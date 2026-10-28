@@ -11,6 +11,15 @@ Every response carries `dataSource` (`synthetic` or `testnet`). Show it on scree
 - `shared/schemas/evidence.json`: evidence bundle schema (DRAFT, owned by Person 2).
 - `shared/ui/VoiceInput.tsx`: voice component (props below). The only location; there is no copy under `services/backend`. It starts with `"use client"` (Next client component).
 
+## Running the backend (Node 24)
+The backend is pinned to Node 24 (`services/backend/.nvmrc` is `24`; `package.json` has `"engines": { "node": ">=24 <25" }`). Install from `services/backend` with:
+
+```
+npm ci --ignore-scripts
+```
+
+Why: plain `npm ci` fails on Windows without Visual Studio build tools (`gyp ERR! find VS`), because `better-sqlite3` has a `binding.gyp` and no install script, so npm tries to compile it. The package already ships a prebuilt Windows binary that it loads at runtime, and `--ignore-scripts` skips the needless compile. Verified in a clean copy on Node 24.19.0 (Windows): plain `npm ci` exit 1; `npm ci --ignore-scripts` exit 0, typecheck passes, server starts, `/health` 200. Also run `npm ci` inside `shared/hash` (it needs `ethers`).
+
 ## Backend settings that affect the web app
 All are required in the backend's `.env` (names in `services/backend/.env.example`); a missing or invalid one stops startup with a message.
 - `CORS_ORIGINS`: comma-separated list of web app origins allowed to call the backend from a browser (for example the URL the web app runs on). Missing, empty or not a valid origin: backend refuses to start. Requests from other origins get no CORS header and the browser blocks them. Requests with no Origin header (curl, server-to-server) are unaffected.
@@ -20,14 +29,14 @@ All are required in the backend's `.env` (names in `services/backend/.env.exampl
 ## Which hash goes where (AGREED)
 | Call | `evidenceHash` is |
 |---|---|
-| `report(target, evidenceHash)` | the `complaintHash` returned by `POST /extract`. It is `hashBundle(complaint + dataSource)` using `shared/hash`, i.e. the complaint object with a `dataSource` field added. Anyone can verify it by recomputing. |
+| `report(target, evidenceHash)` | the `complaintHash` returned by `POST /extract`: `hashBundle({ text, complaint, dataSource })` using `shared/hash`. `text` is the submitted text, trimmed; `complaint` is exactly the object `/extract` returns (`targetAddress, amount, currency, occurredAt, narrative`); `dataSource` is `synthetic` or `testnet`. |
 | `confirm(...)` / `link(...)` | the hash of the full evidence bundle, posted by the verifier only. Read it from the on-chain event and call `GET /evidence/{hash}`. |
 
-This matches `services/backend/src/server.ts`: it builds `{ ...complaint, dataSource }`, hashes it with `hashBundle`, stores that record under the hash, and returns the hash as `complaintHash`.
-**Caveat: the hash is not deterministic from the text.** The `narrative` field is written by the LLM and is part of the hashed record, so the same complaint text can give a different `complaintHash` on each call (observed in a real run). Every hash does verify against the exact record stored under it (`GET /evidence/{hash}`). Do not promise that resubmitting the same text reproduces the same hash.
+This matches `services/backend/src/server.ts`: it builds `{ text, complaint, dataSource }`, hashes it with `hashBundle`, stores exactly that record under the hash, and returns `{ complaint, dataSource, text, complaintHash }`. `GET /evidence/{hash}` returns the same record as `bundle`.
+**The same text can give different hashes.** `narrative` is written by the AI and is part of `complaint`, so submitting the same text twice can produce two different `complaintHash` values (seen in real runs). A hash is verifiable because the exact record it covers is stored: fetch it from `GET /evidence/{hash}`, run `hashBundle` on `bundle`, compare with the on-chain value. Do not promise that resubmitting the same text reproduces the same hash. Because `text` is in the record, the hash also proves which words the extracted fields came from.
 
-No personal details go on-chain, only the hash. The complaint text stays in the backend database.
-Tamper test: fetch the stored record, run `hashBundle` on it, compare with the on-chain hash. A mismatch means it was altered.
+Only the hash goes on-chain. **Privacy flag (undecided):** `GET /evidence/{hash}` currently returns the victim's full submitted text to anyone who has the hash, and the hash is public once it is on-chain. All current data is synthetic; whether to restrict this is an open team decision.
+Tamper test: fetch the stored record, run `hashBundle` on it, compare with the on-chain hash. A mismatch means it was altered. `npm run verify-complaint-hash` (backend running) does this end to end and also shows that changing one character of the text, or the extracted amount, changes the hash.
 
 ## Cluster id
 - Format (agreed): `0x` followed by exactly 64 hex characters, matching the contract's `bytes32`.
@@ -41,15 +50,16 @@ Shapes below come from the code. `POST /extract` and `GET /decisions` were run a
 `POST /extract`  body `{ "text": string, "targetAddress"?: string }` (text trimmed; 1 to 5000 chars; empty, whitespace-only, too long, non-string or invalid JSON all return 400)
 - The target address is chosen by code from the text, never by the AI. Every `0x` + 40-hex token is validated with ethers; the zero address is ignored; case is normalised to the checksummed form.
 - One valid address: it is used. Several: 422 `{ error, candidates: [checksummed...] }`; show the list and re-send the same text with `targetAddress` set to the user's choice (it must be one of the candidates, otherwise 400). None: 400.
-- 200 `{ complaint: { targetAddress, amount, currency, occurredAt, narrative }, dataSource, complaintHash }`
-  - `targetAddress` is checksummed; `occurredAt` is ISO 8601; `amount` is a number.
+- 200 `{ complaint: { targetAddress, amount, currency, occurredAt, narrative }, dataSource, text, complaintHash }`
+  - `targetAddress` is checksummed; `occurredAt` is ISO 8601; `amount` is a number; `text` is the trimmed submitted text; `complaintHash = hashBundle({ text, complaint, dataSource })`.
 - 400 `{ error: string }` for a missing field, a malformed address, or an address not in the text (message is user-readable, show it).
 - 429 rate limited. 502 the AI gave an unusable answer (retry).
 - 422 more than one address in the text (see above).
 - Known limits: only the address is chosen by code. amount, currency, occurredAt and narrative are written by the AI and can be steered by the text. See `docs/person2-test-report.md`.
 
 `GET /evidence/{hash}`  hash is `0x` + 64 hex.
-- 200 `{ hash, bundle }`  (bundle follows `shared/schemas/evidence.json`; complaint records from `/extract` are also stored here)
+- 200 `{ hash, bundle }`. For a hash from `/extract`, the stored `bundle` is `{ text, complaint, dataSource }`: exactly the record that was hashed. Later, verifier evidence bundles (following `shared/schemas/evidence.json`) are stored here too.
+- **This endpoint returns the victim's full submitted text (`bundle.text`) to anyone who has the hash.** That is acceptable only while all data is synthetic (`dataSource: "synthetic"`, no real victims). The team decides whether to restrict it before any real data is used.
 - 400 bad hash format. 404 unknown hash.
 - Planned, not yet run with a real bundle: full evidence bundles appear once `POST /evidence/build` exists.
 
@@ -74,4 +84,4 @@ import { VoiceInput } from "<path to shared>/ui/VoiceInput";
 - Speech engine: the browser's built-in speech recognition (`SpeechRecognition` / `webkitSpeechRecognition`). Wispr Flow is not integrated (availability unconfirmed).
 - On-screen label: always shows `Engine: Browser speech recognition`, with ` (unavailable)` appended if the browser has no speech recognition. Errors appear as a text alert; an unsupported browser shows a message asking the user to type instead.
 - Expected to work in Chrome and Edge.
-- **NOT TESTED IN A BROWSER YET.** It compiles in intent only (it is not part of the backend typecheck, and the repo has no React setup to build it). Test it in the web app before relying on it.
+- **NOT TESTED IN A BROWSER YET.** It passes a strict TypeScript check in a temporary project with React types (zero `any`), but it is not part of the backend typecheck and no one has run it in a browser. It reads `window` during render, so a Next server render may disagree with the client on the "(unavailable)" label (possible hydration warning). Test it in the web app before relying on it.
