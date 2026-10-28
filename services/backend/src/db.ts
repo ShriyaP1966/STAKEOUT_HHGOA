@@ -35,6 +35,7 @@ export function openDb(path: string) {
     listDecisions: db.prepare("SELECT * FROM decisions ORDER BY id DESC LIMIT ?"),
     getKv: db.prepare("SELECT value FROM kv WHERE key = ?"),
     putKv: db.prepare("INSERT INTO kv (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value"),
+    hasEvent: db.prepare("SELECT 1 FROM handled_events WHERE event_key = ?"),
     markEvent: db.prepare("INSERT OR IGNORE INTO handled_events (event_key, handled_at) VALUES (?, ?)"),
   };
 
@@ -54,6 +55,7 @@ export function openDb(path: string) {
     },
     getKv: (key: string) => (q.getKv.get(key) as { value: string } | undefined)?.value ?? null,
     setKv: (key: string, value: string) => void q.putKv.run(key, value),
+    isEventHandled: (eventKey: string) => q.hasEvent.get(eventKey) !== undefined,
     /** true if this call is the first to claim the event (safe to act on it) */
     claimEvent: (eventKey: string) => q.markEvent.run(eventKey, new Date().toISOString()).changes === 1,
   };

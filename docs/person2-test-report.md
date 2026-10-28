@@ -67,18 +67,107 @@ Server stderr had no errors or stack traces. Server stopped; port 8000 confirmed
 
 ## 4. Remaining limits (honest)
 - Only the address is chosen by code. `amount`, `currency`, `occurredAt` and `narrative` are still written by the AI from the text, so text can still steer those (for example a false amount). They are not validated against the text. The verifier never relies on them.
-- `complaintHash` covers the AI-written `narrative`; the same text can give different hashes on different runs. Each hash verifies against its stored record.
+- The same text can give different `complaintHash` values: `narrative` is AI-written and is part of `complaint`, which the hash covers. A hash is verifiable because the exact record `{ text, complaint, dataSource }` is stored under it (see section 6).
 - A text with one valid address plus a mistyped second address uses the valid one (the mistyped token is ignored).
 - Hex characters directly after an address with no separator (for example "...CFFbad") make the token too long, so it counts as malformed.
 
 ## 5. Docs. `.env.example` has the 15 names `config.ts` reads, no values (checked by script in the first run; no variable was added since).
 
+## 6. Third run: `complaintHash` now covers `{ text, complaint, dataSource }`, and the Node 24 pin. Ran by me.
+### Hash proof (`npm run verify-complaint-hash`, backend running, fresh address and text each run)
+Run twice, then once more after fixing the script's exit handling. Final run: script exit code 0, all 7 checks PASS:
+- `POST /extract` returned keys `complaint, dataSource, text, complaintHash`.
+- Returned `text` equals the trimmed submitted text.
+- Recomputing `hashBundle({ text, complaint, dataSource })` from the response equals `complaintHash`.
+- `GET /evidence/<hash>` returns 200, and `bundle` is exactly `{ text, complaint, dataSource }`; hashing that bundle gives the hash it is stored under.
+- Changing one character of `text` changes the hash. Changing the extracted `amount` changes the hash.
+
+Script fix, for the record: the first two runs printed all PASS but ended with a Node crash on Windows (`Assertion failed: UV_HANDLE_CLOSING`, exit -1073740791) because the script called `process.exit()` while HTTP connections were closing. The script now sets `process.exitCode` instead. The backend was not at fault.
+
+### Full robustness suite, third run (`npm run robustness`)
+Same results as the second run: multilingual 4 of 4 correct (address and amount); injection responses never contain a status or confirmation field, and the zero-address text returns the real address; address selection 9 of 9 PASS; bad input all 400 with clear messages; burst 30 x 400 then 5 x 429; `/health` 200 afterwards; no server errors; port 8000 free after stop. The only difference: successful responses now include a `text` key (`complaint, dataSource, text, complaintHash`).
+
+### Privacy observation (decision for the owner, not made here)
+`GET /evidence/<hash>` returns `bundle.text`, the victim's full submitted text, to anyone who has the hash. Demonstrated by a real request. The hash becomes public once it is passed to `report()` on-chain.
+
+### Node 24 pin and clean install (copy of the tracked files in a temp folder outside the repo, same layout, Node 24.19.0 on Windows)
+| Step | Result |
+|---|---|
+| `npm ci` (plain) | Exit 1: `gyp ERR! find VS` (needs Visual Studio build tools). No engines warning. |
+| `npm ci --ignore-scripts` | Exit 0. `better-sqlite3` loads its bundled prebuilt binary (SQLite 3.53.4). |
+| `npm run typecheck` in the copy | Exit 0 |
+| Server start with a throwaway `.env` of dummy values (no real key), `GET /health`, `GET /decisions` | 200 and 200, no errors in the log, then stopped and port free |
+
+Cause: `better-sqlite3` 13.0.3 has a `binding.gyp` and no install script, so npm runs `node-gyp rebuild` by default, which fails without Visual Studio; the package ships a prebuilt Windows binary that it uses at runtime, so skipping scripts is enough. Not tested: Node 26, macOS, Linux.
+
+## 7. Verifier skeleton. Ran by me (stand-in chain and mock RPC only; NOT the real contract)
+`npm run verifier-selftest` (stand-in chain, in-memory database, local HTTP server; addresses generated), 30 of 30 checks pass:
+- Feasibility checks mirror the contract: address limit counts members plus exit points together (3 addresses against a limit of 2 refused, limit named), no live flag, challenged flag, already in a cluster, duplicate, zero address, empty request, link needs an existing cluster.
+- Decision log: sent (with tx hash), dry run (skipped, no tx hash, reason says dry run), revert (skipped, with the reason), infeasible (skipped, with the rule), refused. Only the agreed kind/outcome values appear.
+- Watcher: scans from the deployment block in chunks up to latest minus confirmationsToWait and stores the next block; a restart resumes from it; an event whose flag is no longer live is logged once and is not handled twice even when the stored position is reset; a live flag leaves the event unhandled, logs no decision, keeps the position at that block and warns once with the not-implemented message.
+- Graph Service client: valid response parses; bad shape, HTTP 500, non-JSON, timeout and nothing-listening each give a distinct, clear error.
+
+Startup scenarios (`npm run verifier` started as a real process; the valid case used a MOCK JSON-RPC server built from the real ABI, not a chain). Each refusal exited with code 1 and a clear message:
+| Scenario | Result |
+|---|---|
+| Current `.env` as it is | Lists the missing or invalid variables by name (RPC_URL, CHAIN_ID and the new verifier variables) |
+| `RULES_PATH` and `DEPLOYMENT_PATH` blank | "DEPLOYMENT_PATH: is empty", "RULES_PATH: is empty" |
+| Rules file missing / empty / invalid JSON / wrong shape | Four different messages; the missing one says Person 1 and Person 3 own the file and points to `docs/rules-proposal.md` |
+| Deployment file missing / invalid address | Messages say Person 3 owns it and what is wrong |
+| RPC unreachable | "Cannot reach the RPC endpoint <host>..." |
+| RPC on a different chain | "reports chain 99, but CHAIN_ID in .env is 7" |
+| No contract code at the address | "No contract code at ... redeploy" |
+| Signer lacks `VERIFIER_ROLE` | Names the wallet address and asks Person 3 to grant it |
+| Valid files and mock RPC | Started: logged contract, chain, signer, role confirmed, `maxMembersPerCall` 5, dry run true, resuming from the deployment block; stored next block 20 (latest 20 minus 1 confirmation wait, plus 1); stopped by the test |
+
+The signer's private key never appeared in any output of these runs (checked against the real value without printing it). Only the RPC host is printed.
+Not tested: the real contract, real events, `confirm`/`link` transactions, a real Graph Service (none exists). A human must run these against Person 3's local node and deployment.
+
 ## How to repeat by hand
 1. `npm start` in one window.
-2. In another: `npm run robustness` (all suites, a few minutes because of rate-limit waits) or `-- multilingual`, `-- injection`, `-- address-selection`, `-- bad-input`.
-3. Stop the server and confirm the port is free: `Get-NetTCPConnection -LocalPort <PORT> -State Listen`.
+2. In another: `npm run verify-complaint-hash` for the hash proof.
+3. `npm run robustness` (all suites, a few minutes because of rate-limit waits) or `-- multilingual`, `-- injection`, `-- address-selection`, `-- bad-input`.
+4. Stop the server and confirm the port is free: `Get-NetTCPConnection -LocalPort <PORT> -State Listen`.
 
 ## Human must still do
 - Judge the resolved times in the Hindi, Marathi and Hinglish results.
 - Decide whether to also validate amount, currency and time against the text.
 - Voice component, verifier, evidence builder and testnet transactions are not covered here.
+
+
+## 8. Run of 2026-10-28 (later session): AI resilience, summary guard, `npm run check`, secret-leak audit, voice hydration
+All runs by the assistant unless marked "human must run". No `npm run robustness` and no real AI calls were used for these checks (stub providers, a local stub AI server, a mock node).
+
+### AI resilience in `/extract`
+`npm run llm-selftest` (stub provider using the real `OpenAI.APIError` classes, a fake clock, Fastify `inject`): 22 of 22 checks pass. 429 then success retries once and respects `retry-after` (2000 ms) and `retry-after-ms` (1500 ms); 5xx then timeout then success waits 1 s then 2 s; exhausted retries give HTTP 429 with `Retry-After`; a provider wait longer than the cap gives up at once with the provider's own value (3600 s); `maxRetries` 0 is final; a non-retryable provider 400 and a programming error are never retried; empty, non-JSON and wrong-shape answers still give 502.
+Bug found by this test and fixed: timeouts were detected by error name, but the SDK's error classes do not set `name`, so a timeout would never have been retried. They are now detected by class.
+Provider 4xx (not 429): the HTTP status is unchanged (500, because the SDK error carries `status`, not `statusCode`). The message is now generic. This is a deliberate change: provider messages can echo the API key (seen in the stub test below).
+
+### Summary guard
+`npm run summary-selftest` (stub AI): 31 of 31 checks pass after the fix below.
+Real bug found: the guard matched `0x` plus exactly 40 hex characters, so a forged 64-character id sharing the first 40 characters with the real cluster id, and a truncated prefix of it, both passed. Two failing tests were added first (shown failing), then the guard was changed to compare every `0x...` hex value whole. All tests pass afterwards and the prompt wording is unchanged.
+A flaky test of mine (a random address ending in "A") was fixed; 30 repeated runs: 0 failures. verifier-selftest and llm-selftest: 10 repeated runs each, 0 failures.
+
+### `npm run check`
+Runs typecheck, verifier-selftest, llm-selftest, summary-selftest and env-parity: 5 of 5 pass. With a stray variable temporarily added to `.env.example` it failed with `MISMATCH: ZZ_STRAY_TEST_VARIABLE is in .env.example but no config schema reads it` and exit code 1; after restoring the file (byte-identical, verified with `cmp`) it passed again.
+
+### Security and hardcoding audit (AGENTS.md section 7, `services/backend` and `docs/`)
+- No `0x` + 40-hex literal in source. In `docs/` only the public verifier address in the handoff.
+- Key-like words in source and docs are variable names and code that handles them; no secret value in any tracked file; no URLs, hosts, chain ids or model names typed in non-script source (two matches are example text inside error messages).
+- `.env` is git-ignored and has no tracked copy. The local SQLite files contain neither secret; their 64-hex values are all stored evidence hashes (45 of 45).
+- **Process note:** one of the assistant's audit commands did not exclude `.env` and printed the real API key and the verifier private key into that session's output. It was repeated with `.env` excluded. The owner was told to rotate both keys.
+
+Leak tests with FAKE secrets (a local stub AI server that echoes the API key in its 401 body; a mock node whose errors contain the RPC URL):
+- API server: the fake key, any Authorization or Bearer text, the complaint text and the complaint's wallet address appear in no response and no server log line; retry log lines carry only attempt, reason and wait.
+- Provider 401 gives HTTP 500 with a generic message; 429 then success gives 200 after 2 provider calls and about 1 s; a 429 that never clears and a 503 that never clears give 429 with `Retry-After` after 2 provider calls; a hanging provider times out, retries and gives 429 (about 4 s).
+- Verifier: a probe first showed that ethers puts the full RPC URL, including path and `apikey` query, into its error messages (the verifier would have logged it). After adding redaction to every verifier log line and to uncaught startup errors, the secret path, the secret query and the fake private key never appear (`[redacted]` shows in their place), and an unreachable node prints only host and port.
+
+### Voice component hydration
+`shared/ui/VoiceInput.tsx` now detects speech recognition in an effect. Strict `tsc` in a temporary project outside the repo: exit 0, no `any`, `"use client"` as the first line. `renderToString` of the committed version and the new version in three conditions:
+- BEFORE: the server render ends "(unavailable)"; the first render in a browser that has the API shows no suffix; they differ (a hydration mismatch).
+- AFTER: the first render is identical in all three conditions (no suffix); "(unavailable)" can appear only after mount.
+
+Human must run in Chrome and Edge: the label reads "Engine: Browser speech recognition" with no flash of "(unavailable)"; clicking the button asks for the microphone; spoken text reaches `onText`; denying the microphone shows the error alert; in a browser without the API (for example Firefox) "(unavailable)" appears after load and the button shows the type-instead message; the browser console shows no hydration warning in a Next dev run.
+
+### Local chain
+Not run. `docs/local-chain-test.md` is the checklist a human runs against Person 3's Hardhat node.

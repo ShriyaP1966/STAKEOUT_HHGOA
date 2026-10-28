@@ -9,6 +9,9 @@ export const llmEnv = z.object({
   LLM_BASE_URL: z.url(),
   LLM_API_KEY: nonEmpty,
   LLM_MODEL: nonEmpty,
+  LLM_MAX_RETRIES: z.coerce.number().int().min(0),
+  LLM_TIMEOUT_MS: z.coerce.number().int().positive(),
+  LLM_RETRY_MAX_WAIT_SECONDS: z.coerce.number().int().min(0),
 });
 
 export const serverEnv = z.object({
@@ -43,6 +46,17 @@ export const chainEnv = z.object({
   RULES_PATH: nonEmpty,
 });
 
+/** Everything the verifier process reads from .env (the API server does not need these). */
+export const verifierEnv = chainEnv.extend({
+  DB_PATH: nonEmpty,
+  GRAPH_SERVICE_URL: z.url(),
+  GRAPH_TIMEOUT_MS: z.coerce.number().int().positive(),
+  RPC_TIMEOUT_MS: z.coerce.number().int().positive(),
+  VERIFIER_DRY_RUN: z.enum(["true", "false"], "must be true or false").transform((v) => v === "true"),
+  VERIFIER_POLL_INTERVAL_MS: z.coerce.number().int().positive(),
+  VERIFIER_LOG_CHUNK_BLOCKS: z.coerce.number().int().positive(),
+});
+
 /** Validate process.env against a schema; print every problem by name (never the value) and exit. */
 export function loadEnv<T extends z.ZodObject>(schema: T, label: string): z.infer<T> {
   const parsed = schema.safeParse(process.env);
@@ -66,17 +80,30 @@ export const rulesSchema = z.object({
 export type Rules = z.infer<typeof rulesSchema>;
 
 export function loadRules(path: string): Rules {
+  const fail = (message: string): never => {
+    console.error(message);
+    process.exit(1);
+  };
   let raw: string;
   try {
     raw = readFileSync(path, "utf8");
   } catch {
-    console.error(`Rules file not found at RULES_PATH=${path}. The team must agree and commit config/rules.json.`);
-    process.exit(1);
+    return fail(
+      `Rules file not found at RULES_PATH=${path}. config/rules.json is agreed by Person 1 and Person 3 (Person 2 only reads it); ` +
+        "expected fields are listed in docs/rules-proposal.md. Nothing is assumed in its absence.",
+    );
   }
-  const parsed = rulesSchema.safeParse(JSON.parse(raw));
+  if (raw.trim() === "") return fail(`Rules file ${path} is empty. Expected fields: see docs/rules-proposal.md.`);
+  let json: unknown;
+  try {
+    json = JSON.parse(raw);
+  } catch (e) {
+    return fail(`Rules file ${path} is not valid JSON: ${(e as Error).message}`);
+  }
+  const parsed = rulesSchema.safeParse(json);
   if (!parsed.success) {
-    console.error(`Invalid rules file ${path}:\n${parsed.error.issues.map((i) => `  - ${i.path.join(".")}: ${i.message}`).join("\n")}`);
-    process.exit(1);
+    const problems = parsed.error.issues.map((i) => `  - ${i.path.join(".") || "(root)"}: ${i.message}`).join("\n");
+    return fail(`Invalid rules file ${path} (expected fields: see docs/rules-proposal.md):\n${problems}`);
   }
   return parsed.data;
 }
