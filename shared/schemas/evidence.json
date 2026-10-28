@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "EvidenceBundle",
+  "description": "DRAFT by Person 2. Hash of the canonical form (shared/hash) is what goes on-chain as evidenceHash.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "target", "clusterId", "behaviorScore", "signals", "members",
+    "exitPoints", "unrelatedReporterCount", "thresholdsUsed", "aiSummary", "dataSource", "createdAt"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "integer", "minimum": 1 },
+    "target": { "type": "string", "pattern": "^0x[a-fA-F0-9]{40}$" },
+    "clusterId": { "type": ["string", "null"], "description": "From the Graph Service; null if the target is not in a cluster" },
+    "behaviorScore": { "type": "number" },
+    "signals": { "type": "array", "items": { "type": "object" }, "description": "Passed through from the Graph Service analysis, unmodified" },
+    "members": { "type": "array", "items": { "type": "string", "pattern": "^0x[a-fA-F0-9]{40}$" } },
+    "exitPoints": { "type": "array", "items": { "type": "string", "pattern": "^0x[a-fA-F0-9]{40}$" } },
+    "unrelatedReporterCount": { "type": "integer", "minimum": 0 },
+    "thresholdsUsed": { "type": "object", "description": "Copy of the rules.json values applied, so the decision can be audited" },
+    "aiSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text", "source"],
+      "properties": {
+        "text": { "type": "string" },
+        "source": { "enum": ["llm", "template"], "description": "template = guard rejected the LLM output twice" }
+      }
+    },
+    "dataSource": { "enum": ["synthetic", "testnet"] },
+    "createdAt": { "type": "string", "format": "date-time" }
+  }
+}

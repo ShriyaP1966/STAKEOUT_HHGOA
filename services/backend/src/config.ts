@@ -1,0 +1,66 @@
+import "dotenv/config";
+import { readFileSync } from "node:fs";
+import { z } from "zod";
+
+/** Every env var is required; nothing has a default value in code. */
+const nonEmpty = z.string().min(1, "is empty");
+
+export const llmEnv = z.object({
+  LLM_BASE_URL: z.url(),
+  LLM_API_KEY: nonEmpty,
+  LLM_MODEL: nonEmpty,
+});
+
+export const serverEnv = z.object({
+  PORT: z.coerce.number().int().positive(),
+  DB_PATH: nonEmpty,
+  DATA_SOURCE: z.enum(["synthetic", "testnet"]),
+  GRAPH_SERVICE_URL: z.url(),
+  RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive(),
+});
+
+export const chainEnv = z.object({
+  RPC_URL: z.url(),
+  CHAIN_ID: z.coerce.number().int().positive(),
+  VERIFIER_PRIVATE_KEY: z.string().regex(/^0x[0-9a-fA-F]{64}$/, "must be a 0x-prefixed 32-byte hex key"),
+  DEPLOYMENT_PATH: nonEmpty,
+  RULES_PATH: nonEmpty,
+});
+
+/** Validate process.env against a schema; print every problem by name (never the value) and exit. */
+export function loadEnv<T extends z.ZodObject>(schema: T, label: string): z.infer<T> {
+  const parsed = schema.safeParse(process.env);
+  if (parsed.success) return parsed.data;
+  const lines = parsed.error.issues.map((i) => `  - ${i.path.join(".")}: ${i.message}`);
+  console.error(`Config error (${label}). Fix .env (see .env.example):\n${lines.join("\n")}`);
+  process.exit(1);
+}
+
+/**
+ * Shape of config/rules.json as Person 2 reads it. Field names are a PROPOSAL
+ * from the plan's wording (threshold, minimum signals, report effect,
+ * confirmations to wait); the team must agree them in Phase 0.
+ */
+export const rulesSchema = z.object({
+  behaviorThreshold: z.number(),
+  minSignals: z.number().int().nonnegative(),
+  reportConfidenceBoostPerReporter: z.number().nonnegative(),
+  confirmationsToWait: z.number().int().nonnegative(),
+});
+export type Rules = z.infer<typeof rulesSchema>;
+
+export function loadRules(path: string): Rules {
+  let raw: string;
+  try {
+    raw = readFileSync(path, "utf8");
+  } catch {
+    console.error(`Rules file not found at RULES_PATH=${path}. The team must agree and commit config/rules.json.`);
+    process.exit(1);
+  }
+  const parsed = rulesSchema.safeParse(JSON.parse(raw));
+  if (!parsed.success) {
+    console.error(`Invalid rules file ${path}:\n${parsed.error.issues.map((i) => `  - ${i.path.join(".")}: ${i.message}`).join("\n")}`);
+    process.exit(1);
+  }
+  return parsed.data;
+}
