@@ -86,13 +86,24 @@ A task is done only if ALL are true:
 
 ## 8. Commands
 
-Fill these in once the repo exists (Person 3 owns this section):
+Person 3 owns this section. Run every command from the repo root.
 
-- Install: TBD
+- Install: `npm ci`
+- Compile contracts: `npm run compile`
+- Test contracts: `npm test`
+- Contract coverage: `npm run coverage`
+- Lint Solidity: `npm run lint`
+- Type-check TypeScript: `npm run typecheck`
+- Export ABIs to `shared/abi`: `npm run export-abi`
 - Run graph service: TBD
 - Run backend and verifier: TBD
-- Run web app: TBD
-- Deploy contract to testnet: TBD
+- Install web app: `npm ci --prefix apps/web`
+- Run web app: fill `apps/web/.env.local` from `apps/web/.env.example`, then `npm run web:dev` (or `npm run web:build` then `npm --prefix apps/web start`)
+- Test web app: `npm run web:test`; add `STAKEOUT_LOCAL_RPC_URL=http://127.0.0.1:8545` after `npm run seed:local` to include the local-node checks
+- Seed local test data (synthetic, localhost only): `npm run seed:local` after `npm run deploy:local`
+- Deploy contract to testnet: fill `.env` from `.env.example`, then `npm run deploy:target`. Writes `deployments/network.json` and `shared/abi/*.json`, then verifies on the explorer.
+- Deploy contract locally: `npm run node:local` in one terminal; fill `.env.localhost` with the same variable names (`EXPLORER_API_KEY` optional), then `npm run deploy:local`. Writes the git-ignored `deployments/localhost.json`.
+- Safe transaction calldata: `npm run safe:calldata -- <target|localhost> <action> <args>`
 - Load synthetic scenario: TBD
 
 ## 9. When to stop and ask a human

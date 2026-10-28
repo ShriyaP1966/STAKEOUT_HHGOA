@@ -3,3 +3,16 @@ node_modules/
 *.sqlite
 *.sqlite-*
 data/
+node_modules
+artifacts
+cache
+coverage
+coverage.json
+typechain-types
+.env*
+!.env.example
+deployments/localhost.json
+.next
+*.tsbuildinfo
+deployments/localhost-seed.json
+next-env.d.ts
