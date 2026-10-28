@@ -25,11 +25,14 @@ async function main(): Promise<void> {
 
   const node = new ethers.JsonRpcProvider((network.config as HttpNetworkConfig).url, deployment.chainId, { staticNetwork: true });
   const unlocked = ((await node.send("eth_accounts", [])) as string[]).map((account) => ethers.getAddress(account));
-  for (const [label, account] of [
-    ["reviewer", deployment.reviewer],
-    ["verifier", deployment.verifier],
-  ] as const) {
-    if (!unlocked.includes(account)) throw new Error(`The ${label} ${account} is not an unlocked account on the local node.`);
+  if (!unlocked.includes(deployment.reviewer)) {
+    throw new Error(`The reviewer ${deployment.reviewer} is not an unlocked account on the local node.`);
+  }
+  if (!unlocked.includes(deployment.verifier)) {
+    if ((await node.getBalance(deployment.verifier)) === 0n) {
+      throw new Error("The verifier has no ETH on the local node. Fund it first: npm run fund:local -- <verifier> <amountEth>");
+    }
+    await node.send("hardhat_impersonateAccount", [deployment.verifier]);
   }
   const [deployer] = await ethers.getSigners();
   const pool = unlocked.filter((account) => ![deployer.address, deployment.reviewer, deployment.verifier].includes(account));

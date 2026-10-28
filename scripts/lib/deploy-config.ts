@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { parse } from "dotenv";
-import { MaxUint256, ZeroAddress, getAddress, isAddress, isHexString } from "ethers";
+import { MaxUint256, Wallet, ZeroAddress, getAddress, isAddress, isHexString } from "ethers";
 import { z } from "zod";
 
 export const ROOT_DIR = path.resolve(__dirname, "..", "..");
@@ -114,6 +114,50 @@ export function loadDeployEnv(network: DeployNetworkName): DeployEnv {
 
 export function loadRpcEnv(network: DeployNetworkName): RpcEnv {
   return parseOrThrow(rpcSchema, readEnvFile(network), DEPLOY_NETWORKS[network].envFile);
+}
+
+const verifierSchema = z.object({ VERIFIER_ADDRESS: address });
+
+export function loadVerifierAddress(network: DeployNetworkName): string {
+  return parseOrThrow(verifierSchema, readEnvFile(network), DEPLOY_NETWORKS[network].envFile).VERIFIER_ADDRESS;
+}
+
+const SAFE_OWNER_COUNT = 3;
+
+const safeOwners = text
+  .transform((value) => value.split(",").map((entry) => entry.trim()))
+  .pipe(z.array(address).length(SAFE_OWNER_COUNT, `must list exactly ${SAFE_OWNER_COUNT} addresses separated by commas`))
+  .refine((owners) => new Set(owners).size === owners.length, "must not repeat an address");
+
+const blankAsMissing = (value: unknown) => (typeof value === "string" && value.trim() === "" ? undefined : value);
+
+const safeSetupSchema = z
+  .object({
+    ...deployShape,
+    REVIEWER_ADDRESS: z.preprocess(blankAsMissing, address.optional()),
+    EXPLORER_API_KEY: text,
+    SAFE_OWNERS: safeOwners,
+    SAFE_THRESHOLD: safeNumber,
+  })
+  .superRefine((env, ctx) => {
+    if (env.SAFE_THRESHOLD > env.SAFE_OWNERS.length) {
+      ctx.addIssue({ code: "custom", path: ["SAFE_THRESHOLD"], message: `must be from 1 to ${env.SAFE_OWNERS.length}` });
+    }
+    if (env.VERIFIER_ADDRESS === new Wallet(env.DEPLOYER_PRIVATE_KEY).address) {
+      ctx.addIssue({ code: "custom", path: ["VERIFIER_ADDRESS"], message: "must not be the deployer" });
+    }
+    if (env.SAFE_OWNERS.includes(env.VERIFIER_ADDRESS)) {
+      ctx.addIssue({ code: "custom", path: ["VERIFIER_ADDRESS"], message: "must not be a Safe owner" });
+    }
+    if (env.REVIEWER_ADDRESS !== undefined && env.VERIFIER_ADDRESS === env.REVIEWER_ADDRESS) {
+      ctx.addIssue({ code: "custom", path: ["VERIFIER_ADDRESS"], message: "must not be the reviewer Safe" });
+    }
+  });
+
+export type SafeSetupEnv = z.infer<typeof safeSetupSchema>;
+
+export function loadSafeSetupEnv(): SafeSetupEnv {
+  return parseOrThrow(safeSetupSchema, readEnvFile("target"), DEPLOY_NETWORKS.target.envFile);
 }
 
 const deploymentSchema = z.object({

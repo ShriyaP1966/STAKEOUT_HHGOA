@@ -56,7 +56,13 @@ Without them, contract compile and tests still work, and the web app builds but 
 | Export ABIs to `shared/abi` | `npm run export-abi` |
 | Start a local chain | `npm run node:local` |
 | Deploy to the local chain | `npm run deploy:local` |
+| Create a deployer wallet in `.env` | `npm run gen:deployer` |
+| Validate `.env` and show the deployer balance | `npm run check:env` |
+| Create the reviewer Safe | `npm run create:safe` |
+| Check everything before a testnet deploy, without deploying | `npm run deploy:check` |
 | Deploy to the target network | `npm run deploy:target` |
+| Check a deployment on chain | `npm run check:deployment -- <network> [--verifier-rotated]` |
+| Send local test ETH | `npm run fund:local -- <recipient> <amountEth>` |
 | Print Safe transaction calldata | `npm run safe:calldata -- <network> <action> <args>` |
 | Seed synthetic data on the local chain | `npm run seed:local` |
 | Install the web app | `npm ci --prefix apps/web` |
@@ -87,6 +93,8 @@ Without them, contract compile and tests still work, and the web app builds but 
 | `MAX_MEMBERS_PER_CALL` | Maximum addresses per `confirm` call |
 | `CONFIRMATIONS` | Blocks to wait after each deployment. Use 1 on a local node, which only mines on demand |
 | `EXPLORER_API_KEY` | Block explorer API key. Required for `target`, optional for `localhost` |
+| `SAFE_OWNERS` | Three distinct owner addresses for the reviewer Safe, separated by commas. Used by `create:safe` |
+| `SAFE_THRESHOLD` | Owner signatures the Safe needs, from 1 to the number of owners |
 
 Every value is validated before anything is sent. A missing or invalid variable stops the deploy and is named in the error. Values are never printed. The Hardhat `target` and `localhost` networks are built only from these files; nothing assumes a particular chain.
 
@@ -108,8 +116,19 @@ Target network:
 
 ```sh
 cp .env.example .env
+npm run gen:deployer
+npm run check:env
+npm run create:safe
+npm run deploy:check
 npm run deploy:target
 ```
+
+1. `gen:deployer` creates a random deployer wallet, writes its key to `.env` only, and prints only its public address. It refuses if `DEPLOYER_PRIVATE_KEY` already has a value. Fund that address from a faucet for the testnet.
+2. Fill `SAFE_OWNERS`, `SAFE_THRESHOLD`, `VERIFIER_ADDRESS`, and `EXPLORER_API_KEY`. `check:env` validates every variable, rejects a verifier that is the deployer or a Safe owner, and prints the deployer balance.
+3. `create:safe` deploys a Safe with exactly those owners and threshold. The deployer only pays gas and is not an owner unless it is listed. It writes the Safe address to `REVIEWER_ADDRESS`, reads the owners and threshold back from the chain, and refuses to run when `REVIEWER_ADDRESS` already has a value.
+4. `deploy:check` runs every check without deploying, including that the Safe on chain matches `SAFE_OWNERS` and `SAFE_THRESHOLD`.
+
+These scripts and `deploy:target` refuse to run unless the RPC endpoint reports `CHAIN_ID` and viem's chain list marks that chain as a testnet.
 
 Local chain:
 
@@ -155,6 +174,8 @@ npm run safe:calldata -- target payReward <recipient> <amountWei>
 ```
 
 It reads the contract address from the deployment file and `RPC_URL` and `CHAIN_ID` from the network's env file. It checks that contract code exists there, and reads `VERIFIER_ROLE` from the contract. Paste `to`, `value`, and `data` into the Safe transaction builder.
+
+To replace the verifier, put the new address in `VERIFIER_ADDRESS`, then submit `grantVerifier` for the new address and `revokeVerifier` for the `verifier` in the deployment file as one Safe batch. After it executes, `npm run check:deployment -- target --verifier-rotated` confirms on chain that the new address has `VERIFIER_ROLE` and the old one does not, then updates `verifier` in the deployment file. It changes nothing if the roles do not match.
 
 ### Local seed data
 

@@ -1,0 +1,12 @@
+{
+  "chainId": 84532,
+  "stakeoutAddress": "0x2BDBEa9039F076b9587C2d692d21407Fbe3A66F7",
+  "guardAddress": "0x9999BaDDc06b77B2f11f36A4f728E22916D002CF",
+  "deploymentBlock": 51481325,
+  "reviewer": "0xD164fAD1C47dCbF56Ded1BA7eA44F87CD2C0b6e9",
+  "verifier": "0x5E921119a5168006F82Dfc295242e23b7328cD61",
+  "minStake": "1000000000000000",
+  "flagDuration": 600,
+  "maxMembersPerCall": 20,
+  "deployedAt": "2026-10-28T20:08:53.000Z"
+}

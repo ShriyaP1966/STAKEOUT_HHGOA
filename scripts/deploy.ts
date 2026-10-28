@@ -14,6 +14,7 @@ import {
   redact,
   requireDeployNetwork,
 } from "./lib/deploy-config";
+import { requireTestnetChainId } from "./lib/testnet";
 
 async function waitForDeployment(contract: BaseContract, confirmations: number): Promise<ContractTransactionReceipt> {
   const tx = contract.deploymentTransaction();
@@ -49,6 +50,7 @@ async function main(): Promise<void> {
   if (chainId !== BigInt(env.CHAIN_ID)) {
     throw new Error(`CHAIN_ID is ${env.CHAIN_ID} but the RPC endpoint reports chain ${chainId}.`);
   }
+  if (networkName === "target") requireTestnetChainId(env.CHAIN_ID);
 
   const [deployer] = await ethers.getSigners();
   const balance = await ethers.provider.getBalance(deployer.address);
