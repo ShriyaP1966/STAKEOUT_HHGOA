@@ -29,6 +29,7 @@ Why: plain `npm ci` fails on Windows without Visual Studio build tools (`gyp ERR
 | `GET /evidence/{hash}` | built (returns the stored record; see the privacy flag) |
 | `GET /decisions?limit=n` | built; fills as the verifier logs decisions |
 | `GET /blocklist` | built (PROPOSED hash rule); tested only against a mock node |
+| `POST /webhooks/dodo` | built (Dodo Payments test mode); tested only with locally signed payloads, real Dodo delivery NOT RUN |
 
 Checks that need no real server, chain or AI call: from `services/backend`, `npm run check` (type check, every self-test, environment-variable parity). It prints PASS or FAIL per check and exits non-zero if any fail.
 
@@ -99,11 +100,20 @@ Shapes below come from the code. `POST /extract` and `GET /decisions` were run a
 - Only hashes are returned: no raw addresses, cluster ids or evidence hashes.
 - 503 naming the missing settings (`RPC_URL`, `CHAIN_ID`, `DEPLOYMENT_PATH`, `RPC_TIMEOUT_MS`, `BLOCKLIST_LOG_CHUNK_BLOCKS`), a missing deployment file, a wrong chain, no contract at the deployed address, or an unreachable node. The rest of the API is unaffected.
 
+## Dodo Payments webhook (test mode): `POST /webhooks/dodo`
+Follows the Standard Webhooks scheme described at https://docs.dodopayments.com/developer-resources/webhooks (checked on that page: headers `webhook-id`, `webhook-timestamp` in Unix seconds, `webhook-signature`; signed content `{id}.{timestamp}.{raw body}`; HMAC-SHA256, base64; `v1,<sig>` entries separated by spaces, any may match; secret with `whsec_` removed then base64-decoded; any non-2xx makes Dodo retry).
+- **Verification:** the raw body is kept as received for this route only (every other route still parses JSON normally). Every `v1` entry is compared in constant time. A timestamp further from now than `DODO_WEBHOOK_TOLERANCE_SECONDS` is rejected.
+- **Answers:** 200 `{received:true}` for a new event; 200 `{received:true,duplicate:true}` for a webhook id already seen; 401 `{error:"unauthorized"}` for any failure (wrong secret, tampered body, stale or future timestamp, missing or malformed headers), always the same body, no detail; 503 naming `DODO_WEBHOOK_SECRET` if it is not set. The rate limit applies like on every route.
+- **Stored (table `webhook_events`):** the webhook id, the event type (the payload's top-level `type`, or `unknown` if it is missing or unusable) and the receive time. Never the payload, any customer data, a signature or the secret; none of them is logged either. A verified event whose body cannot be read is still acknowledged with 200 (stored as `unknown`) so Dodo does not retry it for ever.
+- **What it does with an event:** records that it arrived. It takes no action on any payment event.
+- **Not run:** the real Dodo account and a live delivery. UNKNOWN: whether test mode uses a separate signing secret (the page does not say). To try it for real someone must: create the webhook endpoint in Dodo's test mode, put its signing secret in `DODO_WEBHOOK_SECRET` and a tolerance in `DODO_WEBHOOK_TOLERANCE_SECONDS`, and make the backend reachable from the internet (how is not in the repo: UNKNOWN). The Dodo page also mentions a `dodo wh listen` command that needs test-mode API keys; it was not tried.
+
 ## Verifier status (decides; every input it depends on is PROPOSED)
 `npm run verifier` in `services/backend`. It starts only if `RULES_PATH` and `DEPLOYMENT_PATH` point at valid files, the node is on `CHAIN_ID`, the contract exists at the deployed address and the verifier wallet has `VERIFIER_ROLE`; otherwise it stops with a message saying what is missing and who owns it.
 - **Confirm:** a `Promoted` flag is confirmed only if the wallet's own behavior passes the rules (score at least `behaviorThreshold`, at least `minSignals` signals). Unrelated reports only add to a recorded confidence figure and can never confirm a wallet whose behavior fails. The evidence bundle is stored first; its hash is what goes on-chain.
 - **Link:** a `Confirmed` event makes the verifier ask the graph for link candidates. Linked only if the wallet sends funds into the cluster or its exit points repeatedly in a structured way, or is funded by the cluster and then forwards onward like a member. Inbound funding alone, known victims and one-off payers are never linked.
 - **Log:** every outcome goes to the `decisions` table with `kind` `confirm`|`link`, `outcome` `sent`|`refused`|`skipped`, a rule label, a reason and the inputs (the values the `/decisions` page validates). A decision that cannot be made (graph or AI down) is retried, never guessed.
+- **Check the wallet any time, read-only:** `npm run verifier-status` prints the chain id the RPC reports and whether it equals `CHAIN_ID`, the verifier's PUBLIC address, whether it holds `VERIFIER_ROLE` on the deployed contract and its balance. It sends nothing. `npm run verifier-status-selftest` covers it offline against a mock node.
 - **Dry run:** keep `VERIFIER_DRY_RUN=true` until a human has checked a run; then `confirm` and `link` are only simulated and logged as `skipped`.
 - **Optional webhook (viaSocket):** off unless `NOTIFY_WEBHOOK_URL` is set; sends only `id, kind, outcome, target, txHash, rule`. Payload format UNVERIFIED against viaSocket.
 
@@ -118,6 +128,10 @@ Shapes below come from the code. `POST /extract` and `GET /decisions` were run a
 
 **Needed from Person 3:** the deployment file at `DEPLOYMENT_PATH` and `VERIFIER_ROLE` granted to the verifier address above; please also run `docs/local-chain-test.md` and report what you see.
 **Needed from Person 1:** a running Graph Service and the agreed analysis schema (`shared/schemas/analysis.json`).
+
+## Related documents
+- `docs/trust-model.md`: the verifier and the reviewer Safe, what each can and cannot do on-chain, from the contract code. UNKNOWN where the repo does not say (for example the Safe's owners and threshold, and any decentralization roadmap).
+- `docs/oracle-integration.md`: how an outside contract or app calls `getStatus`, the enums, the `StakeoutGuard`, and snippets (TypeScript run read-only against the deployed contract; Solidity not compiled).
 
 ## Voice component: `shared/ui/VoiceInput.tsx`
 ```tsx

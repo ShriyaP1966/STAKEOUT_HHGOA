@@ -14,6 +14,7 @@
     "gen-wallet": "tsx src/scripts/gen-wallet.ts",
     "verifier-address": "tsx src/scripts/verifier-address.ts",
     "verifier-status": "tsx src/scripts/verifier-status.ts",
+    "verifier-status-selftest": "tsx src/scripts/verifier-status-selftest.ts",
     "test-tx": "tsx src/scripts/test-tx.ts",
     "verifier-selftest": "tsx src/scripts/verifier-selftest.ts",
     "llm-selftest": "tsx src/scripts/llm-selftest.ts",
@@ -23,6 +24,7 @@
     "decide-selftest": "tsx src/scripts/decide-selftest.ts",
     "blocklist-selftest": "tsx src/scripts/blocklist-selftest.ts",
     "notify-selftest": "tsx src/scripts/notify-selftest.ts",
+    "dodo-selftest": "tsx src/scripts/dodo-selftest.ts",
     "env-parity": "tsx src/scripts/env-parity.ts",
     "check": "tsx src/scripts/check.ts"
   },

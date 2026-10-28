@@ -9,7 +9,7 @@ TypeScript service: complaint extraction, evidence building and storage, a hashe
 4. `npm start`
 
 ## Environment variables (exactly those read in `src/config.ts`)
-All are required, except the two `NOTIFY_` variables, which may be left empty. There are no defaults in code; a missing or invalid one stops startup with a message naming it (never its value). The `/blocklist` variables are checked when that endpoint is first used, so the rest of the API runs without them.
+All are required, except the `NOTIFY_` and `DODO_` variables, which may be left empty. There are no defaults in code; a missing or invalid one stops startup with a message naming it (never its value). The `/blocklist` variables are checked when that endpoint is first used, so the rest of the API runs without them.
 
 | Variable | Used by | Meaning |
 |---|---|---|
@@ -35,6 +35,7 @@ All are required, except the two `NOTIFY_` variables, which may be left empty. T
 | `VERIFIER_DRY_RUN` | verifier | `true` or `false`. With `true`, `confirm` and `link` are only simulated against the node and nothing is sent. Keep `true` until a human has checked a run. |
 | `VERIFIER_POLL_INTERVAL_MS` | verifier | Pause between polls for new events |
 | `VERIFIER_LOG_CHUNK_BLOCKS` | verifier | Blocks queried per event request |
+| `DODO_WEBHOOK_SECRET`, `DODO_WEBHOOK_TOLERANCE_SECONDS` | server | Optional Dodo Payments (test mode) webhook. The secret is the signing secret Dodo shows for the endpoint (`whsec_` followed by base64); an invalid one stops startup without being printed. The tolerance is how many seconds a webhook timestamp may differ from now (Standard Webhooks libraries use 300; the Dodo page names no number of its own). If the secret is set the tolerance is required. If the secret is empty, `POST /webhooks/dodo` answers 503 and nothing else is affected. |
 | `NOTIFY_WEBHOOK_URL`, `NOTIFY_TIMEOUT_MS` | verifier | Optional viaSocket webhook. Empty means no notifications at all. If the URL is set, the timeout is required. |
 
 ## Install trouble on Windows
@@ -62,13 +63,20 @@ Plain `npm ci` fails with `gyp ERR! find VS` because `better-sqlite3` has a `bin
 - `GET /evidence/:hash` returns `{hash, bundle}`
 - `GET /blocklist` (PROPOSED) returns hashed addresses of Confirmed and Linked wallets, read from contract events: `{rule, count, hashes, scannedFromBlock, scannedToBlock, dataSource, generatedAt}`. 503 with the missing settings named if the node or deployment is not configured.
 - `GET /decisions?limit=n`
+- `POST /webhooks/dodo` (Dodo Payments test mode, Standard Webhooks) verifies `webhook-id`, `webhook-timestamp` and `webhook-signature` against the raw body and answers 200 for a new or duplicate event, 401 (no detail) for any verification failure, 503 if `DODO_WEBHOOK_SECRET` is not set. It stores only the webhook id, the event type and the receive time. The existing rate limit applies. **Tested only with locally signed payloads: the real Dodo account and a live delivery are NOT RUN.**
 
 See `docs/person2-handoff.md` for response shapes, the hash rules and the list of PROPOSED interfaces.
 
 ## npm scripts
-`start`, `typecheck`, `gen-wallet`, `test-tx`, `hash-file -- <file.json>`, `check-cluster-id -- <id>`, `verify-complaint-hash` (needs the server running; recomputes the hash from a live response and runs the tamper checks), `check` (runs typecheck, every self-test below and env-parity; no real server, no real chain, no real AI call), `llm-selftest`, `summary-selftest`, `timezone-selftest`, `evidence-selftest`, `decide-selftest`, `blocklist-selftest`, `notify-selftest`, `env-parity`, `verifier-address` (prints the verifier's PUBLIC address only), `verifier`, `verifier-selftest`, `robustness -- [multilingual|injection|address-selection|bad-input]` (needs the server running; the full run takes a few minutes because it waits for rate-limit windows).
+`start`, `typecheck`, `gen-wallet`, `test-tx`, `hash-file -- <file.json>`, `check-cluster-id -- <id>`, `verify-complaint-hash` (needs the server running; recomputes the hash from a live response and runs the tamper checks), `check` (runs typecheck, every self-test below and env-parity; no real server, no real chain, no real AI call), `llm-selftest`, `summary-selftest`, `timezone-selftest`, `evidence-selftest`, `decide-selftest`, `blocklist-selftest`, `notify-selftest`, `dodo-selftest`, `verifier-status-selftest`, `verifier-status` (read-only: the chain id the RPC reports and whether it matches `CHAIN_ID`, the verifier's PUBLIC address, whether it holds `VERIFIER_ROLE`, its balance; sends nothing), `env-parity`, `verifier-address` (prints the verifier's PUBLIC address only), `verifier`, `verifier-selftest`, `robustness -- [multilingual|injection|address-selection|bad-input]` (needs the server running; the full run takes a few minutes because it waits for rate-limit windows).
+
+## More documents
+- `docs/trust-model.md`: who has to be trusted, and for what, from the contract code. Unknowns are marked UNKNOWN.
+- `docs/oracle-integration.md`: how another contract or app calls `getStatus(address)`, the enums, the `StakeoutGuard` behavior, and code snippets (the TypeScript one was run read-only against the deployed contract; the Solidity one was not compiled).
+- `docs/person2-handoff.md`, `docs/person2-test-report.md`, `docs/local-chain-test.md`.
 
 ## Known limitations
+- **Dodo Payments:** only locally signed payloads have been tested. The real Dodo account, a live delivery, and whether test mode uses a separate signing secret (the Dodo page does not say) are NOT RUN / UNKNOWN. The route records that an event arrived; it takes no action on any payment event.
 - **PROPOSED, not agreed:** the Graph Service routes and response shape (including the link flags), the `config/rules.json` fields and how the verifier uses them, and the blocklist hash rule and response. Each is isolated in one small file (`src/verifier/graphAnalysisProposal.ts` and `graphClient.ts`, `src/config.ts` `rulesSchema`, `src/blocklist.ts`), so an agreed change is a one-file change. See `docs/person2-handoff.md`.
 - The verifier's decisions and the evidence builder have only run against stand-ins (a stub Graph Service, a stub AI, a mock node). They have not run against Person 1's service or Person 3's deployed contract.
 - Rules in use: pass needs behavior score >= `behaviorThreshold` and signal count >= `minSignals`. `reportConfidenceBoostPerReporter` only feeds a recorded confidence figure and never changes pass or fail. Linking uses the graph's flags, not the thresholds. `confirmationsToWait` delays event handling.

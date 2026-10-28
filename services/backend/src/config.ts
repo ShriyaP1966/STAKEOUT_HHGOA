@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { readFileSync } from "node:fs";
 import { z } from "zod";
+import { parseWebhookSecret } from "./dodo.js";
 import { parseTimeZone } from "./timezone.js";
 
 /** Every env var is required; nothing has a default value in code. */
@@ -70,6 +71,23 @@ export const verifierEnv = chainEnv.extend({
   message: "is required when NOTIFY_WEBHOOK_URL is set",
 });
 
+/**
+ * Optional Dodo Payments webhook (test mode). Both empty means the route answers 503. The secret is validated here so a typo
+ * stops startup, but its value is never printed. If the secret is set, the timestamp tolerance is required.
+ */
+export const dodoEnv = z
+  .object({
+    DODO_WEBHOOK_SECRET: z.preprocess(
+      emptyToUndefined,
+      z.string().refine((v) => { try { parseWebhookSecret(v); return true; } catch { return false; } }, "is not a valid webhook secret (expected whsec_ followed by base64)").optional(),
+    ),
+    DODO_WEBHOOK_TOLERANCE_SECONDS: z.preprocess(emptyToUndefined, z.coerce.number().int().positive().optional()),
+  })
+  .refine((v) => !v.DODO_WEBHOOK_SECRET || v.DODO_WEBHOOK_TOLERANCE_SECONDS !== undefined, {
+    path: ["DODO_WEBHOOK_TOLERANCE_SECONDS"],
+    message: "is required when DODO_WEBHOOK_SECRET is set",
+  });
+
 /** Needed only by GET /blocklist. Checked when the endpoint is first used, so the rest of the API runs without a chain. */
 export const blocklistEnv = z.object({
   RPC_URL: z.url(),
@@ -80,7 +98,7 @@ export const blocklistEnv = z.object({
 });
 
 /** Every schema that reads the environment; the env-parity check compares these with .env.example. */
-export const envSchemas = [llmEnv, serverEnv, chainEnv, verifierEnv, blocklistEnv];
+export const envSchemas = [llmEnv, serverEnv, chainEnv, verifierEnv, blocklistEnv, dodoEnv];
 
 /** Validate process.env against a schema; print every problem by name (never the value) and exit. */
 export function loadEnv<T extends z.ZodObject>(schema: T, label: string): z.infer<T> {
