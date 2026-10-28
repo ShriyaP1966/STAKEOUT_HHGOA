@@ -42,5 +42,5 @@ See `docs/person2-handoff.md` for response shapes and the hash rule.
 
 ## Known limitations
 - The same complaint text can produce different `complaintHash` values, because `narrative` is AI-written and is part of the hashed `complaint`. A hash is verifiable because the exact record `{ text, complaint, dataSource }` is stored under it.
-- `GET /evidence/:hash` returns the victim's full submitted text to anyone who has the hash. Whether to restrict it is undecided.
+- `GET /evidence/:hash` returns the stored record `{ text, complaint, dataSource }`, including the victim's full submitted text, to anyone who has the hash. Fine while all data is synthetic; the team decides whether to restrict it.
 - The target address is chosen by code (one valid address in the text, otherwise 422 with candidates or 400), so instructions inside a complaint cannot change it. amount, currency, time and narrative are still written by the AI and can be steered. Confirmation never depends on `/extract`. See `docs/person2-test-report.md`.
