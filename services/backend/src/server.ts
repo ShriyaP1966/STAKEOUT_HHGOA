@@ -1,4 +1,5 @@
 import Fastify from "fastify";
+import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
 import { z } from "zod";
 import { llmEnv, loadEnv, serverEnv } from "./config.js";
@@ -11,6 +12,7 @@ const llm = makeLlm(env);
 const db = openDb(env.DB_PATH);
 
 const app = Fastify({ logger: true });
+await app.register(cors, { origin: env.CORS_ORIGINS });
 await app.register(rateLimit, { max: env.RATE_LIMIT_PER_MINUTE, timeWindow: "1 minute" });
 
 app.setErrorHandler((err: Error & { statusCode?: number }, _req, reply) => {

@@ -19,6 +19,20 @@ export const serverEnv = z.object({
   RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive(),
   DECISIONS_PAGE_SIZE: z.coerce.number().int().positive(),
   DECISIONS_MAX_LIMIT: z.coerce.number().int().positive(),
+  CORS_ORIGINS: z.string().transform((raw, ctx) => {
+    const origins: string[] = [];
+    for (const part of raw.split(",").map((s) => s.trim()).filter(Boolean)) {
+      try {
+        origins.push(new URL(part).origin);
+      } catch {
+        ctx.issues.push({ code: "custom", message: `"${part}" is not a valid origin (expected something like https://example.com)`, input: raw });
+      }
+    }
+    if (origins.length === 0 && ctx.issues.length === 0) {
+      ctx.issues.push({ code: "custom", message: "is empty; list the web app origins, comma-separated", input: raw });
+    }
+    return origins;
+  }),
 });
 
 export const chainEnv = z.object({

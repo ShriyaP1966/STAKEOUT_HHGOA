@@ -19,11 +19,15 @@ All are required. There are no defaults in code; a missing or invalid one stops 
 | `DATA_SOURCE` | server | `synthetic` or `testnet`, shown on every response |
 | `GRAPH_SERVICE_URL` | server | Person 1's Graph Service base URL |
 | `RATE_LIMIT_PER_MINUTE` | server | Requests per minute per client |
+| `CORS_ORIGINS` | server | Comma-separated web app origins allowed by CORS (for example the web app's URL); must contain at least one valid origin |
 | `DECISIONS_PAGE_SIZE` | server | Default `limit` for `GET /decisions` |
 | `DECISIONS_MAX_LIMIT` | server | Largest allowed `limit`; must be at least `DECISIONS_PAGE_SIZE` |
 | `RPC_URL`, `CHAIN_ID` | `test-tx` (and the future verifier) | Testnet connection |
 | `VERIFIER_PRIVATE_KEY` | `test-tx` (and the future verifier) | Written by `gen-wallet`; never share |
 | `DEPLOYMENT_PATH`, `RULES_PATH` | future verifier | Paths to `deployments/network.json` and `config/rules.json` (owned by others) |
+
+## Install trouble on Windows
+`npm ci` / `npm install` can fail with `gyp ERR! find VS` because `better-sqlite3` tries to compile when it has a `binding.gyp` and no install script, which needs Visual Studio build tools. Its package already ships a prebuilt Windows binary, and `npm ci --ignore-scripts` installs and loads it (verified on Node 24.19.0, Windows). Whether to pin a Node version or change the library is still undecided.
 
 ## Endpoints
 - `GET /health`
