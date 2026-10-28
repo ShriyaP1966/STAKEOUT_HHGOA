@@ -69,7 +69,13 @@ Shapes below come from the code. `POST /extract` and `GET /decisions` were run a
 - 400 `{ error: "limit must be a whole number from 1 to <max>" }` for `abc`, `0`, `-5`, `1.5`, empty, or above the maximum.
 - Empty list until the verifier exists and has handled events.
 
-`POST /evidence/build` and `GET /blocklist`: not built yet (waiting on the Graph Service and the contract ABI).
+`POST /evidence/build` and `GET /blocklist`: not built yet (`/evidence/build` waits on Person 1's Graph Service; the contract ABI is now available).
+
+## Verifier status (skeleton; decides nothing real yet)
+`npm run verifier` in `services/backend`. It starts only if `RULES_PATH` and `DEPLOYMENT_PATH` point at valid files, the node is on `CHAIN_ID`, the contract exists at the deployed address and the verifier wallet has `VERIFIER_ROLE`; otherwise it stops with a message saying what is missing and who owns it. It watches `Promoted` events (position and handled events kept in SQLite) and logs decisions to the `decisions` table with `kind` `confirm`|`link` and `outcome` `sent`|`refused`|`skipped`, the values the `/decisions` page validates. `VERIFIER_DRY_RUN=true` simulates `confirm`/`link` without sending. For a live flag it stops at `not implemented: waiting for Person 1 graph analysis / agreed rules.json`.
+- **Needed from Person 3:** the deployment file at `DEPLOYMENT_PATH` (shape used: `chainId`, `stakeoutAddress`, `deploymentBlock`, as written by their deploy script) and `VERIFIER_ROLE` granted to the verifier address above. Please also run the verifier against their local node and report what you see.
+- **Needed from Person 1 and Person 3:** an agreed `config/rules.json` (`docs/rules-proposal.md`).
+- **Needed from Person 1:** the analysis schema and a running Graph Service (`docs/graph-analysis-proposal.md` is only a proposal).
 
 ## Voice component: `shared/ui/VoiceInput.tsx`
 ```tsx

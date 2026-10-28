@@ -5,13 +5,15 @@
   "main": "index.js",
   "scripts": {
     "start": "tsx src/server.ts",
+    "verifier": "tsx src/verifier/main.ts",
     "typecheck": "tsc -p .",
     "verify-complaint-hash": "tsx src/scripts/verify-complaint-hash.ts",
     "robustness": "tsx src/scripts/robustness.ts",
     "check-cluster-id": "tsx src/scripts/check-cluster-id.ts",
     "hash-file": "tsx src/scripts/hash-file.ts",
     "gen-wallet": "tsx src/scripts/gen-wallet.ts",
-    "test-tx": "tsx src/scripts/test-tx.ts"
+    "test-tx": "tsx src/scripts/test-tx.ts",
+    "verifier-selftest": "tsx src/scripts/verifier-selftest.ts"
   },
   "keywords": [],
   "author": "",
