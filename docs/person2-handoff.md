@@ -4,7 +4,7 @@ Backend base URL: from your own config (the backend `PORT` in its `.env`). Do no
 Every response carries `dataSource` (`synthetic` or `testnet`). Show it on screen.
 
 ## Verifier address (give the verifier role to this)
-`0x4a8c8450af85ee8669F882e0799De18901931CFF`  (public address only; testnet)
+`0x411d24b954294d48a8933c84b594df7037645fa0d59d309e1f8f4bcf62aac342`  (public address only; testnet)
 
 ## Files
 - `shared/hash/index.ts`: `canonicalize(value)`, `hashBundle(value)`. It is an ES module (`shared/hash/package.json` has `"type": "module"`, `exports` points at `index.ts`). Run `npm install` inside `shared/hash` first (it needs `ethers`). Use this exact file in the web app; never re-implement it. It is TypeScript source, so a Next app must compile it (for example import it by relative path and enable Next's external-directory support, or add it to the app's transpiled packages); I only tested plain Node ESM and the backend, not a Next build.
