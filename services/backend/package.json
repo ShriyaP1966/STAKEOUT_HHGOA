@@ -6,6 +6,7 @@
   "scripts": {
     "start": "tsx src/server.ts",
     "typecheck": "tsc -p .",
+    "verify-complaint-hash": "tsx src/scripts/verify-complaint-hash.ts",
     "robustness": "tsx src/scripts/robustness.ts",
     "check-cluster-id": "tsx src/scripts/check-cluster-id.ts",
     "hash-file": "tsx src/scripts/hash-file.ts",
@@ -16,6 +17,9 @@
   "author": "",
   "license": "ISC",
   "type": "module",
+  "engines": {
+    "node": ">=24 <25"
+  },
   "dependencies": {
     "@fastify/cors": "11.3.1",
     "@fastify/rate-limit": "11.2.1",

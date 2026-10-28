@@ -3,7 +3,7 @@
 TypeScript service: complaint extraction, evidence storage, decision log. The verifier service, `POST /evidence/build` and `GET /blocklist` are not built yet (they wait on the Graph Service schema and the contract ABI).
 
 ## Setup
-1. `npm install`
+1. Use Node 24 (`.nvmrc` is `24`; `package.json` enforces `>=24 <25`), then `npm ci --ignore-scripts` (see "Install trouble on Windows" for why that flag). Also run `npm ci` inside `shared/hash`.
 2. Create `.env` in this folder from `.env.example`: copy the NAMES and fill in your own values. If a `.env` already exists, add missing lines to it; never overwrite it.
 3. `npm run gen-wallet` creates the verifier wallet and writes its key to `.env` (never printed). It refuses to run if a key is already set.
 4. `npm start`
@@ -27,19 +27,20 @@ All are required. There are no defaults in code; a missing or invalid one stops 
 | `DEPLOYMENT_PATH`, `RULES_PATH` | future verifier | Paths to `deployments/network.json` and `config/rules.json` (owned by others) |
 
 ## Install trouble on Windows
-`npm ci` / `npm install` can fail with `gyp ERR! find VS` because `better-sqlite3` tries to compile when it has a `binding.gyp` and no install script, which needs Visual Studio build tools. Its package already ships a prebuilt Windows binary, and `npm ci --ignore-scripts` installs and loads it (verified on Node 24.19.0, Windows). Whether to pin a Node version or change the library is still undecided.
+Plain `npm ci` fails with `gyp ERR! find VS` because `better-sqlite3` has a `binding.gyp` and no install script, so npm tries to compile it, which needs Visual Studio build tools. Its package already ships a prebuilt Windows binary that it loads at runtime, and `npm ci --ignore-scripts` skips the compile. Verified in a clean copy on Node 24.19.0 (Windows): plain `npm ci` exit 1; `npm ci --ignore-scripts` exit 0, then typecheck passes, the server starts and `/health` returns 200.
 
 ## Endpoints
 - `GET /health`
-- `POST /extract` body `{"text": "...", "targetAddress"?: "..."}` (text trimmed, 1 to 5000 chars) returns `{complaint, dataSource, complaintHash}`; 422 `{error, candidates}` if the text has several addresses
+- `POST /extract` body `{"text": "...", "targetAddress"?: "..."}` (text trimmed, 1 to 5000 chars) returns `{complaint, dataSource, text, complaintHash}` where `complaintHash = hashBundle({ text, complaint, dataSource })`; 422 `{error, candidates}` if the text has several addresses
 - `GET /evidence/:hash`
 - `GET /decisions?limit=n`
 
 See `docs/person2-handoff.md` for response shapes and the hash rule.
 
 ## npm scripts
-`start`, `typecheck`, `gen-wallet`, `test-tx`, `hash-file -- <file.json>`, `check-cluster-id -- <id>`, `robustness -- [multilingual|injection|address-selection|bad-input]` (needs the server running; the full run takes a few minutes because it waits for rate-limit windows).
+`start`, `typecheck`, `gen-wallet`, `test-tx`, `hash-file -- <file.json>`, `check-cluster-id -- <id>`, `verify-complaint-hash` (needs the server running; recomputes the hash from a live response and runs the tamper checks), `robustness -- [multilingual|injection|address-selection|bad-input]` (needs the server running; the full run takes a few minutes because it waits for rate-limit windows).
 
 ## Known limitations
-- `complaintHash` covers the LLM-written `narrative`, so the same complaint text can produce a different hash on each run. Each hash does verify against the record stored under it. It is not deterministic from the text alone.
+- The same complaint text can produce different `complaintHash` values, because `narrative` is AI-written and is part of the hashed `complaint`. A hash is verifiable because the exact record `{ text, complaint, dataSource }` is stored under it.
+- `GET /evidence/:hash` returns the victim's full submitted text to anyone who has the hash. Whether to restrict it is undecided.
 - The target address is chosen by code (one valid address in the text, otherwise 422 with candidates or 400), so instructions inside a complaint cannot change it. amount, currency, time and narrative are still written by the AI and can be steered. Confirmation never depends on `/extract`. See `docs/person2-test-report.md`.

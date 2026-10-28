@@ -27,11 +27,12 @@ const extractBody = z.object({ text: z.string().trim().min(1).max(5000), targetA
 app.post("/extract", async (req) => {
   const body = extractBody.safeParse(req.body);
   if (!body.success) throw new UserError("Body must be {\"text\": \"<complaint, up to 5000 chars>\"}");
-  const complaint = await extractComplaint(llm, body.data.text, body.data.targetAddress);
-  const record = { ...complaint, dataSource: env.DATA_SOURCE };
+  const text = body.data.text;
+  const complaint = await extractComplaint(llm, text, body.data.targetAddress);
+  const record = { text, complaint, dataSource: env.DATA_SOURCE };
   const complaintHash = hashBundle(record);
   db.saveEvidence(complaintHash, record);
-  return { complaint, dataSource: env.DATA_SOURCE, complaintHash };
+  return { complaint, dataSource: env.DATA_SOURCE, text, complaintHash };
 });
 
 app.get("/evidence/:hash", async (req) => {
