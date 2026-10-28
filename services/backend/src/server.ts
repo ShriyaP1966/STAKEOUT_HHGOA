@@ -14,18 +14,18 @@ const app = Fastify({ logger: true });
 await app.register(rateLimit, { max: env.RATE_LIMIT_PER_MINUTE, timeWindow: "1 minute" });
 
 app.setErrorHandler((err: Error & { statusCode?: number }, _req, reply) => {
-  if (err instanceof UserError) return reply.status(err.status).send({ error: err.message });
+  if (err instanceof UserError) return reply.status(err.status).send({ error: err.message, ...err.details });
   app.log.error(err);
   return reply.status(err.statusCode ?? 500).send({ error: err.message });
 });
 
 app.get("/health", async () => ({ ok: true, dataSource: env.DATA_SOURCE }));
 
-const extractBody = z.object({ text: z.string().min(1).max(5000) });
+const extractBody = z.object({ text: z.string().trim().min(1).max(5000), targetAddress: z.string().optional() });
 app.post("/extract", async (req) => {
   const body = extractBody.safeParse(req.body);
   if (!body.success) throw new UserError("Body must be {\"text\": \"<complaint, up to 5000 chars>\"}");
-  const complaint = await extractComplaint(llm, body.data.text);
+  const complaint = await extractComplaint(llm, body.data.text, body.data.targetAddress);
   const record = { ...complaint, dataSource: env.DATA_SOURCE };
   const complaintHash = hashBundle(record);
   db.saveEvidence(complaintHash, record);
