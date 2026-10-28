@@ -20,8 +20,21 @@ npm ci --ignore-scripts
 
 Why: plain `npm ci` fails on Windows without Visual Studio build tools (`gyp ERR! find VS`), because `better-sqlite3` has a `binding.gyp` and no install script, so npm tries to compile it. The package already ships a prebuilt Windows binary that it loads at runtime, and `--ignore-scripts` skips the needless compile. Verified in a clean copy on Node 24.19.0 (Windows): plain `npm ci` exit 1; `npm ci --ignore-scripts` exit 0, typecheck passes, server starts, `/health` 200. Also run `npm ci` inside `shared/hash` (it needs `ethers`).
 
+## API list as it stands
+| Endpoint | Status |
+|---|---|
+| `GET /health` | built |
+| `POST /extract` | built; shapes above; 429 behaviour above |
+| `GET /evidence/{hash}` | built (returns the stored record; see the privacy flag) |
+| `GET /decisions?limit=n` | built; empty until the verifier logs decisions |
+| `POST /evidence/build` | not built: waits on Person 1's analysis schema and Graph Service |
+| `GET /blocklist` | not built (nice to have) |
+
+Checks that need no server, no network and no real AI call: from `services/backend`, `npm run check` (type check, verifier self-test, AI-resilience self-test, summary-guard self-test, environment-variable parity). It prints PASS or FAIL per check and exits non-zero if any fail.
+
 ## Backend settings that affect the web app
 All are required in the backend's `.env` (names in `services/backend/.env.example`); a missing or invalid one stops startup with a message.
+- `LLM_MAX_RETRIES`, `LLM_TIMEOUT_MS`, `LLM_RETRY_MAX_WAIT_SECONDS`: how the backend treats a rate-limited or slow AI provider. It retries at most `LLM_MAX_RETRIES` times and respects the provider's `retry-after`; a wait longer than `LLM_RETRY_MAX_WAIT_SECONDS` is not attempted and the caller gets 429 straight away. No response shape changes.
 - `CORS_ORIGINS`: comma-separated list of web app origins allowed to call the backend from a browser (for example the URL the web app runs on). Missing, empty or not a valid origin: backend refuses to start. Requests from other origins get no CORS header and the browser blocks them. Requests with no Origin header (curl, server-to-server) are unaffected.
 - `DECISIONS_PAGE_SIZE`: how many decisions `GET /decisions` returns when `limit` is not given.
 - `DECISIONS_MAX_LIMIT`: the largest `limit` the endpoint accepts. Must be at least `DECISIONS_PAGE_SIZE` (the backend refuses to start otherwise). A `limit` that is not a whole number from 1 to this value returns 400.
@@ -53,7 +66,9 @@ Shapes below come from the code. `POST /extract` and `GET /decisions` were run a
 - 200 `{ complaint: { targetAddress, amount, currency, occurredAt, narrative }, dataSource, text, complaintHash }`
   - `targetAddress` is checksummed; `occurredAt` is ISO 8601; `amount` is a number; `text` is the trimmed submitted text; `complaintHash = hashBundle({ text, complaint, dataSource })`.
 - 400 `{ error: string }` for a missing field, a malformed address, or an address not in the text (message is user-readable, show it).
-- 429 rate limited. 502 the AI gave an unusable answer (retry).
+- **429 `{ error }` with a `Retry-After` header (seconds):** either this API's own per-client rate limit, or the AI provider is rate limited or overloaded and the backend's bounded retries ran out (message: "The AI service is busy or rate limited. Please try again in about N second(s)."). Show the message and wait `Retry-After` seconds. Provider 5xx errors and timeouts that outlast the retries also give 429.
+- 502 the AI gave an unusable answer (empty, not JSON, or the wrong shape): retry.
+- 500 `{ error: "The AI provider returned an error (HTTP <status>)." }`: the provider refused the request for a reason that is not rate limiting (for example a bad key or request). The message is deliberately generic, because provider messages can echo parts of the API key.
 - 422 more than one address in the text (see above).
 - Known limits: only the address is chosen by code. amount, currency, occurredAt and narrative are written by the AI and can be steered by the text. See `docs/person2-test-report.md`.
 

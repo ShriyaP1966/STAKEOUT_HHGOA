@@ -12,8 +12,13 @@
     "check-cluster-id": "tsx src/scripts/check-cluster-id.ts",
     "hash-file": "tsx src/scripts/hash-file.ts",
     "gen-wallet": "tsx src/scripts/gen-wallet.ts",
+    "verifier-address": "tsx src/scripts/verifier-address.ts",
     "test-tx": "tsx src/scripts/test-tx.ts",
-    "verifier-selftest": "tsx src/scripts/verifier-selftest.ts"
+    "verifier-selftest": "tsx src/scripts/verifier-selftest.ts",
+    "llm-selftest": "tsx src/scripts/llm-selftest.ts",
+    "summary-selftest": "tsx src/scripts/summary-selftest.ts",
+    "env-parity": "tsx src/scripts/env-parity.ts",
+    "check": "tsx src/scripts/check.ts"
   },
   "keywords": [],
   "author": "",

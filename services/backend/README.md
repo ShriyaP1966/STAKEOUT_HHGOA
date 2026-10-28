@@ -18,6 +18,9 @@ All are required. There are no defaults in code; a missing or invalid one stops 
 | `DB_PATH` | server | SQLite file path (its folder is created if missing; git-ignored) |
 | `DATA_SOURCE` | server | `synthetic` or `testnet`, shown on every response |
 | `GRAPH_SERVICE_URL` | server | Person 1's Graph Service base URL |
+| `LLM_MAX_RETRIES` | server | Most times a rate-limited (429), failing (5xx) or timed-out AI call is retried. 0 means never retry. |
+| `LLM_TIMEOUT_MS` | server | How long to wait for one AI call |
+| `LLM_RETRY_MAX_WAIT_SECONDS` | server | Longest wait between retries. If the provider asks for longer, the request fails at once with 429 and the provider's own wait in `Retry-After`. Without a `retry-after` header the waits are 1, 2, 4... seconds up to this cap. |
 | `RATE_LIMIT_PER_MINUTE` | server | Requests per minute per client |
 | `CORS_ORIGINS` | server | Comma-separated web app origins allowed by CORS (for example the web app's URL); must contain at least one valid origin |
 | `DECISIONS_PAGE_SIZE` | server | Default `limit` for `GET /decisions` |
@@ -45,14 +48,14 @@ Checks: `npm run verifier-selftest` (stand-in chain and a local HTTP server; pro
 
 ## Endpoints
 - `GET /health`
-- `POST /extract` body `{"text": "...", "targetAddress"?: "..."}` (text trimmed, 1 to 5000 chars) returns `{complaint, dataSource, text, complaintHash}` where `complaintHash = hashBundle({ text, complaint, dataSource })`; 422 `{error, candidates}` if the text has several addresses
+- `POST /extract` body `{"text": "...", "targetAddress"?: "..."}` (text trimmed, 1 to 5000 chars) returns `{complaint, dataSource, text, complaintHash}` where `complaintHash = hashBundle({ text, complaint, dataSource })`; 422 `{error, candidates}` if the text has several addresses; 429 with `Retry-After` if the AI provider is rate limited or overloaded past the retries (or this API's own limit); 502 if the AI's answer is unusable; 500 with a generic message if the provider rejects the request
 - `GET /evidence/:hash`
 - `GET /decisions?limit=n`
 
 See `docs/person2-handoff.md` for response shapes and the hash rule.
 
 ## npm scripts
-`start`, `typecheck`, `gen-wallet`, `test-tx`, `hash-file -- <file.json>`, `check-cluster-id -- <id>`, `verify-complaint-hash` (needs the server running; recomputes the hash from a live response and runs the tamper checks), `verifier`, `verifier-selftest`, `robustness -- [multilingual|injection|address-selection|bad-input]` (needs the server running; the full run takes a few minutes because it waits for rate-limit windows).
+`start`, `typecheck`, `gen-wallet`, `test-tx`, `hash-file -- <file.json>`, `check-cluster-id -- <id>`, `verify-complaint-hash` (needs the server running; recomputes the hash from a live response and runs the tamper checks), `check` (runs typecheck, verifier-selftest, llm-selftest, summary-selftest and env-parity; no server, network or real AI call), `llm-selftest`, `summary-selftest`, `env-parity`, `verifier-address` (prints the verifier's PUBLIC address only), `verifier`, `verifier-selftest`, `robustness -- [multilingual|injection|address-selection|bad-input]` (needs the server running; the full run takes a few minutes because it waits for rate-limit windows).
 
 ## Known limitations
 - The same complaint text can produce different `complaintHash` values, because `narrative` is AI-written and is part of the hashed `complaint`. A hash is verifiable because the exact record `{ text, complaint, dataSource }` is stored under it.

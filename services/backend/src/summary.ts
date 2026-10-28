@@ -1,26 +1,27 @@
 import { canonicalize } from "../../../shared/hash/index.js";
-import type { Llm } from "./extract.js";
+import type { Llm } from "./llm.js";
 
-const ADDRESS = /0x[0-9a-fA-F]{40}/g;
+// Any 0x-prefixed hex value (address, cluster id, hash) is compared WHOLE, so a longer id cannot pass on its first 40 characters.
+const HEX = /0x[0-9a-fA-F]+/g;
 const NUMBER = /\d+(?:\.\d+)?/g;
 
 type Facts = Record<string, unknown> & { members?: unknown[]; exitPoints?: unknown[]; signals?: unknown[] };
 
-/** Numbers and addresses the summary is allowed to mention: exactly those present in the facts. */
+/** Numbers and 0x values (addresses, ids) the summary is allowed to mention: exactly those present in the facts. */
 function allowed(facts: Facts) {
   const text = canonicalize(facts);
-  const addresses = new Set((text.match(ADDRESS) ?? []).map((a) => a.toLowerCase()));
-  const numbers = new Set(text.replace(ADDRESS, " ").match(NUMBER) ?? []);
+  const hexValues = new Set((text.match(HEX) ?? []).map((a) => a.toLowerCase()));
+  const numbers = new Set(text.replace(HEX, " ").match(NUMBER) ?? []);
   for (const list of [facts.members, facts.exitPoints, facts.signals]) if (Array.isArray(list)) numbers.add(String(list.length));
-  return { addresses, numbers };
+  return { hexValues, numbers };
 }
 
 /** Returns every number/address in the summary that is not in the facts. Empty = pass. */
 export function findUnsupported(summary: string, facts: Facts): string[] {
   const ok = allowed(facts);
   const bad: string[] = [];
-  for (const a of summary.match(ADDRESS) ?? []) if (!ok.addresses.has(a.toLowerCase())) bad.push(a);
-  for (const n of summary.replace(ADDRESS, " ").match(NUMBER) ?? []) if (!ok.numbers.has(n)) bad.push(n);
+  for (const a of summary.match(HEX) ?? []) if (!ok.hexValues.has(a.toLowerCase())) bad.push(a);
+  for (const n of summary.replace(HEX, " ").match(NUMBER) ?? []) if (!ok.numbers.has(n)) bad.push(n);
   return bad;
 }
 
@@ -42,21 +43,15 @@ export async function buildSummary(
 ): Promise<SummaryResult> {
   let feedback = "";
   for (let attempt = 0; attempt < 2; attempt++) {
-    const res = await llm.client.chat.completions.create({
-      model: llm.model,
+    const raw = await llm.complete({
       temperature: 0,
-      messages: [
-        {
-          role: "system",
-          content:
-            "Write a 2-3 sentence plain-language explanation of this wallet analysis for a non-expert. " +
-            "Use ONLY numbers and addresses that appear in the facts, copied exactly. Do not state a verdict " +
-            "and do not say whether the wallet is confirmed; you only explain the evidence. " + feedback,
-        },
-        { role: "user", content: canonicalize(facts) },
-      ],
+      system:
+        "Write a 2-3 sentence plain-language explanation of this wallet analysis for a non-expert. " +
+        "Use ONLY numbers and addresses that appear in the facts, copied exactly. Do not state a verdict " +
+        "and do not say whether the wallet is confirmed; you only explain the evidence. " + feedback,
+      user: canonicalize(facts),
     });
-    const text = res.choices[0]?.message?.content?.trim();
+    const text = raw?.trim();
     if (!text) continue;
     const bad = findUnsupported(text, facts);
     if (bad.length === 0) return { text, source: "llm" };

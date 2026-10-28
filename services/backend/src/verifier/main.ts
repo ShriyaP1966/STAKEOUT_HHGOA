@@ -6,12 +6,14 @@ import { connectChain } from "./chain.js";
 import { StakeoutClient } from "./contractClient.js";
 import { loadDeployment } from "./deployment.js";
 import { VerifierStartupError } from "./errors.js";
-import { log } from "./log.js";
+import { makeRedactor } from "../redact.js";
+import { log, redactText, setLogRedactor } from "./log.js";
 import { startWatcher } from "./watcher.js";
 
 async function main() {
   const env = loadEnv(verifierEnv, "verifier");
   const rules = loadRules(env.RULES_PATH);
+  setLogRedactor(makeRedactor([env.RPC_URL, env.VERIFIER_PRIVATE_KEY, env.GRAPH_SERVICE_URL]));
 
   let chain, deployment;
   try {
@@ -19,7 +21,7 @@ async function main() {
     chain = await connectChain(env, deployment, loadAbi());
   } catch (e) {
     if (!(e instanceof VerifierStartupError)) throw e;
-    console.error(`Verifier cannot start: ${e.message}`);
+    console.error(`Verifier cannot start: ${redactText(e.message)}`);
     process.exitCode = 1;
     return;
   }
@@ -48,4 +50,10 @@ async function main() {
   process.once("SIGTERM", shutdown);
 }
 
-await main();
+try {
+  await main();
+} catch (e) {
+  // an unexpected error (for example from the node) may contain the RPC URL, so it is redacted before it is printed
+  console.error(`Verifier stopped by an unexpected error: ${redactText((e as Error).message)}`);
+  process.exitCode = 1;
+}

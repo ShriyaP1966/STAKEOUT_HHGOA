@@ -9,6 +9,9 @@ export const llmEnv = z.object({
   LLM_BASE_URL: z.url(),
   LLM_API_KEY: nonEmpty,
   LLM_MODEL: nonEmpty,
+  LLM_MAX_RETRIES: z.coerce.number().int().min(0),
+  LLM_TIMEOUT_MS: z.coerce.number().int().positive(),
+  LLM_RETRY_MAX_WAIT_SECONDS: z.coerce.number().int().min(0),
 });
 
 export const serverEnv = z.object({

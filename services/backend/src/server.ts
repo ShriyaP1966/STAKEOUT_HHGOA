@@ -5,21 +5,20 @@ import { z } from "zod";
 import { llmEnv, loadEnv, serverEnv } from "./config.js";
 import { hashBundle } from "../../../shared/hash/index.js";
 import { openDb } from "./db.js";
-import { extractComplaint, makeLlm, UserError } from "./extract.js";
+import { installErrorHandler, makeRedactor, UserError } from "./errors.js";
+import { extractComplaint } from "./extract.js";
+import { makeLlm } from "./llm.js";
 
 const env = { ...loadEnv(serverEnv, "server"), ...loadEnv(llmEnv, "llm") };
-const llm = makeLlm(env);
 const db = openDb(env.DB_PATH);
 
 const app = Fastify({ logger: true });
 await app.register(cors, { origin: env.CORS_ORIGINS });
 await app.register(rateLimit, { max: env.RATE_LIMIT_PER_MINUTE, timeWindow: "1 minute" });
 
-app.setErrorHandler((err: Error & { statusCode?: number }, _req, reply) => {
-  if (err instanceof UserError) return reply.status(err.status).send({ error: err.message, ...err.details });
-  app.log.error(err);
-  return reply.status(err.statusCode ?? 500).send({ error: err.message });
-});
+installErrorHandler(app, makeRedactor([env.LLM_API_KEY]));
+// Retry events carry only the attempt number, the reason and the wait: never headers, keys or the complaint text.
+const llm = makeLlm(env, (e) => app.log.warn(e, "AI provider call failed, retrying"));
 
 app.get("/health", async () => ({ ok: true, dataSource: env.DATA_SOURCE }));
 

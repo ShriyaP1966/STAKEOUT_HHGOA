@@ -133,3 +133,41 @@ Not tested: the real contract, real events, `confirm`/`link` transactions, a rea
 - Judge the resolved times in the Hindi, Marathi and Hinglish results.
 - Decide whether to also validate amount, currency and time against the text.
 - Voice component, verifier, evidence builder and testnet transactions are not covered here.
+
+
+## 8. Run of 2026-10-28 (later session): AI resilience, summary guard, `npm run check`, secret-leak audit, voice hydration
+All runs by the assistant unless marked "human must run". No `npm run robustness` and no real AI calls were used for these checks (stub providers, a local stub AI server, a mock node).
+
+### AI resilience in `/extract`
+`npm run llm-selftest` (stub provider using the real `OpenAI.APIError` classes, a fake clock, Fastify `inject`): 22 of 22 checks pass. 429 then success retries once and respects `retry-after` (2000 ms) and `retry-after-ms` (1500 ms); 5xx then timeout then success waits 1 s then 2 s; exhausted retries give HTTP 429 with `Retry-After`; a provider wait longer than the cap gives up at once with the provider's own value (3600 s); `maxRetries` 0 is final; a non-retryable provider 400 and a programming error are never retried; empty, non-JSON and wrong-shape answers still give 502.
+Bug found by this test and fixed: timeouts were detected by error name, but the SDK's error classes do not set `name`, so a timeout would never have been retried. They are now detected by class.
+Provider 4xx (not 429): the HTTP status is unchanged (500, because the SDK error carries `status`, not `statusCode`). The message is now generic. This is a deliberate change: provider messages can echo the API key (seen in the stub test below).
+
+### Summary guard
+`npm run summary-selftest` (stub AI): 31 of 31 checks pass after the fix below.
+Real bug found: the guard matched `0x` plus exactly 40 hex characters, so a forged 64-character id sharing the first 40 characters with the real cluster id, and a truncated prefix of it, both passed. Two failing tests were added first (shown failing), then the guard was changed to compare every `0x...` hex value whole. All tests pass afterwards and the prompt wording is unchanged.
+A flaky test of mine (a random address ending in "A") was fixed; 30 repeated runs: 0 failures. verifier-selftest and llm-selftest: 10 repeated runs each, 0 failures.
+
+### `npm run check`
+Runs typecheck, verifier-selftest, llm-selftest, summary-selftest and env-parity: 5 of 5 pass. With a stray variable temporarily added to `.env.example` it failed with `MISMATCH: ZZ_STRAY_TEST_VARIABLE is in .env.example but no config schema reads it` and exit code 1; after restoring the file (byte-identical, verified with `cmp`) it passed again.
+
+### Security and hardcoding audit (AGENTS.md section 7, `services/backend` and `docs/`)
+- No `0x` + 40-hex literal in source. In `docs/` only the public verifier address in the handoff.
+- Key-like words in source and docs are variable names and code that handles them; no secret value in any tracked file; no URLs, hosts, chain ids or model names typed in non-script source (two matches are example text inside error messages).
+- `.env` is git-ignored and has no tracked copy. The local SQLite files contain neither secret; their 64-hex values are all stored evidence hashes (45 of 45).
+- **Process note:** one of the assistant's audit commands did not exclude `.env` and printed the real API key and the verifier private key into that session's output. It was repeated with `.env` excluded. The owner was told to rotate both keys.
+
+Leak tests with FAKE secrets (a local stub AI server that echoes the API key in its 401 body; a mock node whose errors contain the RPC URL):
+- API server: the fake key, any Authorization or Bearer text, the complaint text and the complaint's wallet address appear in no response and no server log line; retry log lines carry only attempt, reason and wait.
+- Provider 401 gives HTTP 500 with a generic message; 429 then success gives 200 after 2 provider calls and about 1 s; a 429 that never clears and a 503 that never clears give 429 with `Retry-After` after 2 provider calls; a hanging provider times out, retries and gives 429 (about 4 s).
+- Verifier: a probe first showed that ethers puts the full RPC URL, including path and `apikey` query, into its error messages (the verifier would have logged it). After adding redaction to every verifier log line and to uncaught startup errors, the secret path, the secret query and the fake private key never appear (`[redacted]` shows in their place), and an unreachable node prints only host and port.
+
+### Voice component hydration
+`shared/ui/VoiceInput.tsx` now detects speech recognition in an effect. Strict `tsc` in a temporary project outside the repo: exit 0, no `any`, `"use client"` as the first line. `renderToString` of the committed version and the new version in three conditions:
+- BEFORE: the server render ends "(unavailable)"; the first render in a browser that has the API shows no suffix; they differ (a hydration mismatch).
+- AFTER: the first render is identical in all three conditions (no suffix); "(unavailable)" can appear only after mount.
+
+Human must run in Chrome and Edge: the label reads "Engine: Browser speech recognition" with no flash of "(unavailable)"; clicking the button asks for the microphone; spoken text reaches `onText`; denying the microphone shows the error alert; in a browser without the API (for example Firefox) "(unavailable)" appears after load and the button shows the type-instead message; the browser console shows no hydration warning in a Next dev run.
+
+### Local chain
+Not run. `docs/local-chain-test.md` is the checklist a human runs against Person 3's Hardhat node.
