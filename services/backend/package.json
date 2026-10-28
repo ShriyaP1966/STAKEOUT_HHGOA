@@ -6,6 +6,7 @@
   "scripts": {
     "start": "tsx src/server.ts",
     "typecheck": "tsc -p .",
+    "check-cluster-id": "tsx src/scripts/check-cluster-id.ts",
     "hash-file": "tsx src/scripts/hash-file.ts",
     "gen-wallet": "tsx src/scripts/gen-wallet.ts",
     "test-tx": "tsx src/scripts/test-tx.ts"

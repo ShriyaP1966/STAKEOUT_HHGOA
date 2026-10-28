@@ -40,9 +40,20 @@ app.get("/evidence/:hash", async (req) => {
   return { hash, bundle };
 });
 
+if (env.DECISIONS_PAGE_SIZE > env.DECISIONS_MAX_LIMIT) {
+  console.error("Config error: DECISIONS_PAGE_SIZE must not be larger than DECISIONS_MAX_LIMIT.");
+  process.exit(1);
+}
+const limitMessage = `limit must be a whole number from 1 to ${env.DECISIONS_MAX_LIMIT}`;
+const decisionsQuery = z.object({
+  limit: z.coerce.number(limitMessage).int(limitMessage).min(1, limitMessage).max(env.DECISIONS_MAX_LIMIT, limitMessage)
+    .default(env.DECISIONS_PAGE_SIZE),
+});
+
 app.get("/decisions", async (req) => {
-  const limit = Math.min(Number((req.query as { limit?: string }).limit ?? env.DECISIONS_PAGE_SIZE), env.DECISIONS_PAGE_SIZE);
-  return { decisions: db.listDecisions(limit), dataSource: env.DATA_SOURCE };
+  const query = decisionsQuery.safeParse(req.query);
+  if (!query.success) throw new UserError(query.error.issues[0].message);
+  return { decisions: db.listDecisions(query.data.limit), dataSource: env.DATA_SOURCE };
 });
 
 await app.listen({ port: env.PORT, host: "0.0.0.0" });

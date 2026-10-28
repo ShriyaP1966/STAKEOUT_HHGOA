@@ -18,6 +18,7 @@ export const serverEnv = z.object({
   GRAPH_SERVICE_URL: z.url(),
   RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive(),
   DECISIONS_PAGE_SIZE: z.coerce.number().int().positive(),
+  DECISIONS_MAX_LIMIT: z.coerce.number().int().positive(),
 });
 
 export const chainEnv = z.object({
