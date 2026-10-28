@@ -1,16 +1,15 @@
 {
   "name": "hash",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
+  "description": "canonicalize and hashBundle shared by backend and web app",
+  "main": "index.ts",
+  "type": "module",
   "dependencies": {
     "ethers": "6.17.0"
-  }
+  },
+  "types": "index.ts",
+  "exports": {
+    ".": "./index.ts"
+  },
+  "private": true
 }

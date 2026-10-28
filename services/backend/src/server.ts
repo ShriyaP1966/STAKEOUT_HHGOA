@@ -1,4 +1,5 @@
 import Fastify from "fastify";
+import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
 import { z } from "zod";
 import { llmEnv, loadEnv, serverEnv } from "./config.js";
@@ -11,6 +12,7 @@ const llm = makeLlm(env);
 const db = openDb(env.DB_PATH);
 
 const app = Fastify({ logger: true });
+await app.register(cors, { origin: env.CORS_ORIGINS });
 await app.register(rateLimit, { max: env.RATE_LIMIT_PER_MINUTE, timeWindow: "1 minute" });
 
 app.setErrorHandler((err: Error & { statusCode?: number }, _req, reply) => {
@@ -25,11 +27,12 @@ const extractBody = z.object({ text: z.string().trim().min(1).max(5000), targetA
 app.post("/extract", async (req) => {
   const body = extractBody.safeParse(req.body);
   if (!body.success) throw new UserError("Body must be {\"text\": \"<complaint, up to 5000 chars>\"}");
-  const complaint = await extractComplaint(llm, body.data.text, body.data.targetAddress);
-  const record = { ...complaint, dataSource: env.DATA_SOURCE };
+  const text = body.data.text;
+  const complaint = await extractComplaint(llm, text, body.data.targetAddress);
+  const record = { text, complaint, dataSource: env.DATA_SOURCE };
   const complaintHash = hashBundle(record);
   db.saveEvidence(complaintHash, record);
-  return { complaint, dataSource: env.DATA_SOURCE, complaintHash };
+  return { complaint, dataSource: env.DATA_SOURCE, text, complaintHash };
 });
 
 app.get("/evidence/:hash", async (req) => {
