@@ -17,6 +17,7 @@ export const serverEnv = z.object({
   DATA_SOURCE: z.enum(["synthetic", "testnet"]),
   GRAPH_SERVICE_URL: z.url(),
   RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive(),
+  DECISIONS_PAGE_SIZE: z.coerce.number().int().positive(),
 });
 
 export const chainEnv = z.object({
