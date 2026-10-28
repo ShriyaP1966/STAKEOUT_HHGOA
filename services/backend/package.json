@@ -13,6 +13,7 @@
     "hash-file": "tsx src/scripts/hash-file.ts",
     "gen-wallet": "tsx src/scripts/gen-wallet.ts",
     "verifier-address": "tsx src/scripts/verifier-address.ts",
+    "verifier-status": "tsx src/scripts/verifier-status.ts",
     "test-tx": "tsx src/scripts/test-tx.ts",
     "verifier-selftest": "tsx src/scripts/verifier-selftest.ts",
     "llm-selftest": "tsx src/scripts/llm-selftest.ts",
