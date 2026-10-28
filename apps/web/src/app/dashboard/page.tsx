@@ -1,17 +1,19 @@
 "use client";
 
-import { formatEther, zeroAddress } from "viem";
+import { formatEther, zeroAddress, type Address } from "viem";
 import { FlagState, Role } from "@shared/enums";
+import { ChallengeAction, ExpireAction, PromoteAction, WithdrawPanel } from "@/components/actions";
 import { Countdown, Empty, ErrorPanel, ExplorerLink, Loading, Mono, RefreshButton, Section } from "@/components/ui";
 import { combinedAbi } from "@/lib/abi";
+import { isLive } from "@/lib/action-rules";
 import { NATIVE_CURRENCY } from "@/lib/chain";
-import { isFlagLive } from "@/lib/contract";
+import type { StatusResult } from "@/lib/contract";
 import { decodeError } from "@/lib/errors";
-import type { ClusterRow, FlagRow, ReportRow } from "@/lib/events";
-import { useFlagStates, useStakeoutIndex } from "@/lib/hooks";
+import type { ClusterRow, FlagRow, ReportRow, RewardRow } from "@/lib/events";
+import { useFlagStates, useStakeoutIndex, useStatuses } from "@/lib/hooks";
 import { useNowSeconds } from "@/lib/now";
 
-function Reports({ reports }: { reports: ReportRow[] }) {
+function Reports({ reports, statuses }: { reports: ReportRow[]; statuses: Map<Address, StatusResult> | undefined }) {
   if (reports.length === 0) return <Empty label="No reports yet." />;
   return (
     <ul className="divide-y divide-slate-100">
@@ -30,6 +32,7 @@ function Reports({ reports }: { reports: ReportRow[] }) {
           <p className="text-xs text-slate-600">
             Block {report.ref.blockNumber.toString()}, tx <ExplorerLink kind="tx" value={report.ref.transactionHash} />
           </p>
+          <PromoteAction reportId={report.reportId} targetStatus={statuses?.get(report.target)?.status} />
         </li>
       ))}
     </ul>
@@ -47,7 +50,7 @@ function Flags({ flags }: { flags: FlagRow[] }) {
       {[...flags].reverse().map((flag) => {
         const state = states.data.get(flag.flagId.toString());
         if (!state) return null;
-        const live = now !== 0 && isFlagLive(state, now);
+        const live = now !== 0 && isLive(state, now);
         const challenged = state.state === FlagState.Active && state.challenger !== zeroAddress;
         return (
           <li key={flag.flagId.toString()} className="space-y-1 py-3">
@@ -73,6 +76,10 @@ function Flags({ flags }: { flags: FlagRow[] }) {
               Promoted in block {flag.ref.blockNumber.toString()}, tx{" "}
               <ExplorerLink kind="tx" value={flag.ref.transactionHash} />
             </p>
+            <div className="flex flex-col gap-3 pt-1 sm:flex-row">
+              <ChallengeAction flagId={flag.flagId} flag={state} />
+              <ExpireAction flagId={flag.flagId} flag={state} />
+            </div>
           </li>
         );
       })}
@@ -114,8 +121,30 @@ function Clusters({ clusters }: { clusters: ClusterRow[] }) {
   );
 }
 
+function Activity({ rewards }: { rewards: RewardRow[] }) {
+  if (rewards.length === 0) return <Empty label="No reward payouts yet." />;
+  return (
+    <ul className="divide-y divide-slate-100">
+      {[...rewards].reverse().map((reward) => (
+        <li key={`${reward.ref.transactionHash}-${reward.ref.logIndex}`} className="space-y-1 py-3">
+          <p className="text-sm font-medium">
+            Reward paid: {formatEther(reward.amount)} {NATIVE_CURRENCY.symbol}
+          </p>
+          <p className="text-xs text-slate-600">
+            Recipient <ExplorerLink kind="address" value={reward.recipient} />
+          </p>
+          <p className="text-xs text-slate-600">
+            Block {reward.ref.blockNumber.toString()}, tx <ExplorerLink kind="tx" value={reward.ref.transactionHash} />
+          </p>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export default function DashboardPage() {
   const index = useStakeoutIndex();
+  const statuses = useStatuses(index.data?.reports.map((report) => report.target) ?? []);
   const refresh = <RefreshButton onClick={() => index.refetch()} busy={index.isFetching} />;
   if (index.isPending) {
     return (
@@ -133,14 +162,19 @@ export default function DashboardPage() {
   }
   return (
     <>
+      <WithdrawPanel />
       <Section title={`Reports (${index.data.reports.length})`} action={refresh}>
-        <Reports reports={index.data.reports} />
+        {statuses.isError && <ErrorPanel error={decodeError(statuses.error, combinedAbi)} />}
+        <Reports reports={index.data.reports} statuses={statuses.data} />
       </Section>
       <Section title={`Flags (${index.data.flags.length})`}>
         <Flags flags={index.data.flags} />
       </Section>
       <Section title={`Clusters (${index.data.clusters.length})`}>
         <Clusters clusters={index.data.clusters} />
+      </Section>
+      <Section title={`Activity: reward payouts (${index.data.rewards.length})`}>
+        <Activity rewards={index.data.rewards} />
       </Section>
     </>
   );

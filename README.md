@@ -151,6 +151,7 @@ npm run safe:calldata -- target resolve <flagId> <true|false>
 npm run safe:calldata -- target removeMember <target>
 npm run safe:calldata -- target grantVerifier <account>
 npm run safe:calldata -- target revokeVerifier <account>
+npm run safe:calldata -- target payReward <recipient> <amountWei>
 ```
 
 It reads the contract address from the deployment file and `RPC_URL` and `CHAIN_ID` from the network's env file. It checks that contract code exists there, and reads `VERIFIER_ROLE` from the contract. Paste `to`, `value`, and `data` into the Safe transaction builder.
@@ -186,13 +187,15 @@ Next.js inlines these values at build time, so rebuild after changing them. If a
 | Page | What it shows |
 |---|---|
 | `/wallet` | Checks any address with `getStatus` and shows a warning matched to the status: none, a note for Reported, a soft warning with a countdown for Flagged, a strong warning with the cluster id for Confirmed and Linked. Shows the evidence hash from the matching event. Sends go through `StakeoutGuard.sendTo`, and a blocked send shows the decoded `Blocked` error |
-| `/dashboard` | Reports, flags with live countdowns, and clusters with members, exit points, and linked addresses, all from events. Rows link to the explorer |
+| `/dashboard` | Reports, flags with live countdowns, clusters with members, exit points, and linked addresses, and reward payouts, all from events. Rows link to the explorer. Verified reporters can promote Reported targets and challenge live flags; anyone can expire a lapsed, unchallenged flag. A panel shows the connected wallet's credit with a Withdraw button |
 | `/report` | Complaint text box with voice input. Sends the text to `POST /extract`, shows the structured complaint and `dataSource`, recomputes the complaint hash with `hashBundle`, and only if it matches lets the user call `report(targetAddress, complaintHash)` |
 | `/verify` | Takes a hash, fetches the bundle from `GET /evidence/{hash}`, and shows three results: whether a `ReportSubmitted`, `Confirmed`, or `Linked` event carries the hash, whether the recomputed hash matches, and the bundle's `dataSource` |
 | `/decisions` | The verifier's decisions from `GET /decisions`: target, kind, outcome, rule, reason, time, and transaction |
-| `/reviewer` | Read-only view of open challenges, verified reporters, and the reward pool. Actions go through the reviewer Safe |
+| `/reviewer` | Read-only view of open challenges, verified reporters, and the reward pool, plus the exact `npm run safe:calldata` command for each reviewer action. Actions go through the reviewer Safe |
 
 For Confirmed and Linked addresses, `/wallet` also fetches the evidence bundle for the event's hash and shows `aiSummary.text`, `aiSummary.source`, and `dataSource`. Every page that needs the backend shows a clear error when it is unreachable, never placeholder data.
+
+On-chain buttons read the stake from `minStake()` and show it before sending. Promote and challenge appear only for accounts with `REPORTER_ROLE`; when a button is hidden or disabled, one line says why. Each action shows pending, confirmed, or failed with the transaction linked, decodes contract errors, and refreshes statuses and balances when it confirms. On `/wallet`, a Reported address can be promoted directly. On `/report`, if the complaint mentions more than one valid address, the user picks the one that received the money, and it is sent to the backend as `targetAddress`.
 
 Local run:
 
@@ -226,6 +229,7 @@ Statuses: `None=0, Reported=1, Flagged=2, Confirmed=3, Linked=4`. Cluster roles:
 | `removeMember(target)` | `REVIEWER_ROLE` | Removes an address from its cluster |
 | `addVerifiedReporter(account)` | `REVIEWER_ROLE` | Grants `REPORTER_ROLE` |
 | `withdraw()` | Anyone with credit | Pull payment of the caller's credit |
+| `payReward(recipient, amount)` | `REVIEWER_ROLE` | Moves `amount` from `rewardPool` to the recipient's credit, which they collect with `withdraw`. Reverts with `RewardExceedsPool(requested, available)` above the pool |
 | `getStatus(address)` | Anyone, view | `(status, clusterId, role, expiresAt)`. Never reverts |
 
 A flag is live while it is `Active` and either challenged or before its deadline. `getStatus` checks the cluster entry first, then a live flag, then whether any report exists. A flag whose deadline has passed shows as `Reported` even before anyone calls `expire`.
@@ -254,4 +258,4 @@ Withdrawn(address indexed account, uint256 amount)
 
 - The reviewer multisig holds `DEFAULT_ADMIN_ROLE` and `REVIEWER_ROLE`. It whitelists and removes reporters, rotates the verifier, removes cluster entries, and decides challenges.
 - One verifier account holds `VERIFIER_ROLE` and posts every `confirm` and `link`.
-- Funds in `rewardPool` currently have no withdrawal path.
+- Funds in `rewardPool` leave only through `payReward`, which only the reviewer Safe can call.

@@ -762,6 +762,71 @@ describe("Stakeout", function () {
     });
   });
 
+  describe("payReward", function () {
+    async function slashedPoolFixture() {
+      const base = await deployFixture();
+      const { stakeout, reviewer, reporterA, reporterB, victim, minStake } = base;
+      const flagStake = minStake * 4n;
+      const challengeStake = minStake * 2n;
+      const { flagId } = await flagTarget(stakeout, reporterA, randomAddress(), flagStake, victim);
+      await stakeout.connect(reporterB).challenge(flagId, { value: challengeStake });
+      await stakeout.connect(reviewer).resolve(flagId, false);
+      return { ...base, flagStake, challengeStake };
+    }
+
+    it("rejects a caller without REVIEWER_ROLE", async function () {
+      const { stakeout, roles, verifier, outsider } = await loadFixture(slashedPoolFixture);
+      await expect(stakeout.connect(verifier).payReward(outsider.address, 1n))
+        .to.be.revertedWithCustomError(stakeout, "AccessControlUnauthorizedAccount")
+        .withArgs(verifier.address, roles.reviewer);
+    });
+
+    it("rejects a zero recipient and a zero amount", async function () {
+      const { stakeout, reviewer, outsider } = await loadFixture(slashedPoolFixture);
+      await expect(stakeout.connect(reviewer).payReward(ethers.ZeroAddress, 1n))
+        .to.be.revertedWithCustomError(stakeout, "ZeroAddress");
+      await expect(stakeout.connect(reviewer).payReward(outsider.address, 0n))
+        .to.be.revertedWithCustomError(stakeout, "ZeroValue");
+    });
+
+    it("rejects an amount above the reward pool with the requested amount and the pool", async function () {
+      const { stakeout, reviewer, outsider } = await loadFixture(slashedPoolFixture);
+      const pool = await stakeout.rewardPool();
+      await expect(stakeout.connect(reviewer).payReward(outsider.address, pool + 1n))
+        .to.be.revertedWithCustomError(stakeout, "RewardExceedsPool")
+        .withArgs(pool + 1n, pool);
+    });
+
+    it("moves the exact amount from the pool to the recipient's credit and emits RewardPaid", async function () {
+      const { stakeout, reviewer, outsider, flagStake } = await loadFixture(slashedPoolFixture);
+      expect(await stakeout.rewardPool()).to.equal(flagStake);
+      const amount = flagStake / 4n;
+      await expect(stakeout.connect(reviewer).payReward(outsider.address, amount))
+        .to.emit(stakeout, "RewardPaid")
+        .withArgs(outsider.address, amount);
+      expect(await stakeout.rewardPool()).to.equal(flagStake - amount);
+      expect(await stakeout.credits(outsider.address)).to.equal(amount);
+      await stakeout.connect(reviewer).payReward(outsider.address, flagStake - amount);
+      expect(await stakeout.rewardPool()).to.equal(0n);
+      expect(await stakeout.credits(outsider.address)).to.equal(flagStake);
+    });
+
+    it("runs the full flow: challenge, resolve with a slash, payReward, withdraw", async function () {
+      const { stakeout, reviewer, reporterA, reporterB, outsider, flagStake, challengeStake } =
+        await loadFixture(slashedPoolFixture);
+      expect(await stakeout.credits(reporterA.address)).to.equal(0n);
+      expect(await stakeout.credits(reporterB.address)).to.equal(challengeStake);
+      await stakeout.connect(reviewer).payReward(outsider.address, flagStake);
+      const withdrawal = stakeout.connect(outsider).withdraw();
+      await expect(withdrawal).to.emit(stakeout, "Withdrawn").withArgs(outsider.address, flagStake);
+      await expect(withdrawal).to.changeEtherBalances([outsider, stakeout], [flagStake, -flagStake]);
+      expect(await stakeout.credits(outsider.address)).to.equal(0n);
+      expect(await stakeout.rewardPool()).to.equal(0n);
+      await stakeout.connect(reporterB).withdraw();
+      expect(await ethers.provider.getBalance(await stakeout.getAddress())).to.equal(0n);
+    });
+  });
+
   describe("getStatus", function () {
     it("returns None for an unknown address and the zero address", async function () {
       const { stakeout } = await loadFixture(deployFixture);

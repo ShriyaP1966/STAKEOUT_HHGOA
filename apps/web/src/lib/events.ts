@@ -33,6 +33,7 @@ const argSchemas = {
   Resolved: z.object({ flagId: uint, flagUpheld: z.boolean() }),
   MemberRemoved: z.object({ target: address, clusterId: bytes32 }),
   Withdrawn: z.object({ account: address, amount: uint }),
+  RewardPaid: z.object({ recipient: address, amount: uint }),
   RoleGranted: z.object({ role: bytes32, account: address, sender: address }),
   RoleRevoked: z.object({ role: bytes32, account: address, sender: address }),
 };
@@ -84,11 +85,14 @@ type ClusterEntryRow = { address: Address; role: Role; evidenceHash: Hex; remove
 
 export type ClusterRow = { clusterId: Hex; entries: ClusterEntryRow[]; ref: LogRef };
 
+export type RewardRow = { recipient: Address; amount: bigint; ref: LogRef };
+
 type StakeoutIndex = {
   reports: ReportRow[];
   flags: FlagRow[];
   clusters: ClusterRow[];
   reporters: Address[];
+  rewards: RewardRow[];
 };
 
 function compareRefs(a: LogRef, b: LogRef): number {
@@ -102,6 +106,7 @@ export function buildIndex(events: StakeoutEvent[], reporterRole: Hex): Stakeout
   const flags: FlagRow[] = [];
   const clusters = new Map<Hex, ClusterRow>();
   const reporters = new Set<Address>();
+  const rewards: RewardRow[] = [];
 
   const clusterFor = (clusterId: Hex, ref: LogRef): ClusterRow => {
     const existing = clusters.get(clusterId);
@@ -145,6 +150,9 @@ export function buildIndex(events: StakeoutEvent[], reporterRole: Hex): Stakeout
         if (entry) entry.removed = true;
         break;
       }
+      case "RewardPaid":
+        rewards.push({ ...event.args, ref: event.ref });
+        break;
       case "RoleGranted":
         if (event.args.role === reporterRole) reporters.add(event.args.account);
         break;
@@ -156,7 +164,7 @@ export function buildIndex(events: StakeoutEvent[], reporterRole: Hex): Stakeout
     }
   }
 
-  return { reports, flags, clusters: [...clusters.values()], reporters: [...reporters] };
+  return { reports, flags, clusters: [...clusters.values()], reporters: [...reporters], rewards };
 }
 
 export function latestReportFor(events: StakeoutEvent[], target: Address): ReportRow | undefined {

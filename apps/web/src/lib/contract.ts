@@ -1,6 +1,5 @@
-import { getAddress, isAddress, zeroAddress, type Address, type Hex, type PublicClient } from "viem";
+import { getAddress, isAddress, type Address, type Hex, type PublicClient } from "viem";
 import { z } from "zod";
-import { FlagState } from "@shared/enums";
 import { stakeoutAbi } from "./abi";
 
 const address = z
@@ -44,8 +43,4 @@ export async function readBigint(client: PublicClient, stakeout: Address, functi
 export async function readRole(client: PublicClient, stakeout: Address, functionName: string): Promise<Hex> {
   const raw = await client.readContract({ address: stakeout, abi: stakeoutAbi, functionName });
   return bytes32.parse(raw);
-}
-
-export function isFlagLive(flag: FlagData, nowSeconds: number): boolean {
-  return flag.state === FlagState.Active && (flag.challenger !== zeroAddress || BigInt(nowSeconds) < flag.expiresAt);
 }

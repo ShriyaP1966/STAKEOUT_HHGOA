@@ -10,7 +10,35 @@ import { decodeError } from "@/lib/errors";
 import type { FlagRow } from "@/lib/events";
 import { useFlagStates, useRewardPool, useStakeoutIndex } from "@/lib/hooks";
 
+const SAFE_ACTIONS = [
+  { label: "Whitelist a verified reporter", args: "addVerifiedReporter <account>" },
+  { label: "Resolve a challenge", args: "resolve <flagId> <true|false>" },
+  { label: "Remove a cluster member", args: "removeMember <target>" },
+  { label: "Pay a reward from the reward pool", args: "payReward <recipient> <amountWei>" },
+  { label: "Grant the verifier role", args: "grantVerifier <account>" },
+  { label: "Revoke the verifier role", args: "revokeVerifier <account>" },
+];
+
+function Command({ text }: { text: string }) {
+  return <code className="block rounded bg-slate-100 px-2 py-1 font-mono text-xs break-all">{text}</code>;
+}
+
+function SafeCommands() {
+  const config = useAppConfig();
+  return (
+    <ul className="space-y-3">
+      {SAFE_ACTIONS.map((action) => (
+        <li key={action.args} className="space-y-1">
+          <p className="text-sm">{action.label}</p>
+          <Command text={`npm run safe:calldata -- ${config.deploymentName} ${action.args}`} />
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function OpenChallenges({ flags }: { flags: FlagRow[] }) {
+  const config = useAppConfig();
   const states = useFlagStates(flags);
   if (flags.length === 0) return <Empty label="No flags, so no challenges." />;
   if (states.isPending) return <Loading label="Reading flag states…" />;
@@ -39,6 +67,8 @@ function OpenChallenges({ flags }: { flags: FlagRow[] }) {
           <p className="text-xs text-slate-600">
             Promoted in tx <ExplorerLink kind="tx" value={flag.ref.transactionHash} />
           </p>
+          <p className="text-xs text-slate-600">Safe calldata to resolve it (true upholds the flag, false overturns it):</p>
+          <Command text={`npm run safe:calldata -- ${config.deploymentName} resolve ${flag.flagId.toString()} <true|false>`} />
         </li>
       ))}
     </ul>
@@ -67,6 +97,13 @@ export default function ReviewerPage() {
           <ExplorerLink kind="address" value={config.deployment.reviewer} />. Prepare calldata with{" "}
           <code className="font-mono text-xs">npm run safe:calldata</code> and submit it through the Safe.
         </div>
+      </Section>
+      <Section title="Reviewer actions through the Safe">
+        <p className="mb-3 text-sm text-slate-600">
+          Run a command from the repository root. It prints the target address, value and calldata to paste into the Safe
+          transaction builder. It never sends anything.
+        </p>
+        <SafeCommands />
       </Section>
       <Section title="Reward pool">
         {pool.isPending && <Loading label="Reading rewardPool…" />}

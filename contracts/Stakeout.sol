@@ -90,6 +90,7 @@ contract Stakeout is AccessControl, ReentrancyGuard {
     event Resolved(uint256 indexed flagId, bool flagUpheld);
     event MemberRemoved(address indexed target, bytes32 indexed clusterId);
     event Withdrawn(address indexed account, uint256 amount);
+    event RewardPaid(address indexed recipient, uint256 amount);
 
     error ZeroValue();
     error ZeroAddress();
@@ -115,6 +116,7 @@ contract Stakeout is AccessControl, ReentrancyGuard {
     error NoLiveFlaggedMember();
     error NoCredit();
     error TransferFailed();
+    error RewardExceedsPool(uint256 requested, uint256 available);
 
     constructor(
         uint256 minStake_,
@@ -261,6 +263,16 @@ contract Stakeout is AccessControl, ReentrancyGuard {
     function addVerifiedReporter(address account) external onlyRole(REVIEWER_ROLE) {
         if (account == address(0)) revert ZeroAddress();
         _grantRole(REPORTER_ROLE, account);
+    }
+
+    /// @notice Moves an amount from the reward pool to a recipient's withdrawable credit.
+    function payReward(address recipient, uint256 amount) external onlyRole(REVIEWER_ROLE) {
+        if (recipient == address(0)) revert ZeroAddress();
+        if (amount == 0) revert ZeroValue();
+        if (amount > rewardPool) revert RewardExceedsPool(amount, rewardPool);
+        rewardPool -= amount;
+        credits[recipient] += amount;
+        emit RewardPaid(recipient, amount);
     }
 
     /// @notice Pays out the caller's accumulated credit.

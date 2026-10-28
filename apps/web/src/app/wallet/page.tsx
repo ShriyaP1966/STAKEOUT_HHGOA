@@ -4,6 +4,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
 import { getAddress, isAddress, type Address, type Hex } from "viem";
 import { useAccount, useWriteContract } from "wagmi";
+import { PromoteAction } from "@/components/actions";
 import { useAppConfig } from "@/components/AppConfigContext";
 import { Countdown, Empty, ErrorPanel, ExplorerLink, Field, Loading, Mono, Section } from "@/components/ui";
 import { Role, Status } from "@shared/enums";
@@ -25,7 +26,7 @@ const LEVEL_STYLES: Record<WarningLevel, string> = {
   strong: "border-red-400 bg-red-50 text-red-900",
 };
 
-type Evidence = { hash: Hex; ref: LogRef; source: string } | null;
+type Evidence = { hash: Hex; ref: LogRef; source: string; reportId?: bigint } | null;
 
 function useEvidence(account: Address | undefined, status: StatusResult | undefined) {
   const config = useAppConfig();
@@ -49,7 +50,9 @@ function useEvidence(account: Address | undefined, status: StatusResult | undefi
       }
       const events = await fetchStakeoutEvents(client, { ...base, event: abiEvent("ReportSubmitted"), args: { target: account } });
       const report = latestReportFor(events, account);
-      return report ? { hash: report.evidenceHash, ref: report.ref, source: `ReportSubmitted event, report #${report.reportId}` } : null;
+      return report
+        ? { hash: report.evidenceHash, ref: report.ref, source: `ReportSubmitted event, report #${report.reportId}`, reportId: report.reportId }
+        : null;
     },
   });
 }
@@ -126,6 +129,11 @@ function StatusCard({ account, status }: { account: Address; status: StatusResul
                 </p>
               </div>
             )}
+          </Field>
+        )}
+        {status.status === Status.Reported && evidence.isSuccess && evidence.data?.reportId !== undefined && (
+          <Field label="Promote">
+            <PromoteAction reportId={evidence.data.reportId} targetStatus={status.status} />
           </Field>
         )}
         {warning.showCluster && evidence.isSuccess && evidence.data && (
