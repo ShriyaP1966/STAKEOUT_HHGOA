@@ -96,6 +96,7 @@ describe("buildIndex", () => {
     makeLog("RoleGranted", { role: reporterRole, account: reporterB, sender: reporter }, 1n, 1),
     makeLog("RoleGranted", { role: otherRole, account: target, sender: reporter }, 1n, 2),
     makeLog("RoleRevoked", { role: reporterRole, account: reporterA, sender: reporter }, 8n, 0),
+    makeLog("RewardPaid", { recipient: reporterB, amount: 9n }, 10n, 0),
   ];
   const events = decode(logs);
   const index = buildIndex(events, reporterRole);
@@ -120,6 +121,10 @@ describe("buildIndex", () => {
     ]);
     expect(latestClusterEntryFor(events, linked, clusterId)?.evidenceHash).toBe(linkHash);
     expect(latestClusterEntryFor(events, member, clusterId)).toBeUndefined();
+  });
+
+  it("records reward payouts from RewardPaid events", () => {
+    expect(index.rewards.map((reward) => [reward.recipient, reward.amount])).toEqual([[reporterB, 9n]]);
   });
 
   it("tracks the current reporter set for the reporter role only", () => {

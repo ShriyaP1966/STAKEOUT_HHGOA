@@ -1,4 +1,4 @@
-import { isAddress, type Hex } from "viem";
+import { getAddress, isAddress, type Address, type Hex } from "viem";
 import { z } from "zod";
 import { BACKEND_PROXY_PATH } from "./backend-path";
 import type { DecodedError } from "./errors";
@@ -45,6 +45,7 @@ export class BackendError extends Error {
   constructor(
     readonly status: number | null,
     readonly decoded: DecodedError,
+    readonly body: unknown = undefined,
   ) {
     super(decoded.detail);
     this.name = "BackendError";
@@ -68,6 +69,7 @@ export function describeBackendFailure(status: number | null, body: unknown): De
   }
   if (status === 400) return { title: "Please check your input", detail: message };
   if (status === 404) return { title: "Not found", detail: message };
+  if (status === 422) return { title: "Choose the receiving address", detail: message };
   if (status === 429) {
     return { title: "Too many requests", detail: "The backend is rate limiting requests. Wait a minute and try again." };
   }
@@ -88,7 +90,7 @@ export async function callBackend<T>(path: string, schema: z.ZodType<T>, init?: 
   } catch {
     throw new BackendError(response.status, describeBackendFailure(null, undefined));
   }
-  if (!response.ok) throw new BackendError(response.status, describeBackendFailure(response.status, body));
+  if (!response.ok) throw new BackendError(response.status, describeBackendFailure(response.status, body), body);
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
     throw new BackendError(response.status, {
@@ -99,12 +101,21 @@ export async function callBackend<T>(path: string, schema: z.ZodType<T>, init?: 
   return parsed.data;
 }
 
+const candidatesSchema = z.object({ candidates: z.array(z.string()) });
+
+export function candidatesOf(error: unknown): Address[] {
+  if (!(error instanceof BackendError) || (error.status !== 400 && error.status !== 422)) return [];
+  const parsed = candidatesSchema.safeParse(error.body);
+  if (!parsed.success) return [];
+  return parsed.data.candidates.filter((candidate) => isAddress(candidate)).map((candidate) => getAddress(candidate));
+}
+
 export const backend = {
-  extract: (text: string) =>
+  extract: (text: string, targetAddress?: Address) =>
     callBackend("/extract", extractResponseSchema, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ text }),
+      body: JSON.stringify(targetAddress === undefined ? { text } : { text, targetAddress }),
     }),
   evidence: (hash: Hex) => callBackend(`/evidence/${hash}`, evidenceResponseSchema),
   decisions: () => callBackend("/decisions", decisionsResponseSchema),

@@ -2,12 +2,14 @@
 
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
+import type { Address } from "viem";
 import { useAccount, useWriteContract } from "wagmi";
 import { VoiceInput } from "@shared/ui/VoiceInput";
 import { useAppConfig } from "@/components/AppConfigContext";
 import { ErrorPanel, ExplorerLink, Field, Loading, Mono, Section } from "@/components/ui";
 import { combinedAbi } from "@/lib/abi";
-import { backend, BackendError } from "@/lib/backend";
+import { findAddresses } from "@/lib/address-pick";
+import { backend, BackendError, candidatesOf } from "@/lib/backend";
 import { checkComplaintHash } from "@/lib/complaint-hash";
 import { decodeError, type DecodedError } from "@/lib/errors";
 import { useStakeoutClient } from "@/lib/hooks";
@@ -23,8 +25,16 @@ export default function ReportPage() {
   const { address, isConnected, chainId } = useAccount();
   const { writeContractAsync } = useWriteContract();
   const [text, setText] = useState("");
+  const [chosen, setChosen] = useState<Address | undefined>(undefined);
+  const [needsChoice, setNeedsChoice] = useState(false);
 
-  const extract = useMutation({ mutationFn: (complaintText: string) => backend.extract(complaintText) });
+  const extract = useMutation({
+    mutationFn: (input: { text: string; targetAddress?: Address }) => backend.extract(input.text, input.targetAddress),
+  });
+  const localCandidates = findAddresses(text);
+  const serverCandidates = candidatesOf(extract.error);
+  const choices = localCandidates.length > 1 ? localCandidates : serverCandidates.length > 1 ? serverCandidates : [];
+  const selected = chosen !== undefined && choices.includes(chosen) ? chosen : undefined;
   const hashCheck = extract.data ? checkComplaintHash(extract.data) : undefined;
 
   const send = useMutation({
@@ -55,7 +65,12 @@ export default function ReportPage() {
           onSubmit={(event) => {
             event.preventDefault();
             send.reset();
-            extract.mutate(text);
+            if (choices.length > 1 && selected === undefined) {
+              setNeedsChoice(true);
+              return;
+            }
+            setNeedsChoice(false);
+            extract.mutate({ text, targetAddress: choices.length > 1 ? selected : undefined });
           }}
         >
           <label htmlFor="complaint" className="block text-sm font-medium text-slate-700">
@@ -69,6 +84,29 @@ export default function ReportPage() {
             className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
           />
           <VoiceInput lang={config.voiceLang} onText={(spoken) => setText(spoken)} />
+          {choices.length > 1 && (
+            <fieldset className="space-y-2 rounded-md border border-amber-300 bg-amber-50 p-3">
+              <legend className="px-1 text-sm font-medium text-amber-900">
+                Your text has {choices.length} wallet addresses. Which one received the money?
+              </legend>
+              {choices.map((candidate) => (
+                <label key={candidate} className="flex items-center gap-2 text-sm">
+                  <input
+                    type="radio"
+                    name="target"
+                    value={candidate}
+                    checked={selected === candidate}
+                    onChange={() => {
+                      setChosen(candidate);
+                      setNeedsChoice(false);
+                    }}
+                  />
+                  <span className="font-mono text-xs break-all">{candidate}</span>
+                </label>
+              ))}
+              {needsChoice && <p className="text-sm text-red-700">Choose the receiving address before extracting.</p>}
+            </fieldset>
+          )}
           <button
             type="submit"
             disabled={text.trim() === "" || extract.isPending}

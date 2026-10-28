@@ -8,6 +8,7 @@ const ACTIONS = {
   removeMember: "<target>",
   grantVerifier: "<account>",
   revokeVerifier: "<account>",
+  payReward: "<recipient> <amountWei>",
 } as const;
 
 type Action = keyof typeof ACTIONS;
@@ -31,6 +32,13 @@ function parseAddressArg(value: string | undefined, label: string): string {
 
 function parseFlagId(value: string | undefined): bigint {
   if (value === undefined || !/^[0-9]+$/.test(value)) throw new Error("flagId must be a whole number.");
+  return BigInt(value);
+}
+
+function parseAmountWei(value: string | undefined): bigint {
+  if (value === undefined || !/^[0-9]+$/.test(value) || BigInt(value) === 0n) {
+    throw new Error("amountWei must be a whole number of wei greater than zero.");
+  }
   return BigInt(value);
 }
 
@@ -83,6 +91,15 @@ async function main(): Promise<void> {
       method = "revokeRole";
       args = [await stakeout.VERIFIER_ROLE(), parseAddressArg(params[0], "account")];
       break;
+    case "payReward": {
+      const recipient = parseAddressArg(params[0], "recipient");
+      const amount = parseAmountWei(params[1]);
+      const pool = await stakeout.rewardPool();
+      if (amount > pool) throw new Error(`amountWei ${amount} is larger than the reward pool (${pool} wei).`);
+      method = "payReward";
+      args = [recipient, amount];
+      break;
+    }
   }
 
   const abi: Interface = stakeout.interface;
