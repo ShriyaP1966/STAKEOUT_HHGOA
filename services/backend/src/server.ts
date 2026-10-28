@@ -2,11 +2,12 @@ import Fastify from "fastify";
 import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
 import { z } from "zod";
-import { llmEnv, loadEnv, serverEnv } from "./config.js";
-import { hashBundle } from "../../../shared/hash/index.js";
+import { openBlocklist, registerBlocklistRoute } from "./blocklist.js";
+import { chainEnv, ConfigError, llmEnv, loadEnv, readRules, serverEnv } from "./config.js";
 import { openDb } from "./db.js";
 import { installErrorHandler, makeRedactor, UserError } from "./errors.js";
-import { extractComplaint } from "./extract.js";
+import { registerEvidenceRoutes } from "./evidenceRoutes.js";
+import { registerExtractRoute } from "./extractRoute.js";
 import { makeLlm } from "./llm.js";
 
 const env = { ...loadEnv(serverEnv, "server"), ...loadEnv(llmEnv, "llm") };
@@ -16,31 +17,38 @@ const app = Fastify({ logger: true });
 await app.register(cors, { origin: env.CORS_ORIGINS });
 await app.register(rateLimit, { max: env.RATE_LIMIT_PER_MINUTE, timeWindow: "1 minute" });
 
-installErrorHandler(app, makeRedactor([env.LLM_API_KEY]));
+// The RPC URL (used by /blocklist) can carry a key, so it is redacted from every response and log line too.
+installErrorHandler(app, makeRedactor([env.LLM_API_KEY, process.env.RPC_URL]));
 // Retry events carry only the attempt number, the reason and the wait: never headers, keys or the complaint text.
 const llm = makeLlm(env, (e) => app.log.warn(e, "AI provider call failed, retrying"));
 
 app.get("/health", async () => ({ ok: true, dataSource: env.DATA_SOURCE }));
 
-const extractBody = z.object({ text: z.string().trim().min(1).max(5000), targetAddress: z.string().optional() });
-app.post("/extract", async (req) => {
-  const body = extractBody.safeParse(req.body);
-  if (!body.success) throw new UserError("Body must be {\"text\": \"<complaint, up to 5000 chars>\"}");
-  const text = body.data.text;
-  const complaint = await extractComplaint(llm, text, body.data.targetAddress);
-  const record = { text, complaint, dataSource: env.DATA_SOURCE };
-  const complaintHash = hashBundle(record);
-  db.saveEvidence(complaintHash, record);
-  return { complaint, dataSource: env.DATA_SOURCE, text, complaintHash };
+registerExtractRoute(app, { llm, db, dataSource: env.DATA_SOURCE, defaultTimezone: env.DEFAULT_TIMEZONE });
+
+// The agreed config/rules.json may not exist yet. Reading it only when evidence is built keeps /extract and the rest running,
+// and a missing or invalid file is reported on the request that needs it.
+function loadRulesForEvidence() {
+  const path = chainEnv.pick({ RULES_PATH: true }).safeParse(process.env);
+  if (!path.success) throw new UserError("RULES_PATH is not set in .env, so evidence cannot be built (it records the rules applied).", 503);
+  try {
+    return readRules(path.data.RULES_PATH);
+  } catch (e) {
+    if (e instanceof ConfigError) throw new UserError(e.message, 503);
+    throw e;
+  }
+}
+
+registerEvidenceRoutes(app, {
+  db,
+  llm,
+  graph: { baseUrl: env.GRAPH_SERVICE_URL, timeoutMs: env.GRAPH_TIMEOUT_MS },
+  dataSource: env.DATA_SOURCE,
+  loadRules: loadRulesForEvidence,
 });
 
-app.get("/evidence/:hash", async (req) => {
-  const { hash } = req.params as { hash: string };
-  if (!/^0x[0-9a-fA-F]{64}$/.test(hash)) throw new UserError("hash must be 0x followed by 64 hex characters");
-  const bundle = db.getEvidence(hash);
-  if (!bundle) throw new UserError("No evidence stored for that hash", 404);
-  return { hash, bundle };
-});
+// PROPOSED: hashed addresses of Confirmed and Linked wallets, read from contract events. Needs RPC_URL, CHAIN_ID and DEPLOYMENT_PATH when first used.
+registerBlocklistRoute(app, { open: () => openBlocklist(process.env), dataSource: env.DATA_SOURCE });
 
 if (env.DECISIONS_PAGE_SIZE > env.DECISIONS_MAX_LIMIT) {
   console.error("Config error: DECISIONS_PAGE_SIZE must not be larger than DECISIONS_MAX_LIMIT.");

@@ -3,13 +3,13 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
-import { chainEnv, llmEnv, serverEnv, verifierEnv } from "../config.js";
+import { envSchemas } from "../config.js";
 
 const backend = fileURLToPath(new URL("../../", import.meta.url));
 
 // 1. Variables declared in the config schemas (the one place the backend validates its environment).
 const declared = new Set<string>();
-for (const schema of [llmEnv, serverEnv, chainEnv, verifierEnv]) for (const key of Object.keys(schema.shape)) declared.add(key);
+for (const schema of envSchemas) for (const key of Object.keys(schema.shape)) declared.add(key);
 
 // 2. Variables read directly from the process environment object anywhere in src (these must be declared too).
 const readDirectly = new Map<string, string[]>();

@@ -4,7 +4,7 @@ A human runs this. Nothing here has been run by the assistant: there is no root 
 Commands are copied from the root `package.json`, `README.md`, `scripts/` and AGENTS.md section 8. Anything not found in those files is marked **UNVERIFIED**.
 
 What this proves: the verifier starts against a real contract, finds the `VERIFIER_ROLE`, reads real `Promoted` events, logs decisions, and survives a restart without repeating itself.
-What it does NOT prove: any real confirm or link. The verifier cannot decide yet (it waits on Person 1's graph analysis and an agreed `config/rules.json`), so no transaction will be sent.
+What it does NOT prove: a real confirm or link on the real graph. The verifier decides using the Graph Service (PROPOSED schema) and `config/rules.json`, and neither exists yet. Without a Graph Service the verifier cannot judge a live flag: it logs why and retries, and sends nothing. With `VERIFIER_DRY_RUN=true` it would only simulate anyway.
 
 Use throwaway keys only. Never put a key in chat or in a file that is committed.
 
@@ -70,20 +70,22 @@ $env:DB_PATH = "<a NEW database path just for this test, e.g. .\data\localtest.d
 $env:GRAPH_SERVICE_URL = "http://127.0.0.1:8001"   # not contacted yet; any valid URL
 $env:GRAPH_TIMEOUT_MS = "5000"
 $env:RPC_TIMEOUT_MS = "5000"
+$env:DATA_SOURCE = "synthetic"
 $env:VERIFIER_DRY_RUN = "true"
 $env:VERIFIER_POLL_INTERVAL_MS = "2000"
 $env:VERIFIER_LOG_CHUNK_BLOCKS = "100"
 npm run verifier
 ```
-`VERIFIER_PRIVATE_KEY` comes from your `.env` as usual (it is not printed). Use a fresh `DB_PATH` so earlier runs do not hide events.
+`VERIFIER_PRIVATE_KEY` and the `LLM_*` settings (the verifier builds evidence summaries) come from your `.env` as usual (they are not printed). `NOTIFY_WEBHOOK_URL` and `NOTIFY_TIMEOUT_MS` may stay empty. Use a fresh `DB_PATH` so earlier runs do not hide events.
 
 ### Expected (from reading the code; not yet observed on a real node)
 - [ ] A line `Verifier started. contract 0x... on chain <id> via <host>; signer <your address> has VERIFIER_ROLE; maxMembersPerCall <n>; dry run: true; resuming from block <deploymentBlock> (deployment block).`
 - [ ] If instead it says it cannot start, the message names the cause (wrong chain, no contract code, role missing, file missing). Fix that and retry.
 - [ ] Events are read only up to the latest block minus `confirmationsToWait` (1 in the test rules). A local node mines only on demand; `seed:local` sends many transactions so this is normally enough. If the newest events are ignored, mine more blocks. **UNVERIFIED:** the Hardhat node RPC method `hardhat_mine`.
 - [ ] For each `Promoted` event whose flag is no longer live (for example the target that was later confirmed) the verifier logs a `skipped` decision: "the target no longer has a live flag ...". It marks the event handled.
-- [ ] At the first target whose flag is still live (the flagged one, and the flagged-and-challenged one) the verifier logs a WARN: `Promoted flag <id> for <address> (block <n>) is waiting: not implemented: waiting for Person 1 graph analysis / agreed rules.json`. It sends nothing, writes no decision for it, and does not move past that event. Events after it wait until the decision logic exists. This is intended.
-- [ ] `confirm` and `link` are never sent (decision logic missing, and `VERIFIER_DRY_RUN=true`).
+- [ ] At the first target whose flag is still live (the flagged one, and the flagged-and-challenged one) the verifier tries to fetch the graph analysis. With no Graph Service running (the expected case today) it logs an ERROR once: `Promoted flag <id> for <address> (block <n>) is waiting: could not handle the event: Cannot reach the Graph Service at <host>...`. It sends nothing, writes no decision for it, and does not move past that event; events after it wait. This is intended: nothing is guessed.
+- [ ] If you point `GRAPH_SERVICE_URL` at a running Graph Service that answers in the proposed shape, the verifier decides: a refusal or a dry-run `skipped` appears in the log with its rule and reason. If the answer has the wrong shape the ERROR names the offending fields.
+- [ ] With `VERIFIER_DRY_RUN=true`, `confirm` and `link` are never sent.
 
 ## 8. Check the decision log
 In another terminal, from `services/backend`, start the API server against the SAME database, with the same variables you use for it normally plus `$env:DB_PATH` set to the test database path, then `npm start`. Then:
@@ -96,7 +98,7 @@ curl "http://localhost:<PORT>/decisions"
 Stop the verifier (Ctrl+C), start it again with the same variables and database.
 - [ ] The started line says `resuming from block <n>` where `n` is greater than the deployment block (the position was stored).
 - [ ] The number of decisions in `/decisions` does not increase: events already handled are not handled again.
-- [ ] The WARN for the live flag appears again (that event was never handled; it is retried by design).
+- [ ] The ERROR for the live flag appears again (that event was never handled; it is retried by design).
 
 ## 10. Negative checks
 - [ ] Set `$env:CHAIN_ID` to a wrong number and start: it stops with "reports chain ..., but CHAIN_ID in .env is ...".
@@ -108,4 +110,4 @@ Stop the verifier (Ctrl+C), start it again with the same variables and database.
 Paste the verifier output and the `/decisions` response into a new dated section at the end of `docs/person2-test-report.md` (do not edit earlier sections). Remove any secret before pasting.
 
 ## Still blocked after this passes
-Real decisions need Person 1's `shared/schemas/analysis.json` and a running Graph Service, and an agreed `config/rules.json` (see `docs/rules-proposal.md` and `docs/graph-analysis-proposal.md`).
+Real decisions need Person 1's running Graph Service and agreed `shared/schemas/analysis.json`, and an agreed `config/rules.json` (see `docs/rules-proposal.md` and `docs/graph-analysis-proposal.md`).

@@ -2,7 +2,9 @@
 // Usage: npm run check   (exits non-zero if any check fails)
 import { spawnSync } from "node:child_process";
 
-const checks = ["typecheck", "verifier-selftest", "llm-selftest", "summary-selftest", "env-parity"];
+const checks = [
+  "typecheck", "verifier-selftest", "llm-selftest", "summary-selftest", "timezone-selftest", "evidence-selftest", "decide-selftest", "blocklist-selftest", "notify-selftest", "env-parity",
+];
 
 let failures = 0;
 for (const name of checks) {

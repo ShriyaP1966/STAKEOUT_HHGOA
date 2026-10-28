@@ -9,7 +9,7 @@ import { openDb } from "../db.js";
 import { applyPlan, checkConfirmFeasible, checkLinkFeasible } from "../verifier/actions.js";
 import type { ChainReader, ChainWriter, LiveFlag, PromotedEvent, StakeoutClient } from "../verifier/contractClient.js";
 import { fetchAnalysis, GraphServiceError } from "../verifier/graphClient.js";
-import { startWatcher } from "../verifier/watcher.js";
+import { startWatcher, type WatcherDeps } from "../verifier/watcher.js";
 
 let failed = false;
 const check = (name: string, ok: boolean, detail = "") => {
@@ -78,7 +78,7 @@ async function logging() {
     link: async () => ({ txHash: bytes32(), dryRun: false }),
     explainRevert: (e) => `contract reverted: ${(e as Error).message}`,
   });
-  const confirmPlan = { action: "confirm" as const, clusterId: cluster, members: [member], exitPoints: [], evidenceHash: evidence, rule: "test-rule", inputs: { n: 1 } };
+  const confirmPlan = { action: "confirm" as const, clusterId: cluster, members: [member], exitPoints: [], evidenceHash: evidence, rule: "test-rule", reason: "test reason", inputs: { n: 1 } };
 
   const dbs = Array.from({ length: 5 }, () => openDb(":memory:"));
   await applyPlan({ reader: reads, writer: writer("send"), db: dbs[0] }, target, confirmPlan);
@@ -105,16 +105,18 @@ async function watcher() {
   const rules = { behaviorThreshold: 0, minSignals: 0, reportConfidenceBoostPerReporter: 0, confirmationsToWait: 2 };
   const deployment = { chainId: 7, stakeoutAddress: addr(), deploymentBlock: 3 };
   const latest = 20;
-  const run = async (db: ReturnType<typeof openDb>, events: PromotedEvent[], flag: LiveFlag | null) => {
+  const run = async (db: ReturnType<typeof openDb>, events: PromotedEvent[], flag: LiveFlag | null, decidePromoted: WatcherDeps["decidePromoted"] = async () => { throw new Error("the graph is unreachable (stub)"); }) => {
     const ranges: Array<[number, number]> = [];
     const client = {
+      confirmedBetween: async () => [],
       promotedBetween: async (from: number, to: number) => { ranges.push([from, to]); return events.filter((e) => e.blockNumber >= from && e.blockNumber <= to); },
       liveFlag: async () => flag,
       clusterRole: async () => Role.None,
     } as unknown as StakeoutClient;
     const w = startWatcher({
       client, provider: { getBlockNumber: async () => latest } as never, db, rules, deployment, chainId: 7,
-      pollMs: 20, chunkBlocks: 5, graphServiceUrl: "http://unused.invalid", graphTimeoutMs: 100,
+      pollMs: 20, chunkBlocks: 5, decidePromoted,
+      linkCandidates: async () => [], decideLinkFor: async () => { throw new Error("no link flow in this test"); },
     });
     await new Promise((r) => setTimeout(r, 150));
     await w.stop();
@@ -138,18 +140,26 @@ async function watcher() {
   await run(db2, [ev], null);
   check("same event after a restart with the position reset is NOT handled twice", db2.listDecisions(10).length === 1);
 
-  // 3. live flag: decision logic is not implemented -> nothing logged, nothing marked handled, position stays at the event
+  // 3. live flag but the decision cannot be made (here: the graph is down) -> nothing logged, nothing marked handled, position stays at the event
   const db3 = openDb(":memory:");
   const live1 = fakeEvent(12);
-  const w = console.warn;
+  const w = console.error;
   const warnings: string[] = [];
-  console.warn = (m: string) => warnings.push(m);
+  console.error = (m: string) => warnings.push(m);
   await run(db3, [live1], live());
-  console.warn = w;
+  console.error = w;
   check("live flag: verifier decides nothing (no decision rows)", db3.listDecisions(10).length === 0);
-  check("live flag: event left unhandled so it is retried once the logic exists", !db3.isEventHandled(`7:${live1.blockHash}:${live1.logIndex}`));
+  check("live flag: event left unhandled so it is retried on the next poll", !db3.isEventHandled(`7:${live1.blockHash}:${live1.logIndex}`));
   check("live flag: position stays at the event's block", db3.getKv("verifier.nextBlock") === "12");
-  check("live flag: warns once with the not-implemented message", warnings.length === 1 && warnings[0].includes("not implemented: waiting for Person 1 graph analysis / agreed rules.json"), `${warnings.length} warning(s)`);
+  check("live flag: reports the failure once, naming the cause", warnings.length === 1 && warnings[0].includes("could not handle the event: the graph is unreachable (stub)"), `${warnings.length} message(s)`);
+
+  // 4. live flag and the decision logic answers: the outcome is logged, the event is handled once
+  const db4 = openDb(":memory:");
+  const live2 = fakeEvent(12);
+  await run(db4, [live2], live(), async (ev) => ({ action: "refuse", kind: "confirm", rule: "stub-rule", reason: "stub refusal", inputs: { target: ev.target }, evidenceHash: null }));
+  const rows4 = db4.listDecisions(10) as Array<Record<string, unknown>>;
+  check("live flag with an answer: one refused decision with the rule and reason", rows4.length === 1 && rows4[0].outcome === "refused" && rows4[0].rule === "stub-rule" && rows4[0].reason === "stub refusal");
+  check("...the event is marked handled and the position moves past it", db4.isEventHandled(`7:${live2.blockHash}:${live2.logIndex}`) && Number(db4.getKv("verifier.nextBlock")) > 12);
 }
 
 async function graph() {

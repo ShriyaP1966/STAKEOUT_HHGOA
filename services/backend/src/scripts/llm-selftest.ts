@@ -95,7 +95,7 @@ async function http() {
   const run = async (llm: Llm) => {
     const app = Fastify();
     installErrorHandler(app, makeRedactor([secretKey]));
-    app.post("/extract", async () => ({ complaint: await extractComplaint(llm, text) }));
+    app.post("/extract", async () => ({ complaint: await extractComplaint(llm, text, undefined, "UTC") }));
     const res = await app.inject({ method: "POST", url: "/extract", payload: {} });
     await app.close();
     return { status: res.statusCode, body: res.body, headers: res.headers };

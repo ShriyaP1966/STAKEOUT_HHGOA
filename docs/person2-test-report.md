@@ -171,3 +171,46 @@ Human must run in Chrome and Edge: the label reads "Engine: Browser speech recog
 
 ### Local chain
 Not run. `docs/local-chain-test.md` is the checklist a human runs against Person 3's Hardhat node.
+
+
+## 9. Run of 2026-10-29: timezone, evidence build, verifier decisions, blocklist, notifier
+Everything below was run by the assistant. No real AI call was made and `npm run robustness` was not run. Every stand-in below (a stub Graph Service, a stub AI, a mock node, a rules fixture) lives only in test files and is never used at runtime. Each test was written first and shown failing before the code existed; the first failure was in every case a missing module or export (not a failed assertion), except where noted.
+
+### Result
+`npm run check`: 10 of 10 pass (typecheck, verifier-selftest, llm-selftest, summary-selftest, timezone-selftest, evidence-selftest, decide-selftest, blocklist-selftest, notify-selftest, env-parity).
+
+### A. Timezone for `/extract` (`npm run timezone-selftest`)
+All checks pass. The zone is validated in code (offsets such as `+05:30`, empty, `null`, numbers, arrays and made-up names are rejected with 400 and the AI is not called). The default comes from `DEFAULT_TIMEZONE`. The prompt gets the zone, the local time and the offset; daylight saving is covered with fixed instants (New York gives -04:00 in October and -05:00 in December). The hash shape is unchanged: the response keys are `complaint, complaintHash, dataSource, text`, the stored record has no timezone, and the same text gives the same hash whatever zone is sent.
+Finding: the platform's time zone database canonicalises names (`Asia/Kolkata` becomes `Asia/Calcutta`), so my first test, which expected the spelling to round-trip, failed. The code now returns the platform's canonical name and the test checks that every spelling of one zone normalises the same way.
+
+### B. `POST /evidence/build` against the PROPOSED analysis schema (`npm run evidence-selftest`)
+All checks pass against a local stub Graph Service. The bundle passes a strict schema that is checked against `shared/schemas/evidence.json` (same properties, same required list, strict). `hash = hashBundle(bundle)`, the bundle is stored and `GET /evidence/:hash` returns it; a one-character change in the stored bundle changes the hash. The AI is given only the graph facts (no thresholds, no timestamps) and the guard applies: an unsupported number twice gives the plain template after exactly 2 requests. Failures are loud and specific: Graph Service HTTP 500, non-JSON, wrong shape (the field is named), a different wallet, a different data source (both labels named), a timeout (504, names `GRAPH_TIMEOUT_MS`), unreachable (502); a missing rules file gives 503 and the rest of the server keeps running; an AI rate limit gives 429.
+Process note: my config patch had a syntax error (a line break inside a string). The evidence test did not load that file, so `tsc` caught it, not the test.
+
+### C. Verifier decisions (`npm run decide-selftest`, `npm run verifier-selftest`)
+All checks pass with a rules fixture (arbitrary numbers, not the team's).
+- Confirm: a wallet whose behavior passes is confirmed, and its `evidenceHash` is the hash of the stored bundle. The FRAMED wallet (30 reports, weak behavior) is refused with rule `B:behaviorThreshold` and a reason naming both numbers. REPORTS ALONE never confirm: a wallet with score 0, 1000 reporters and an enormous boost is refused. Too few signals, no cluster, and a target not in its own member list are each refused with their own rule.
+- Thresholds are not hardcoded: threshold below, equal to and just above the score gives confirm, confirm, refuse; `minSignals` above or equal to the signal count gives refuse, confirm.
+- Link: the ROTATED wallet (repeated structured outflow) is linked; funded-and-forwards is linked; the DUSTED critic (inbound funding only), forwards-only and no-behavior wallets are not; the VICTIM is never linked even when its flows look like a member's; a one-off payer is never linked; a different cluster and missing link evidence are refused. Changing the confirm thresholds does not change a link.
+- Log: dry run logs `skipped` with "dry run" plus the decision reason; sent logs `sent` with a tx hash, the rule and the evidence hash; a refusal logs `refused`; only the agreed kind and outcome values appear.
+- Watcher (stand-in chain): a `Confirmed` event makes the verifier judge the graph's link candidates. The rotated wallet is linked (dry run), the dusted and victim wallets are refused, addresses already in the cluster are not judged. A restart with the scan position reset decides nothing twice. If one candidate fails (graph down), the event is retried, the earlier candidates are logged once, and no row is written for the failing one.
+The existing `verifier-selftest` was updated for the new plan field and watcher dependencies and passes; the placeholder "not implemented" behaviour no longer exists.
+
+### D. `GET /blocklist` (`npm run blocklist-selftest`)
+All checks pass against a mock JSON-RPC node built from the real ABI. The PROPOSED hash rule is `keccak256` of the 20 address bytes, case-insensitive (checked against an independent computation, with lowercase, checksummed and uppercase spellings giving one hash). Confirmed members and exit points and Linked wallets are listed; a `MemberRemoved` wallet is not; events from another contract and non-blocklist events are ignored. The response contains hashes, a count and metadata only: no raw address, cluster id or evidence hash. Scanning is chunked (each request covers at most the configured number of blocks, every block exactly once) and incremental (a second refresh starts right after the last scanned block, and makes no request when there are no new blocks). An ABI missing any of the three events makes the constructor refuse and name the event. Missing settings, a missing deployment file, a wrong chain, no contract code and an unreachable node each give 503 with a specific message; the secret part of an RPC URL never appears in a response.
+Real bug found and fixed: ethers caches `getBlockNumber()` for a few seconds, so a polling endpoint would have missed new blocks. The index now asks the node directly with `eth_blockNumber`; the incremental-refresh checks failed before this change and pass after it.
+
+### E. Optional notifier (`npm run notify-selftest`)
+All checks pass against a local stub webhook. With no URL (or an empty one) no request is ever made. With a URL, each logged decision is POSTed once with exactly `{ id, kind, outcome, target, txHash, rule }`; the complaint text, the reason, the inputs, addresses inside them, the evidence hash and the cluster id are never sent (checked with strings planted in the decision). A webhook that answers 500, never answers, or is unreachable leaves the decision identical to the no-webhook baseline, reports the failure once (status or timeout only, naming `NOTIFY_TIMEOUT_MS`), and a hanging webhook does not delay the decision (2 ms against a 300 ms timeout). The webhook URL path and query token appear in no log line. The watcher's own decisions go through the same path. Config: URL set without a timeout is refused naming `NOTIFY_TIMEOUT_MS`; empty or absent means off.
+Real gap found and fixed: a notifier that threw would have escaped after the decision was logged, making the watcher retry the event and log it twice. The recording point now catches and reports it (redacted).
+The payload format is UNVERIFIED against viaSocket.
+
+### Real-process smoke tests (no AI call)
+- API server: refuses to start without `DEFAULT_TIMEZONE` and names it. With that one value set for the process and a separate port: `/health` 200; `POST /extract` with an invalid timezone 400; `POST /evidence/build` 503 naming the missing rules file (the server keeps running); `POST /evidence/build` with a bad body 400; `GET /blocklist` 503 naming the missing settings; `GET /decisions` 200; `GET /evidence/0x1234` 400. The server log did not contain the complaint address. Port free afterwards.
+- Verifier process against the mock node: all earlier startup scenarios behave the same (blank paths, missing, empty, invalid and wrong-shape rules, missing and invalid deployment, unreachable node, wrong chain, no contract code, missing role), and the valid case starts and logs "Decision notifications: off".
+
+### Hardcoding audit (AGENTS.md section 7, `.env` files excluded)
+No address-like literal in source; the only 0x value of that length in `docs/` is the public verifier address. No key-like word in any new non-script file. No URL, host, chain id, model name or port typed in non-script source (two matches are example text inside error messages). No status word typed as a string. The contract's own event names `Promoted` and `MemberRemoved` are typed once each (the other two come from the shared Status enum). No numeric threshold in `decide.ts`. No "if address equals X" logic.
+
+### Not run
+Everything that needs a real Graph Service (none exists), a real deployed contract or local node (a human runs `docs/local-chain-test.md`), a real viaSocket webhook, a real AI call, or a browser. The decisions, the evidence builder and the blocklist have only run against stand-ins.

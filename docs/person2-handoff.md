@@ -24,13 +24,13 @@ Why: plain `npm ci` fails on Windows without Visual Studio build tools (`gyp ERR
 | Endpoint | Status |
 |---|---|
 | `GET /health` | built |
-| `POST /extract` | built; shapes above; 429 behaviour above |
+| `POST /extract` | built; optional `timezone`; shapes below; 429 behaviour below |
+| `POST /evidence/build` | built against the PROPOSED Graph Service schema; tested only with a stub Graph Service |
 | `GET /evidence/{hash}` | built (returns the stored record; see the privacy flag) |
-| `GET /decisions?limit=n` | built; empty until the verifier logs decisions |
-| `POST /evidence/build` | not built: waits on Person 1's analysis schema and Graph Service |
-| `GET /blocklist` | not built (nice to have) |
+| `GET /decisions?limit=n` | built; fills as the verifier logs decisions |
+| `GET /blocklist` | built (PROPOSED hash rule); tested only against a mock node |
 
-Checks that need no server, no network and no real AI call: from `services/backend`, `npm run check` (type check, verifier self-test, AI-resilience self-test, summary-guard self-test, environment-variable parity). It prints PASS or FAIL per check and exits non-zero if any fail.
+Checks that need no real server, chain or AI call: from `services/backend`, `npm run check` (type check, every self-test, environment-variable parity). It prints PASS or FAIL per check and exits non-zero if any fail.
 
 ## Backend settings that affect the web app
 All are required in the backend's `.env` (names in `services/backend/.env.example`); a missing or invalid one stops startup with a message.
@@ -60,7 +60,8 @@ Tamper test: fetch the stored record, run `hashBundle` on it, compare with the o
 ## API shapes
 Shapes below come from the code. `POST /extract` and `GET /decisions` were run against the real server (see the test list in the report); no captured sample responses are included here.
 
-`POST /extract`  body `{ "text": string, "targetAddress"?: string }` (text trimmed; 1 to 5000 chars; empty, whitespace-only, too long, non-string or invalid JSON all return 400)
+`POST /extract`  body `{ "text": string, "targetAddress"?: string, "timezone"?: string }` (text trimmed; 1 to 5000 chars; empty, whitespace-only, too long, non-string or invalid JSON all return 400)
+- `timezone` (optional): an IANA zone name in Region/City form, or `UTC`, never a UTC offset. It tells the AI which zone relative times such as "yesterday" are in; without it the backend's `DEFAULT_TIMEZONE` is used. An invalid value, or `null`, an empty string or a number, gives 400 and the AI is not called. It is not part of the hash.
 - The target address is chosen by code from the text, never by the AI. Every `0x` + 40-hex token is validated with ethers; the zero address is ignored; case is normalised to the checksummed form.
 - One valid address: it is used. Several: 422 `{ error, candidates: [checksummed...] }`; show the list and re-send the same text with `targetAddress` set to the user's choice (it must be one of the candidates, otherwise 400). None: 400.
 - 200 `{ complaint: { targetAddress, amount, currency, occurredAt, narrative }, dataSource, text, complaintHash }`
@@ -84,13 +85,39 @@ Shapes below come from the code. `POST /extract` and `GET /decisions` were run a
 - 400 `{ error: "limit must be a whole number from 1 to <max>" }` for `abc`, `0`, `-5`, `1.5`, empty, or above the maximum.
 - Empty list until the verifier exists and has handled events.
 
-`POST /evidence/build` and `GET /blocklist`: not built yet (`/evidence/build` waits on Person 1's Graph Service; the contract ABI is now available).
+`POST /evidence/build`  body `{ "target": "<wallet address>" }`  (PROPOSED: depends on the Graph Service schema Person 1 has not agreed)
+- 200 `{ hash, bundle }`. `bundle` follows `shared/schemas/evidence.json` exactly: `schemaVersion, target, clusterId, behaviorScore, signals, members, exitPoints, unrelatedReporterCount, thresholdsUsed, aiSummary { text, source }, dataSource, createdAt`. `hash = hashBundle(bundle)`; the same bundle is stored and returned by `GET /evidence/{hash}`.
+- `signals, members, exitPoints, clusterId, behaviorScore, unrelatedReporterCount` come from the graph unmodified; `thresholdsUsed` is a copy of the rules applied; `dataSource` comes from the backend's config and the graph's own label must agree (otherwise 502).
+- `aiSummary.source` is `llm` when the AI's plain-language summary passed the guard (every number and 0x value in it appears in the graph facts), or `template` when it failed twice. The AI only explains; nothing it writes decides or confirms anything.
+- Two builds for the same wallet give different hashes (build time and summary text differ). Verify a hash by fetching the stored bundle, never by rebuilding.
+- 400 bad body or zero address. 502 Graph Service unreachable, answering HTTP errors, not JSON, in the wrong shape, answering for another wallet, or labelled with another data source. 504 Graph Service too slow. 503 `config/rules.json` missing or invalid (message says who owns it). 429 with `Retry-After` if the AI is rate limited.
 
-## Verifier status (skeleton; decides nothing real yet)
-`npm run verifier` in `services/backend`. It starts only if `RULES_PATH` and `DEPLOYMENT_PATH` point at valid files, the node is on `CHAIN_ID`, the contract exists at the deployed address and the verifier wallet has `VERIFIER_ROLE`; otherwise it stops with a message saying what is missing and who owns it. It watches `Promoted` events (position and handled events kept in SQLite) and logs decisions to the `decisions` table with `kind` `confirm`|`link` and `outcome` `sent`|`refused`|`skipped`, the values the `/decisions` page validates. `VERIFIER_DRY_RUN=true` simulates `confirm`/`link` without sending. For a live flag it stops at `not implemented: waiting for Person 1 graph analysis / agreed rules.json`.
-- **Needed from Person 3:** the deployment file at `DEPLOYMENT_PATH` (shape used: `chainId`, `stakeoutAddress`, `deploymentBlock`, as written by their deploy script) and `VERIFIER_ROLE` granted to the verifier address above. Please also run the verifier against their local node and report what you see.
-- **Needed from Person 1 and Person 3:** an agreed `config/rules.json` (`docs/rules-proposal.md`).
-- **Needed from Person 1:** the analysis schema and a running Graph Service (`docs/graph-analysis-proposal.md` is only a proposal).
+`GET /blocklist`  (PROPOSED: hash rule and response shape are not agreed with Person 3)
+- 200 `{ rule, count, hashes, scannedFromBlock, scannedToBlock, dataSource, generatedAt }`. `hashes` are sorted, unique, `0x` + 64 hex; `rule` is the text of the hash rule.
+- **Hash rule (PROPOSED):** `keccak256` of the 20 address bytes, case-insensitive. A wallet computes the same hash of an address and checks membership, so the list is never shown in the clear. This only hides the list from casual reading: anyone who already has a candidate address can hash it and check.
+- Contents: members and exit points of every `Confirmed` event and the target of every `Linked` event, minus any wallet removed by `MemberRemoved`. Event names are read from the ABI at `shared/abi/Stakeout.json`; if one is missing the endpoint says which.
+- Only hashes are returned: no raw addresses, cluster ids or evidence hashes.
+- 503 naming the missing settings (`RPC_URL`, `CHAIN_ID`, `DEPLOYMENT_PATH`, `RPC_TIMEOUT_MS`, `BLOCKLIST_LOG_CHUNK_BLOCKS`), a missing deployment file, a wrong chain, no contract at the deployed address, or an unreachable node. The rest of the API is unaffected.
+
+## Verifier status (decides; every input it depends on is PROPOSED)
+`npm run verifier` in `services/backend`. It starts only if `RULES_PATH` and `DEPLOYMENT_PATH` point at valid files, the node is on `CHAIN_ID`, the contract exists at the deployed address and the verifier wallet has `VERIFIER_ROLE`; otherwise it stops with a message saying what is missing and who owns it.
+- **Confirm:** a `Promoted` flag is confirmed only if the wallet's own behavior passes the rules (score at least `behaviorThreshold`, at least `minSignals` signals). Unrelated reports only add to a recorded confidence figure and can never confirm a wallet whose behavior fails. The evidence bundle is stored first; its hash is what goes on-chain.
+- **Link:** a `Confirmed` event makes the verifier ask the graph for link candidates. Linked only if the wallet sends funds into the cluster or its exit points repeatedly in a structured way, or is funded by the cluster and then forwards onward like a member. Inbound funding alone, known victims and one-off payers are never linked.
+- **Log:** every outcome goes to the `decisions` table with `kind` `confirm`|`link`, `outcome` `sent`|`refused`|`skipped`, a rule label, a reason and the inputs (the values the `/decisions` page validates). A decision that cannot be made (graph or AI down) is retried, never guessed.
+- **Dry run:** keep `VERIFIER_DRY_RUN=true` until a human has checked a run; then `confirm` and `link` are only simulated and logged as `skipped`.
+- **Optional webhook (viaSocket):** off unless `NOTIFY_WEBHOOK_URL` is set; sends only `id, kind, outcome, target, txHash, rule`. Payload format UNVERIFIED against viaSocket.
+
+### PROPOSED interfaces that need agreement (each lives in one small file, so a change is cheap)
+| Interface | Needs | Where it is written | Details |
+|---|---|---|---|
+| Graph Service routes and response (including the `link` flags and the link-candidates route) | **Person 1** | `src/verifier/graphAnalysisProposal.ts`, `graphClient.ts` | `docs/graph-analysis-proposal.md` |
+| `config/rules.json` fields and how the verifier uses them | **Person 1 and Person 3** | `rulesSchema` in `src/config.ts`, `src/verifier/decide.ts` | `docs/rules-proposal.md` |
+| Blocklist hash rule and response shape | **Person 3** (the demo wallet does the lookup) | `src/blocklist.ts` | above |
+| Deployment file fields the backend reads (`chainId`, `stakeoutAddress`, `deploymentBlock`) | Person 3 (already what their deploy script writes) | `src/verifier/deployment.ts` | confirm they will not change |
+| Webhook payload | viaSocket (nobody has checked it) | `src/verifier/notify.ts` | UNVERIFIED |
+
+**Needed from Person 3:** the deployment file at `DEPLOYMENT_PATH` and `VERIFIER_ROLE` granted to the verifier address above; please also run `docs/local-chain-test.md` and report what you see.
+**Needed from Person 1:** a running Graph Service and the agreed analysis schema (`shared/schemas/analysis.json`).
 
 ## Voice component: `shared/ui/VoiceInput.tsx`
 ```tsx
@@ -105,4 +132,4 @@ import { VoiceInput } from "<path to shared>/ui/VoiceInput";
 - Speech engine: the browser's built-in speech recognition (`SpeechRecognition` / `webkitSpeechRecognition`). Wispr Flow is not integrated (availability unconfirmed).
 - On-screen label: always shows `Engine: Browser speech recognition`, with ` (unavailable)` appended if the browser has no speech recognition. Errors appear as a text alert; an unsupported browser shows a message asking the user to type instead.
 - Expected to work in Chrome and Edge.
-- **NOT TESTED IN A BROWSER YET.** It passes a strict TypeScript check in a temporary project with React types (zero `any`), but it is not part of the backend typecheck and no one has run it in a browser. It reads `window` during render, so a Next server render may disagree with the client on the "(unavailable)" label (possible hydration warning). Test it in the web app before relying on it.
+- **NOT TESTED IN A BROWSER YET.** It passes a strict TypeScript check in a temporary project with React types (zero `any`). Speech-recognition detection runs after mount, so the server render and the first client render are identical (checked with `renderToString`); "(unavailable)" can only appear after load. A human still has to try it in Chrome and Edge.

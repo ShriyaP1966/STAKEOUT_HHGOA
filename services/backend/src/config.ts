@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { readFileSync } from "node:fs";
 import { z } from "zod";
+import { parseTimeZone } from "./timezone.js";
 
 /** Every env var is required; nothing has a default value in code. */
 const nonEmpty = z.string().min(1, "is empty");
@@ -19,7 +20,9 @@ export const serverEnv = z.object({
   DB_PATH: nonEmpty,
   DATA_SOURCE: z.enum(["synthetic", "testnet"]),
   GRAPH_SERVICE_URL: z.url(),
+  GRAPH_TIMEOUT_MS: z.coerce.number().int().positive(),
   RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive(),
+  DEFAULT_TIMEZONE: z.string().refine((v) => parseTimeZone(v) !== null, "must be an IANA time zone name in Region/City form (or UTC)").transform((v) => parseTimeZone(v) as string),
   DECISIONS_PAGE_SIZE: z.coerce.number().int().positive(),
   DECISIONS_MAX_LIMIT: z.coerce.number().int().positive(),
   CORS_ORIGINS: z.string().transform((raw, ctx) => {
@@ -46,16 +49,38 @@ export const chainEnv = z.object({
   RULES_PATH: nonEmpty,
 });
 
+/** An empty value in .env means "not set" for optional variables. */
+const emptyToUndefined = (v: unknown) => (v === "" ? undefined : v);
+
 /** Everything the verifier process reads from .env (the API server does not need these). */
 export const verifierEnv = chainEnv.extend({
   DB_PATH: nonEmpty,
+  DATA_SOURCE: z.enum(["synthetic", "testnet"]),
   GRAPH_SERVICE_URL: z.url(),
   GRAPH_TIMEOUT_MS: z.coerce.number().int().positive(),
   RPC_TIMEOUT_MS: z.coerce.number().int().positive(),
   VERIFIER_DRY_RUN: z.enum(["true", "false"], "must be true or false").transform((v) => v === "true"),
   VERIFIER_POLL_INTERVAL_MS: z.coerce.number().int().positive(),
   VERIFIER_LOG_CHUNK_BLOCKS: z.coerce.number().int().positive(),
+  /** Optional viaSocket webhook. Unset or empty means no notifications at all. */
+  NOTIFY_WEBHOOK_URL: z.preprocess(emptyToUndefined, z.url().optional()),
+  NOTIFY_TIMEOUT_MS: z.preprocess(emptyToUndefined, z.coerce.number().int().positive().optional()),
+}).refine((v) => !v.NOTIFY_WEBHOOK_URL || v.NOTIFY_TIMEOUT_MS !== undefined, {
+  path: ["NOTIFY_TIMEOUT_MS"],
+  message: "is required when NOTIFY_WEBHOOK_URL is set",
 });
+
+/** Needed only by GET /blocklist. Checked when the endpoint is first used, so the rest of the API runs without a chain. */
+export const blocklistEnv = z.object({
+  RPC_URL: z.url(),
+  CHAIN_ID: z.coerce.number().int().positive(),
+  DEPLOYMENT_PATH: nonEmpty,
+  RPC_TIMEOUT_MS: z.coerce.number().int().positive(),
+  BLOCKLIST_LOG_CHUNK_BLOCKS: z.coerce.number().int().positive(),
+});
+
+/** Every schema that reads the environment; the env-parity check compares these with .env.example. */
+export const envSchemas = [llmEnv, serverEnv, chainEnv, verifierEnv, blocklistEnv];
 
 /** Validate process.env against a schema; print every problem by name (never the value) and exit. */
 export function loadEnv<T extends z.ZodObject>(schema: T, label: string): z.infer<T> {
@@ -79,31 +104,41 @@ export const rulesSchema = z.object({
 });
 export type Rules = z.infer<typeof rulesSchema>;
 
-export function loadRules(path: string): Rules {
-  const fail = (message: string): never => {
-    console.error(message);
-    process.exit(1);
-  };
+export class ConfigError extends Error {}
+
+/** Reads and validates the rules file. Throws ConfigError with a message that says what is wrong and who owns the file. */
+export function readRules(path: string): Rules {
   let raw: string;
   try {
     raw = readFileSync(path, "utf8");
   } catch {
-    return fail(
+    throw new ConfigError(
       `Rules file not found at RULES_PATH=${path}. config/rules.json is agreed by Person 1 and Person 3 (Person 2 only reads it); ` +
         "expected fields are listed in docs/rules-proposal.md. Nothing is assumed in its absence.",
     );
   }
-  if (raw.trim() === "") return fail(`Rules file ${path} is empty. Expected fields: see docs/rules-proposal.md.`);
+  if (raw.trim() === "") throw new ConfigError(`Rules file ${path} is empty. Expected fields: see docs/rules-proposal.md.`);
   let json: unknown;
   try {
     json = JSON.parse(raw);
   } catch (e) {
-    return fail(`Rules file ${path} is not valid JSON: ${(e as Error).message}`);
+    throw new ConfigError(`Rules file ${path} is not valid JSON: ${(e as Error).message}`);
   }
   const parsed = rulesSchema.safeParse(json);
   if (!parsed.success) {
     const problems = parsed.error.issues.map((i) => `  - ${i.path.join(".") || "(root)"}: ${i.message}`).join("\n");
-    return fail(`Invalid rules file ${path} (expected fields: see docs/rules-proposal.md):\n${problems}`);
+    throw new ConfigError(`Invalid rules file ${path} (expected fields: see docs/rules-proposal.md):\n${problems}`);
   }
   return parsed.data;
+}
+
+/** For processes that cannot run without the rules (the verifier): print the problem and stop. */
+export function loadRules(path: string): Rules {
+  try {
+    return readRules(path);
+  } catch (e) {
+    if (!(e instanceof ConfigError)) throw e;
+    console.error(e.message);
+    process.exit(1);
+  }
 }

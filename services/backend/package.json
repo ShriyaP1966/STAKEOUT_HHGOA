@@ -17,6 +17,11 @@
     "verifier-selftest": "tsx src/scripts/verifier-selftest.ts",
     "llm-selftest": "tsx src/scripts/llm-selftest.ts",
     "summary-selftest": "tsx src/scripts/summary-selftest.ts",
+    "timezone-selftest": "tsx src/scripts/timezone-selftest.ts",
+    "evidence-selftest": "tsx src/scripts/evidence-selftest.ts",
+    "decide-selftest": "tsx src/scripts/decide-selftest.ts",
+    "blocklist-selftest": "tsx src/scripts/blocklist-selftest.ts",
+    "notify-selftest": "tsx src/scripts/notify-selftest.ts",
     "env-parity": "tsx src/scripts/env-parity.ts",
     "check": "tsx src/scripts/check.ts"
   },

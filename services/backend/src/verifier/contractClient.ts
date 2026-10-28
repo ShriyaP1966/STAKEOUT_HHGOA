@@ -14,6 +14,17 @@ export type PromotedEvent = {
   logIndex: number;
 };
 
+export type ConfirmedEvent = {
+  clusterId: string;
+  members: string[];
+  exitPoints: string[];
+  evidenceHash: string;
+  blockNumber: number;
+  blockHash: string;
+  txHash: string;
+  logIndex: number;
+};
+
 export type LiveFlag = { flagId: bigint; expiresAt: bigint; challenged: boolean; live: boolean };
 
 export type WriteResult = { txHash: string | null; dryRun: boolean };
@@ -86,6 +97,25 @@ export class StakeoutClient implements ChainReader, ChainWriter {
         flagger: l.args.flagger,
         stake: l.args.stake,
         expiresAt: l.args.expiresAt,
+        blockNumber: l.blockNumber,
+        blockHash: l.blockHash,
+        txHash: l.transactionHash,
+        logIndex: l.index,
+      };
+    });
+  }
+
+  /** Confirmed events: the event name is the Status enum's name (the ABI is checked at startup), so no status word is typed here. */
+  async confirmedBetween(fromBlock: number, toBlock: number): Promise<ConfirmedEvent[]> {
+    const name = Status[Status.Confirmed];
+    const logs = await this.contract.queryFilter(this.contract.filters[name](), fromBlock, toBlock);
+    return logs.map((log) => {
+      const l = log as EventLog;
+      return {
+        clusterId: l.args.clusterId,
+        members: [...l.args.members] as string[],
+        exitPoints: [...l.args.exitPoints] as string[],
+        evidenceHash: l.args.evidenceHash,
         blockNumber: l.blockNumber,
         blockHash: l.blockHash,
         txHash: l.transactionHash,

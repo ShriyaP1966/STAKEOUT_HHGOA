@@ -16,7 +16,7 @@ function hostOf(url: string): string {
 }
 
 /** Raw eth_chainId call with a timeout, so an unreachable node fails once with a clear message instead of retrying forever. */
-async function rpcChainId(url: string, timeoutMs: number): Promise<number> {
+export async function rpcChainId(url: string, timeoutMs: number): Promise<number> {
   const host = hostOf(url);
   let res: Response;
   try {

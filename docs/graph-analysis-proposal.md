@@ -1,9 +1,12 @@
 # Proposal: Graph Service analysis response (for Person 1 to agree)
 
-Status: **PROPOSAL, not agreed.** Person 1's `shared/schemas/analysis.json` does not exist yet. When it does, it replaces this document and `services/backend/src/verifier/graphAnalysisProposal.ts`. The verifier cannot make a real decision until then; where it needs the analysis it stops with `not implemented: waiting for Person 1 graph analysis / agreed rules.json`.
+Status: **PROPOSAL, not agreed.** Person 1's `shared/schemas/analysis.json` does not exist yet. When it does, it replaces this document and `services/backend/src/verifier/graphAnalysisProposal.ts`. The backend is now written against this proposal (`POST /evidence/build` and the verifier's decisions), but only ever tested with a stub Graph Service.
 
-## What the verifier would ask
-`GET {GRAPH_SERVICE_URL}/analysis/{address}` (route is part of the proposal). The address is a checksummed wallet address. `GRAPH_SERVICE_URL` and `GRAPH_TIMEOUT_MS` come from `.env`.
+## What the backend would ask (two routes)
+1. `GET {GRAPH_SERVICE_URL}/analysis/{address}` for one wallet (route is part of the proposal).
+2. `GET {GRAPH_SERVICE_URL}/clusters/{clusterId}/link-candidates` returns `{ clusterId, candidates: [address, ...] }`: wallets that might join a newly confirmed cluster (PROPOSED).
+
+The wallet address is a checksummed address. `GRAPH_SERVICE_URL` and `GRAPH_TIMEOUT_MS` come from `.env`.
 
 ## What it would like back (JSON)
 | Field | Type | Meaning |
@@ -15,7 +18,20 @@ Status: **PROPOSAL, not agreed.** Person 1's `shared/schemas/analysis.json` does
 | `members` | array of addresses | Addresses in the cluster to confirm. |
 | `exitPoints` | array of addresses | Exit-point addresses of the cluster. |
 | `unrelatedReporterCount` | integer, 0 or more | Number of unrelated reporters. |
-| `dataSource` | `"synthetic"` or `"testnet"` | Shown in every bundle. |
+| `dataSource` | `"synthetic"` or `"testnet"` | Must equal the backend's `DATA_SOURCE`, or the backend refuses to build. |
+| `link` (optional) | object | Present only for a link candidate: the facts below, decided by the graph. For a candidate, `clusterId` is the cluster it would join. |
+
+### The `link` object (PROPOSED)
+Booleans, so the graph owns the definition of behavior and the verifier only applies the linking rule from AGENTS.md section 4.
+| Field | Meaning |
+|---|---|
+| `repeatedStructuredOutflowToCluster` | sends funds into the cluster or its exit points in a repeated, structured way |
+| `fundedByCluster` | received funds from the cluster |
+| `forwardsOnwardLikeMember` | forwards funds onward the way a cluster member does |
+| `isKnownVictim` | a known victim of the cluster: never linked |
+| `isOneOffPayer` | paid the cluster once and nothing more: never linked |
+
+Linked if `repeatedStructuredOutflowToCluster`, or if `fundedByCluster` and `forwardsOnwardLikeMember`. Never if `isKnownVictim` or `isOneOffPayer`. Inbound funding alone (dusting) is ignored.
 
 ## How the verifier treats failures (already built and tested against a local stand-in server)
 - Not reachable, or no answer within `GRAPH_TIMEOUT_MS`: a clear error naming the host and the setting.
@@ -24,7 +40,8 @@ Status: **PROPOSAL, not agreed.** Person 1's `shared/schemas/analysis.json` does
 Errors are logged and the event is retried on the next poll; nothing is guessed.
 
 ## Open questions for Person 1
-1. Is the route and shape above acceptable, or what is the real one?
-2. How are link candidates represented (a wallet that sends funds into the cluster or its exit points repeatedly, or is funded by it and forwards onward)? The linking rule needs more than the confirm fields: probably a per-wallet answer plus the cluster it would join. Known victims and one-off payers must be excluded by the graph.
+0. Are the two routes and the `link` flags acceptable, or what are the real ones? Who decides "repeated" and "structured" (the proposal assumes the graph does, so no extra rules field is needed)?
+1. Is the shape of the per-wallet response above acceptable, or what is the real one?
+2. Can the graph list link candidates for a cluster and set the `link` flags as described? Known victims and one-off payers must be flagged by the graph; the backend never links them.
 3. Does the `target` response include enough to build the full evidence bundle (`shared/schemas/evidence.json`), or does the verifier need extra calls?
 4. Should the analysis be deterministic for the same data, so a re-run produces the same evidence hash?

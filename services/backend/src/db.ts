@@ -47,8 +47,8 @@ export function openDb(path: string) {
       const row = q.getEvidence.get(hash) as { bundle: string } | undefined;
       return row ? JSON.parse(row.bundle) : null;
     },
-    logDecision(d: Decision) {
-      q.putDecision.run(d.target, d.kind, d.outcome, d.rule, d.reason, JSON.stringify(d.inputs), d.txHash, d.evidenceHash, new Date().toISOString());
+    logDecision(d: Decision): number {
+      return Number(q.putDecision.run(d.target, d.kind, d.outcome, d.rule, d.reason, JSON.stringify(d.inputs), d.txHash, d.evidenceHash, new Date().toISOString()).lastInsertRowid);
     },
     listDecisions(limit: number) {
       return (q.listDecisions.all(limit) as Record<string, unknown>[]).map((r) => ({ ...r, inputs: JSON.parse(r.inputs as string) }));

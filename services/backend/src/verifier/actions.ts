@@ -1,8 +1,10 @@
 import { ZeroAddress, isAddress } from "ethers";
 import { Role } from "../../../../shared/enums.js";
-import type { Db } from "../db.js";
+import type { Db, Decision } from "../db.js";
 import type { ChainReader, ChainWriter } from "./contractClient.js";
 import type { DecisionPlan } from "./decide.js";
+import type { Notifier } from "./notify.js";
+import { recordDecision } from "./record.js";
 
 export type Feasibility = { ok: true } | { ok: false; rule: string; reason: string };
 const no = (rule: string, reason: string): Feasibility => ({ ok: false, rule, reason });
@@ -39,14 +41,15 @@ export async function checkLinkFeasible(reader: ChainReader, req: { target: stri
   return { ok: true };
 }
 
-export type ActionDeps = { reader: ChainReader; writer: ChainWriter; db: Db };
+export type ActionDeps = { reader: ChainReader; writer: ChainWriter; db: Db; notifier?: Notifier };
 
 const DRY_RUN_REASON = "dry run (VERIFIER_DRY_RUN=true): the contract call was simulated successfully; nothing was sent";
 
 /** Turns a decision plan into a logged outcome. Only call this with a plan produced by real decision logic. */
-export async function applyPlan({ reader, writer, db }: ActionDeps, target: string, plan: DecisionPlan): Promise<void> {
+export async function applyPlan({ reader, writer, db, notifier }: ActionDeps, target: string, plan: DecisionPlan): Promise<void> {
+  const record = (d: Decision) => recordDecision(db, notifier, d);
   if (plan.action === "refuse") {
-    db.logDecision({ target, kind: plan.kind, outcome: "refused", rule: plan.rule, reason: plan.reason, inputs: plan.inputs, txHash: null, evidenceHash: plan.evidenceHash });
+    record({ target, kind: plan.kind, outcome: "refused", rule: plan.rule, reason: plan.reason, inputs: plan.inputs, txHash: null, evidenceHash: plan.evidenceHash });
     return;
   }
   const kind = plan.action;
@@ -56,7 +59,7 @@ export async function applyPlan({ reader, writer, db }: ActionDeps, target: stri
       : await checkLinkFeasible(reader, plan);
   const evidenceHash = plan.evidenceHash;
   if (!feasibility.ok) {
-    db.logDecision({ target, kind, outcome: "skipped", rule: feasibility.rule, reason: feasibility.reason, inputs: plan.inputs, txHash: null, evidenceHash });
+    record({ target, kind, outcome: "skipped", rule: feasibility.rule, reason: feasibility.reason, inputs: plan.inputs, txHash: null, evidenceHash });
     return;
   }
   try {
@@ -64,13 +67,13 @@ export async function applyPlan({ reader, writer, db }: ActionDeps, target: stri
       plan.action === "confirm"
         ? await writer.confirm(plan.clusterId, plan.members, plan.exitPoints, plan.evidenceHash)
         : await writer.link(plan.target, plan.clusterId, plan.evidenceHash);
-    db.logDecision({
+    record({
       target, kind, rule: plan.rule, inputs: plan.inputs, evidenceHash,
       outcome: result.dryRun ? "skipped" : "sent",
-      reason: result.dryRun ? DRY_RUN_REASON : `${kind} sent`,
+      reason: result.dryRun ? `${DRY_RUN_REASON}. Decision: ${plan.reason}` : `${kind} sent. ${plan.reason}`,
       txHash: result.txHash,
     });
   } catch (e) {
-    db.logDecision({ target, kind, outcome: "skipped", rule: plan.rule, reason: writer.explainRevert(e), inputs: plan.inputs, txHash: null, evidenceHash });
+    record({ target, kind, outcome: "skipped", rule: plan.rule, reason: writer.explainRevert(e), inputs: plan.inputs, txHash: null, evidenceHash });
   }
 }

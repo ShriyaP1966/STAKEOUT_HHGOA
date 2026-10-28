@@ -1,6 +1,6 @@
 # Stakeout backend (Person 2)
 
-TypeScript service: complaint extraction, evidence storage, decision log, and a verifier skeleton. `POST /evidence/build` and `GET /blocklist` are not built yet (they wait on the Graph Service schema). The verifier watches the contract but **decides nothing real yet** (see "Verifier" below).
+TypeScript service: complaint extraction, evidence building and storage, a hashed blocklist, the verifier (which decides confirm, link or refuse and logs why), and a decision log. Everything that depends on Person 1's Graph Service or the agreed `config/rules.json` is marked PROPOSED below and in `docs/`; none of it has run against a real Graph Service or a real contract.
 
 ## Setup
 1. Use Node 24 (`.nvmrc` is `24`; `package.json` enforces `>=24 <25`), then `npm ci --ignore-scripts` (see "Install trouble on Windows" for why that flag). Also run `npm ci` inside `shared/hash`.
@@ -9,55 +9,71 @@ TypeScript service: complaint extraction, evidence storage, decision log, and a 
 4. `npm start`
 
 ## Environment variables (exactly those read in `src/config.ts`)
-All are required. There are no defaults in code; a missing or invalid one stops startup with a message naming it (never its value).
+All are required, except the two `NOTIFY_` variables, which may be left empty. There are no defaults in code; a missing or invalid one stops startup with a message naming it (never its value). The `/blocklist` variables are checked when that endpoint is first used, so the rest of the API runs without them.
 
 | Variable | Used by | Meaning |
 |---|---|---|
-| `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL` | server | OpenAI-compatible LLM endpoint, key and model name |
+| `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL` | server, verifier | OpenAI-compatible LLM endpoint, key and model name |
+| `LLM_MAX_RETRIES` | server, verifier | Most times a rate-limited (429), failing (5xx) or timed-out AI call is retried. 0 means never retry. |
+| `LLM_TIMEOUT_MS` | server, verifier | How long to wait for one AI call |
+| `LLM_RETRY_MAX_WAIT_SECONDS` | server, verifier | Longest wait between retries. If the provider asks for longer, the request fails at once with 429 and the provider's own wait in `Retry-After`. Without a `retry-after` header the waits are 1, 2, 4... seconds up to this cap. |
 | `PORT` | server | Port to listen on |
-| `DB_PATH` | server | SQLite file path (its folder is created if missing; git-ignored) |
-| `DATA_SOURCE` | server | `synthetic` or `testnet`, shown on every response |
-| `GRAPH_SERVICE_URL` | server | Person 1's Graph Service base URL |
-| `LLM_MAX_RETRIES` | server | Most times a rate-limited (429), failing (5xx) or timed-out AI call is retried. 0 means never retry. |
-| `LLM_TIMEOUT_MS` | server | How long to wait for one AI call |
-| `LLM_RETRY_MAX_WAIT_SECONDS` | server | Longest wait between retries. If the provider asks for longer, the request fails at once with 429 and the provider's own wait in `Retry-After`. Without a `retry-after` header the waits are 1, 2, 4... seconds up to this cap. |
+| `DB_PATH` | server, verifier | SQLite file path (its folder is created if missing; git-ignored). The server and the verifier must point at the same file to share evidence and the decision log. |
+| `DATA_SOURCE` | server, verifier | `synthetic` or `testnet`, shown on every response and bundle. The graph's own label must agree with it. |
+| `DEFAULT_TIMEZONE` | server | IANA zone (Region/City form, or UTC) used to resolve relative times when a request has no `timezone` |
+| `GRAPH_SERVICE_URL`, `GRAPH_TIMEOUT_MS` | server, verifier | Person 1's Graph Service base URL and how long to wait for it |
 | `RATE_LIMIT_PER_MINUTE` | server | Requests per minute per client |
-| `CORS_ORIGINS` | server | Comma-separated web app origins allowed by CORS (for example the web app's URL); must contain at least one valid origin |
+| `CORS_ORIGINS` | server | Comma-separated web app origins allowed by CORS; must contain at least one valid origin |
 | `DECISIONS_PAGE_SIZE` | server | Default `limit` for `GET /decisions` |
 | `DECISIONS_MAX_LIMIT` | server | Largest allowed `limit`; must be at least `DECISIONS_PAGE_SIZE` |
-| `RPC_URL`, `CHAIN_ID` | `test-tx`, verifier | Node connection. The verifier refuses to start if the node reports a different chain. Only the host of `RPC_URL` is ever printed, because RPC URLs often carry keys. |
+| `RPC_URL`, `CHAIN_ID` | `test-tx`, verifier, `GET /blocklist` | Node connection. A mismatch with the node's chain is refused. Only the host of `RPC_URL` is ever printed, because RPC URLs often carry keys. |
+| `DEPLOYMENT_PATH` | verifier, `GET /blocklist` | Path to Person 3's deployment file (`chainId`, `stakeoutAddress`, `deploymentBlock` are read) |
+| `RPC_TIMEOUT_MS` | verifier, `GET /blocklist` | How long to wait for the node |
+| `BLOCKLIST_LOG_CHUNK_BLOCKS` | `GET /blocklist` | Blocks per event request when scanning |
+| `RULES_PATH` | verifier, `POST /evidence/build` | Path to `config/rules.json` (agreed by Person 1 and 3). The verifier needs it to start; evidence building reads it per request and answers 503 if it is missing. |
 | `VERIFIER_PRIVATE_KEY` | `test-tx`, verifier | Written by `gen-wallet`; never share. Never logged. |
-| `DEPLOYMENT_PATH`, `RULES_PATH` | verifier | Paths to the deployment file (Person 3) and `config/rules.json` (agreed by Person 1 and 3); both must exist and be valid |
-| `GRAPH_TIMEOUT_MS` | verifier | How long to wait for the Graph Service |
-| `RPC_TIMEOUT_MS` | verifier | How long to wait for the node at startup |
-| `VERIFIER_DRY_RUN` | verifier | `true` or `false`. With `true`, `confirm` and `link` are only simulated against the node and nothing is sent. |
+| `VERIFIER_DRY_RUN` | verifier | `true` or `false`. With `true`, `confirm` and `link` are only simulated against the node and nothing is sent. Keep `true` until a human has checked a run. |
 | `VERIFIER_POLL_INTERVAL_MS` | verifier | Pause between polls for new events |
 | `VERIFIER_LOG_CHUNK_BLOCKS` | verifier | Blocks queried per event request |
+| `NOTIFY_WEBHOOK_URL`, `NOTIFY_TIMEOUT_MS` | verifier | Optional viaSocket webhook. Empty means no notifications at all. If the URL is set, the timeout is required. |
 
 ## Install trouble on Windows
 Plain `npm ci` fails with `gyp ERR! find VS` because `better-sqlite3` has a `binding.gyp` and no install script, so npm tries to compile it, which needs Visual Studio build tools. Its package already ships a prebuilt Windows binary that it loads at runtime, and `npm ci --ignore-scripts` skips the compile. Verified in a clean copy on Node 24.19.0 (Windows): plain `npm ci` exit 1; `npm ci --ignore-scripts` exit 0, then typecheck passes, the server starts and `/health` returns 200.
 
 ## Verifier (`npm run verifier`, separate process from the API server)
-What exists: it loads `RULES_PATH` and `DEPLOYMENT_PATH` (clear errors if missing, empty or invalid), reads the ABI from `shared/abi/Stakeout.json`, checks the node is on `CHAIN_ID`, that contract code exists at the deployed address and that the signer has `VERIFIER_ROLE`, then polls for `Promoted` events. The next block to scan and every handled event are stored in SQLite, so a restart never handles an event twice. Decisions are logged in the `decisions` table with `kind` = `confirm`|`link` and `outcome` = `sent`|`refused`|`skipped`.
+**Startup:** loads `RULES_PATH` and `DEPLOYMENT_PATH` (clear errors if missing, empty or invalid), reads the ABI from `shared/abi/Stakeout.json`, checks the node is on `CHAIN_ID`, that contract code exists at the deployed address and that the signer has `VERIFIER_ROLE`, then polls for `Promoted` and `Confirmed` events. The next block to scan and every handled event are stored in SQLite, so a restart never handles an event twice.
 
-What it does NOT do yet: decide. For a live flag it reaches `decide()` which throws `not implemented: waiting for Person 1 graph analysis / agreed rules.json`; the event stays unhandled and is retried, and nothing is sent or logged as a decision. It only logs a skipped decision when it can already tell on-chain that the flag is no longer live or the target is already in a cluster.
+**Confirm (a `Promoted` flag).** The graph analysis for the flagged wallet is fetched (PROPOSED route and shape, `docs/graph-analysis-proposal.md`). The wallet is confirmed only if its OWN behavior passes the rules: behavior score at least `behaviorThreshold` and at least `minSignals` signals. Reports from unrelated victims only add to a confidence figure that is recorded in the log; no number of reports can confirm a wallet whose behavior fails. The evidence bundle is built, hashed and stored first, and its hash is the `evidenceHash` sent on-chain.
 
-Other pieces are built but not reachable until `decide()` exists: the checks that mirror the contract's reverts (address limit counts members plus exit points together, duplicates, already in a cluster, no live unchallenged member flag, cluster must exist for link), the dry-run switch, and the Graph Service client (proposal only: see `docs/graph-analysis-proposal.md`; `docs/rules-proposal.md` lists the rules fields).
+**Link (a `Confirmed` event).** The graph proposes link candidates for the new cluster (PROPOSED route). A candidate is linked only if it sends funds into the cluster or its exit points in a repeated, structured way, or is funded by the cluster and then forwards onward like a member. Inbound funding alone is ignored, and known victims and one-off payers are never linked. The graph supplies these facts as flags; the confirm thresholds play no part.
 
-Checks: `npm run verifier-selftest` (stand-in chain and a local HTTP server; proves our logic, not the real contract). Testing against the real contract needs a local node and deployment from Person 3's scripts (see AGENTS.md section 8).
+**Log:** every outcome is written to the `decisions` table with `kind` = `confirm`|`link` and `outcome` = `sent`|`refused`|`skipped`, a rule label, a plain reason, the inputs (score, signal count, reporters, thresholds used) and the evidence hash. `skipped` also covers "cannot be sent": the flag is no longer live, over the contract's address limit, already in a cluster, challenged, or dry run. If anything needed for a decision fails (graph down, AI down), nothing is guessed: the event is retried on the next poll.
+
+**Dry run:** with `VERIFIER_DRY_RUN=true` the contract call is simulated and logged as `skipped` ("dry run"); nothing is sent.
+
+**Notifications (optional):** if `NOTIFY_WEBHOOK_URL` is set, each logged decision is POSTed to it with only `{ id, kind, outcome, target, txHash, rule }`. Never the reason, inputs or any complaint text. The URL is redacted from every log line. A failure or a slow webhook is logged and never blocks or changes a decision. The payload format is UNVERIFIED against viaSocket.
+
+**Checks:** `npm run decide-selftest` and `npm run verifier-selftest` (stand-in chain, stub graph, stub AI; they prove our logic, not the real contract or the real graph). Testing against the real contract needs a local node and deployment from Person 3's scripts: `docs/local-chain-test.md`.
 
 ## Endpoints
 - `GET /health`
-- `POST /extract` body `{"text": "...", "targetAddress"?: "..."}` (text trimmed, 1 to 5000 chars) returns `{complaint, dataSource, text, complaintHash}` where `complaintHash = hashBundle({ text, complaint, dataSource })`; 422 `{error, candidates}` if the text has several addresses; 429 with `Retry-After` if the AI provider is rate limited or overloaded past the retries (or this API's own limit); 502 if the AI's answer is unusable; 500 with a generic message if the provider rejects the request
-- `GET /evidence/:hash`
+- `POST /extract` body `{"text": "...", "targetAddress"?: "...", "timezone"?: "..."}` (text trimmed, 1 to 5000 chars; `timezone` is an IANA name, default `DEFAULT_TIMEZONE`, invalid gives 400) returns `{complaint, dataSource, text, complaintHash}` where `complaintHash = hashBundle({ text, complaint, dataSource })`; 422 `{error, candidates}` if the text has several addresses; 429 with `Retry-After` if the AI provider is rate limited or overloaded past the retries (or this API's own limit); 502 if the AI's answer is unusable; 500 with a generic message if the provider rejects the request
+- `POST /evidence/build` body `{"target": "<address>"}` fetches the graph analysis (PROPOSED), builds the bundle from `shared/schemas/evidence.json`, hashes it with `shared/hash`, stores it and returns `{hash, bundle}`. 400 bad input; 502 or 504 for a failing or slow Graph Service; 503 if the rules file is missing; 429 if the AI is rate limited.
+- `GET /evidence/:hash` returns `{hash, bundle}`
+- `GET /blocklist` (PROPOSED) returns hashed addresses of Confirmed and Linked wallets, read from contract events: `{rule, count, hashes, scannedFromBlock, scannedToBlock, dataSource, generatedAt}`. 503 with the missing settings named if the node or deployment is not configured.
 - `GET /decisions?limit=n`
 
-See `docs/person2-handoff.md` for response shapes and the hash rule.
+See `docs/person2-handoff.md` for response shapes, the hash rules and the list of PROPOSED interfaces.
 
 ## npm scripts
-`start`, `typecheck`, `gen-wallet`, `test-tx`, `hash-file -- <file.json>`, `check-cluster-id -- <id>`, `verify-complaint-hash` (needs the server running; recomputes the hash from a live response and runs the tamper checks), `check` (runs typecheck, verifier-selftest, llm-selftest, summary-selftest and env-parity; no server, network or real AI call), `llm-selftest`, `summary-selftest`, `env-parity`, `verifier-address` (prints the verifier's PUBLIC address only), `verifier`, `verifier-selftest`, `robustness -- [multilingual|injection|address-selection|bad-input]` (needs the server running; the full run takes a few minutes because it waits for rate-limit windows).
+`start`, `typecheck`, `gen-wallet`, `test-tx`, `hash-file -- <file.json>`, `check-cluster-id -- <id>`, `verify-complaint-hash` (needs the server running; recomputes the hash from a live response and runs the tamper checks), `check` (runs typecheck, every self-test below and env-parity; no real server, no real chain, no real AI call), `llm-selftest`, `summary-selftest`, `timezone-selftest`, `evidence-selftest`, `decide-selftest`, `blocklist-selftest`, `notify-selftest`, `env-parity`, `verifier-address` (prints the verifier's PUBLIC address only), `verifier`, `verifier-selftest`, `robustness -- [multilingual|injection|address-selection|bad-input]` (needs the server running; the full run takes a few minutes because it waits for rate-limit windows).
 
 ## Known limitations
+- **PROPOSED, not agreed:** the Graph Service routes and response shape (including the link flags), the `config/rules.json` fields and how the verifier uses them, and the blocklist hash rule and response. Each is isolated in one small file (`src/verifier/graphAnalysisProposal.ts` and `graphClient.ts`, `src/config.ts` `rulesSchema`, `src/blocklist.ts`), so an agreed change is a one-file change. See `docs/person2-handoff.md`.
+- The verifier's decisions and the evidence builder have only run against stand-ins (a stub Graph Service, a stub AI, a mock node). They have not run against Person 1's service or Person 3's deployed contract.
+- Rules in use: pass needs behavior score >= `behaviorThreshold` and signal count >= `minSignals`. `reportConfidenceBoostPerReporter` only feeds a recorded confidence figure and never changes pass or fail. Linking uses the graph's flags, not the thresholds. `confirmationsToWait` delays event handling.
+- Two evidence builds for the same wallet give different hashes (the build time and the AI-written summary are in the bundle). The bundle that was hashed is stored under its hash.
+- The blocklist hashes only hide the list from casual reading: anyone who already has a candidate address can hash it and check. It reflects reorg-free chains only (no reorg handling).
 - The same complaint text can produce different `complaintHash` values, because `narrative` is AI-written and is part of the hashed `complaint`. A hash is verifiable because the exact record `{ text, complaint, dataSource }` is stored under it.
 - `GET /evidence/:hash` returns the stored record `{ text, complaint, dataSource }`, including the victim's full submitted text, to anyone who has the hash. Fine while all data is synthetic; the team decides whether to restrict it.
 - The target address is chosen by code (one valid address in the text, otherwise 422 with candidates or 400), so instructions inside a complaint cannot change it. amount, currency, time and narrative are still written by the AI and can be steered. Confirmation never depends on `/extract`. See `docs/person2-test-report.md`.

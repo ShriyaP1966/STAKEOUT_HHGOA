@@ -1,4 +1,9 @@
-import { analysisProposalSchema, proposedAnalysisPath, type AnalysisProposal } from "./graphAnalysisProposal.js";
+import type { z } from "zod";
+import { UserError } from "../errors.js";
+import {
+  analysisProposalSchema, linkCandidatesSchema, proposedAnalysisPath, proposedLinkCandidatesPath,
+  type AnalysisProposal, type LinkCandidates,
+} from "./graphAnalysisProposal.js";
 
 export type GraphErrorKind = "unreachable" | "timeout" | "http" | "invalid-json" | "invalid-shape";
 
@@ -8,9 +13,9 @@ export class GraphServiceError extends Error {
   }
 }
 
-/** Fetches the analysis for one wallet. Every failure is a GraphServiceError with a message that says what went wrong. */
-export async function fetchAnalysis(baseUrl: string, target: string, timeoutMs: number): Promise<AnalysisProposal> {
-  const url = new URL(proposedAnalysisPath(target), baseUrl);
+/** One GET to the Graph Service. Every failure is a GraphServiceError with a message that says what went wrong. */
+async function getJson<T extends z.ZodType>(baseUrl: string, path: string, timeoutMs: number, schema: T): Promise<z.infer<T>> {
+  const url = new URL(path, baseUrl);
   let res: Response;
   try {
     res = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
@@ -30,7 +35,7 @@ export async function fetchAnalysis(baseUrl: string, target: string, timeoutMs: 
   } catch {
     throw new GraphServiceError("invalid-json", "Graph Service returned something that is not JSON.");
   }
-  const parsed = analysisProposalSchema.safeParse(json);
+  const parsed = schema.safeParse(json);
   if (!parsed.success) {
     const problems = parsed.error.issues.map((i) => `${i.path.join(".") || "(root)"}: ${i.message}`).join("; ");
     throw new GraphServiceError(
@@ -39,4 +44,20 @@ export async function fetchAnalysis(baseUrl: string, target: string, timeoutMs: 
     );
   }
   return parsed.data;
+}
+
+/** PROPOSED route and shape: see graphAnalysisProposal.ts. */
+export function fetchAnalysis(baseUrl: string, target: string, timeoutMs: number): Promise<AnalysisProposal> {
+  return getJson(baseUrl, proposedAnalysisPath(target), timeoutMs, analysisProposalSchema);
+}
+
+/** PROPOSED route and shape: see graphAnalysisProposal.ts. */
+export function fetchLinkCandidates(baseUrl: string, clusterId: string, timeoutMs: number): Promise<LinkCandidates> {
+  return getJson(baseUrl, proposedLinkCandidatesPath(clusterId), timeoutMs, linkCandidatesSchema);
+}
+
+/** How a Graph Service failure is shown to an API caller. */
+export function graphErrorToUserError(e: unknown): unknown {
+  if (!(e instanceof GraphServiceError)) return e;
+  return new UserError(e.message, e.kind === "timeout" ? 504 : 502);
 }
