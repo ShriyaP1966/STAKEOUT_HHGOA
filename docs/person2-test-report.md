@@ -273,3 +273,25 @@ The command was added and tested only against a LOCAL stub webhook. **The assist
 - Whether viaSocket enforces a timeout, retries, rate limits or authentication on the webhook, and whether `NOTIFY_TIMEOUT_MS` as currently set is long enough for it: UNKNOWN.
 - That a real verifier decision (rather than the sample) triggers the webhook live: not run (it needs a deployed contract, a Graph Service and a flagged wallet).
 - The payload format against viaSocket's documentation: UNVERIFIED (no viaSocket documentation was consulted).
+
+
+## 12. Run of 2026-10-29 (latest): local chain rehearsal results, and the dev-only Graph Service stand-in
+### Human-run on the local chain, recorded as reported (not run or seen by the assistant)
+On 2026-10-29 a human ran `docs/local-chain-test.md` on a local Hardhat node. What they reported:
+- Deploy and seed worked with Hardhat Account #2 as the verifier.
+- The verifier started on chain 31337, found `VERIFIER_ROLE` for its signer, read a real `Promoted` event, and then waited with a clear ERROR, because no Graph Service was running. It sent nothing.
+- After a restart it resumed at block 9 instead of the deployment block, and repeated the same waiting ERROR. (The assistant did not see this. It matches the design: the next block to scan is stored, and an event it could not handle is retried.)
+- A wrong `CHAIN_ID` stopped it with a clear message.
+- A missing deployment file stopped it with a clear message that names Person 3.
+Also reported: with an external address as verifier the seed script fails with "invalid account" (bug to report to Person 3; outside Person 2's folders). Leaving `EXPLORER_API_KEY` empty in `.env.localhost` fails validation, and the verifier stops at the first live flag it cannot handle, so skipped decisions for later events do not appear until it is handled. Both are now written into `docs/local-chain-test.md`.
+
+### Run by the assistant: the dev-only stand-in Graph Service
+Added `npm run dev:graph-fixture`, `npm run dev:graph-stub` and `npm run dev-graph-selftest` (in `npm run check`), plus `docs/local-rehearsal.md`. The stand-in answers only the two PROPOSED routes from a fixture file (`GRAPH_FIXTURE_PATH`, name added to `.env.example`, empty), refuses to start unless `DATA_SOURCE` is synthetic and `CHAIN_ID` is 31337, binds to 127.0.0.1 only, and prints the banner "DEV STAND-IN, NOT Person 1's Graph Service, synthetic data only".
+- The self-test (random generated addresses, real scripts as child processes) checks: strong and weak scores against the rules file; a regenerated fixture with other thresholds and a new seed carries nothing from the first; every refusal (testnet, wrong chain, non-local URL, no port, missing, malformed, wrong-shape, non-synthetic or wrong-chain fixture); the verifier's OWN graph client parses the stub's answers; the verifier's OWN `decideConfirm` confirms the strong target and refuses the weak one, and `decideLink` links both link shapes; 404, 400 and 405 answers; not reachable on the machine's non-loopback address; no address literal in the source. The first run of the self-test had one failing check: a wrong rule label I had guessed in the test (not a stand-in bug); I fixed the test to use the exported constant. As a mutation check I made the flagged target's score weak: 3 checks failed, and the original passes again.
+- Manual run against the REAL seed file (`deployments/localhost-seed.json`, structure only): the generator wrote 5 analyses and 2 clusters of link candidates; the stub started with the banner and answered the flagged target (score 2, 2 signals, synthetic), the challenged target (score 0, 0 signals, no cluster) and 3 link candidates; I then stopped my own stub by its process id. The rules file for this was a temporary fixture (threshold 1, minimum signals 1), not the team's.
+
+### Still NOT verified
+- The whole rehearsal against a chain: dry run with the stand-in, the live run with `VERIFIER_DRY_RUN=false`, the real confirm transaction, the `getStatus` change, `GET /decisions` for those decisions and the viaSocket alert: NOT RUN (a node was seen answering on the local RPC port, but deploying or seeding would write into `deployments/`, which is not Person 2's folder).
+- Whether the contract accepts the confirm built from the stand-in (a member list of one flagged wallet, no exit points, a new cluster id): UNVERIFIED on chain.
+- A real `link` transaction: not exercised by this fixture (the seed puts every candidate in a cluster already).
+- Anything about Person 1's real Graph Service and the agreed schema and thresholds: still blocked.

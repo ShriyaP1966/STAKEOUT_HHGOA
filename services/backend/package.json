@@ -26,6 +26,9 @@
     "notify-selftest": "tsx src/scripts/notify-selftest.ts",
     "notify-test": "tsx src/scripts/notify-test.ts",
     "notify-test-selftest": "tsx src/scripts/notify-test-selftest.ts",
+    "dev:graph-stub": "tsx src/scripts/dev-graph-stub.ts",
+    "dev:graph-fixture": "tsx src/scripts/dev-graph-fixture.ts",
+    "dev-graph-selftest": "tsx src/scripts/dev-graph-selftest.ts",
     "dodo-selftest": "tsx src/scripts/dodo-selftest.ts",
     "env-parity": "tsx src/scripts/env-parity.ts",
     "check": "tsx src/scripts/check.ts"

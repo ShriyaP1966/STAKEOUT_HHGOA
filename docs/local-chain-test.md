@@ -32,7 +32,7 @@ Same variable names as `.env.example` (README, "Deployment"). The file is git-ig
 | `VERIFIER_ADDRESS` | **your verifier public address from step 0** |
 | `MIN_STAKE_WEI`, `FLAG_DURATION_SECONDS`, `MAX_MEMBERS_PER_CALL` | local test values of your choice; they are constructor arguments, read back into the deployment file |
 | `CONFIRMATIONS` | `1` (README: use 1 on a local node) |
-| `EXPLORER_API_KEY` | leave empty (optional for localhost) |
+| `EXPLORER_API_KEY` | **do not list this line at all** in `.env.localhost`. Leaving it empty fails validation (found in a human run on 2026-10-29). It is optional; remove the line and the deploy works without it. |
 
 ## 3. Deploy (terminal B, repo root)
 ```
@@ -82,8 +82,9 @@ npm run verifier
 - [ ] A line `Verifier started. contract 0x... on chain <id> via <host>; signer <your address> has VERIFIER_ROLE; maxMembersPerCall <n>; dry run: true; resuming from block <deploymentBlock> (deployment block).`
 - [ ] If instead it says it cannot start, the message names the cause (wrong chain, no contract code, role missing, file missing). Fix that and retry.
 - [ ] Events are read only up to the latest block minus `confirmationsToWait` (1 in the test rules). A local node mines only on demand; `seed:local` sends many transactions so this is normally enough. If the newest events are ignored, mine more blocks. **UNVERIFIED:** the Hardhat node RPC method `hardhat_mine`.
-- [ ] For each `Promoted` event whose flag is no longer live (for example the target that was later confirmed) the verifier logs a `skipped` decision: "the target no longer has a live flag ...". It marks the event handled.
+- [ ] For each `Promoted` event whose flag is no longer live (and which comes BEFORE the first live flag the verifier cannot handle: see the head-of-line note below) (for example the target that was later confirmed) the verifier logs a `skipped` decision: "the target no longer has a live flag ...". It marks the event handled.
 - [ ] At the first target whose flag is still live (the flagged one, and the flagged-and-challenged one) the verifier tries to fetch the graph analysis. With no Graph Service running (the expected case today) it logs an ERROR once: `Promoted flag <id> for <address> (block <n>) is waiting: could not handle the event: Cannot reach the Graph Service at <host>...`. It sends nothing, writes no decision for it, and does not move past that event; events after it wait. This is intended: nothing is guessed.
+- [ ] **Head-of-line waiting (found in a human run on 2026-10-29):** the verifier handles events strictly in order and stops at the first one it cannot handle. So the `skipped` decisions for LATER events (for example the target that was later confirmed, whose flag is no longer live) do not appear in the log until that live flag has been handled, which needs a running Graph Service. With no Graph Service, only the decisions for events before the first live flag exist. This is by design, not a bug in the test; `docs/local-rehearsal.md` shows how to get past it with a dev-only stand-in.
 - [ ] If you point `GRAPH_SERVICE_URL` at a running Graph Service that answers in the proposed shape, the verifier decides: a refusal or a dry-run `skipped` appears in the log with its rule and reason. If the answer has the wrong shape the ERROR names the offending fields.
 - [ ] With `VERIFIER_DRY_RUN=true`, `confirm` and `link` are never sent.
 
@@ -92,7 +93,7 @@ In another terminal, from `services/backend`, start the API server against the S
 ```
 curl "http://localhost:<PORT>/decisions"
 ```
-- [ ] The `skipped` decisions from step 7 appear, each with `kind` `confirm`, `outcome` `skipped`, a `rule` starting `feasibility:` and a plain `reason`.
+- [ ] The `skipped` decisions from step 7 appear (only those for events before the first live flag that could not be handled; later ones wait behind it, see the head-of-line note in step 7), each with `kind` `confirm`, `outcome` `skipped`, a `rule` starting `feasibility:` and a plain `reason`.
 
 ## 9. Restart test
 Stop the verifier (Ctrl+C), start it again with the same variables and database.
@@ -108,6 +109,9 @@ Stop the verifier (Ctrl+C), start it again with the same variables and database.
 
 ## Record the result
 Paste the verifier output and the `/decisions` response into a new dated section at the end of `docs/person2-test-report.md` (do not edit earlier sections). Remove any secret before pasting.
+
+## Want to see decisions without Person 1's service?
+`docs/local-rehearsal.md` runs the same setup with a DEV-ONLY stand-in Graph Service, so the verifier can decide (and, on the local chain only, send) for real.
 
 ## Still blocked after this passes
 Real decisions need Person 1's running Graph Service and agreed `shared/schemas/analysis.json`, and an agreed `config/rules.json` (see `docs/rules-proposal.md` and `docs/graph-analysis-proposal.md`).

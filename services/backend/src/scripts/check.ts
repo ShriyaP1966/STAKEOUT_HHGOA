@@ -3,7 +3,7 @@
 import { spawnSync } from "node:child_process";
 
 const checks = [
-  "typecheck", "verifier-selftest", "llm-selftest", "summary-selftest", "timezone-selftest", "evidence-selftest", "decide-selftest", "blocklist-selftest", "notify-selftest", "notify-test-selftest", "dodo-selftest", "verifier-status-selftest", "env-parity",
+  "typecheck", "verifier-selftest", "llm-selftest", "summary-selftest", "timezone-selftest", "evidence-selftest", "decide-selftest", "blocklist-selftest", "notify-selftest", "notify-test-selftest", "dev-graph-selftest", "dodo-selftest", "verifier-status-selftest", "env-parity",
 ];
 
 let failures = 0;

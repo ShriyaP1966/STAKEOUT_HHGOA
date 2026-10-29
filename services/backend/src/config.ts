@@ -103,8 +103,24 @@ export const blocklistEnv = z.object({
   BLOCKLIST_LOG_CHUNK_BLOCKS: z.coerce.number().int().positive(),
 });
 
+/** DEV ONLY: `npm run dev:graph-stub`, the stand-in Graph Service. The port comes from GRAPH_SERVICE_URL. */
+export const graphStubEnv = z.object({
+  GRAPH_FIXTURE_PATH: nonEmpty,
+  DATA_SOURCE: z.enum(["synthetic", "testnet"]),
+  CHAIN_ID: z.coerce.number().int().positive(),
+  GRAPH_SERVICE_URL: z.url(),
+});
+
+/** DEV ONLY: `npm run dev:graph-fixture`, which writes the fixture file from the seed and reads the thresholds from the rules file. */
+export const graphFixtureEnv = z.object({
+  GRAPH_FIXTURE_PATH: nonEmpty,
+  DATA_SOURCE: z.enum(["synthetic", "testnet"]),
+  CHAIN_ID: z.coerce.number().int().positive(),
+  RULES_PATH: nonEmpty,
+});
+
 /** Every schema that reads the environment; the env-parity check compares these with .env.example. */
-export const envSchemas = [llmEnv, serverEnv, chainEnv, verifierEnv, blocklistEnv, dodoEnv];
+export const envSchemas = [llmEnv, serverEnv, chainEnv, verifierEnv, blocklistEnv, dodoEnv, graphStubEnv, graphFixtureEnv];
 
 /** Validate process.env against a schema; print every problem by name (never the value) and exit. */
 export function loadEnv<T extends z.ZodObject>(schema: T, label: string): z.infer<T> {
