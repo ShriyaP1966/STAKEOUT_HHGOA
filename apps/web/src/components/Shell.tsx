@@ -235,14 +235,15 @@ export function Shell({ children }: { children: ReactNode }) {
           <div className="max-w-2xl space-y-2 text-[15px] leading-relaxed text-fg-muted">
             <p className="font-medium text-fg">Stakeout is a testnet prototype. Do not use real funds.</p>
             <p className="break-words">
-              Data source: {config.dataSource}. Contracts from {config.deploymentFile}, deployed {config.deployment.deployedAt}.
+              Data source: {config.dataSource}. Contracts from {config.deploymentFile},{" "}
+              <span className="whitespace-nowrap">deployed {config.deployment.deployedAt}.</span>
             </p>
           </div>
           <nav aria-label="Footer" className="w-full max-w-3xl border-t border-line pt-6">
-            <ul className="flex flex-wrap justify-center gap-x-2 gap-y-1">
+            <ul className="flex flex-wrap justify-center gap-x-1 gap-y-1 sm:gap-x-2">
               {FOOTER_LINKS.map((link) => (
                 <li key={link.href}>
-                  <Link href={link.href} className="flex min-h-11 items-center rounded-md px-4 text-[15px] text-fg hover:bg-sunken">
+                  <Link href={link.href} className="flex min-h-11 items-center rounded-md px-2.5 text-[15px] text-fg hover:bg-sunken sm:px-4">
                     {link.label}
                   </Link>
                 </li>
