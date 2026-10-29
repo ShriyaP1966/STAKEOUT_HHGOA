@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { DocPage, Pending, type DocSection } from "@/components/DocPage";
+import { CONTACT_EMAIL } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Terms",
@@ -122,7 +123,11 @@ const SECTIONS: DocSection[] = [
     heading: "Contact",
     body: (
       <p>
-        Questions about these terms: <Pending>team contact email to be confirmed</Pending>. See also the{" "}
+        Questions about these terms:{" "}
+        <a href={`mailto:${CONTACT_EMAIL}`} className="break-all underline underline-offset-4">
+          {CONTACT_EMAIL}
+        </a>
+        . See also the{" "}
         <Link href="/privacy" className="underline underline-offset-4">
           Privacy
         </Link>{" "}

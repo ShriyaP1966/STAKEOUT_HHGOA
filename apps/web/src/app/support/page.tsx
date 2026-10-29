@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRightIcon, ExternalIcon } from "@/components/icons";
 import { Notice, PageHeader, Section } from "@/components/ui";
+import { CONTACT_EMAIL } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Help and contact",
@@ -9,7 +10,6 @@ export const metadata: Metadata = {
 };
 
 const ISSUES_URL = "https://github.com/ShriyaP1966/STAKEOUT_HHGOA/issues";
-const CONTACT_EMAIL = "stakeout202@gmail.com";
 
 const linkClass = "font-semibold underline underline-offset-4";
 
