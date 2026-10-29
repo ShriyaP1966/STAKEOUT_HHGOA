@@ -4,7 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { isHex, size, type Hex } from "viem";
 import { useAppConfig } from "@/components/AppConfigContext";
-import { Empty, ErrorPanel, ExplorerLink, Loading, Mono, Section } from "@/components/ui";
+import { CheckIcon, CrossIcon, InfoIcon } from "@/components/icons";
+import { buttonClass, Empty, ErrorPanel, ExplorerLink, inputClass, Loading, Mono, PageHeader } from "@/components/ui";
 import { combinedAbi } from "@/lib/abi";
 import { backend, BackendError } from "@/lib/backend";
 import { decodeError } from "@/lib/errors";
@@ -17,14 +18,21 @@ function isBytes32(value: string): value is Hex {
 }
 
 function Result({ ok, title, children }: { ok: boolean | null; title: string; children: ReactNode }) {
-  const style = ok === null ? "border-slate-300 bg-slate-50" : ok ? "border-emerald-300 bg-emerald-50" : "border-red-300 bg-red-50";
-  const mark = ok === null ? "–" : ok ? "Pass" : "Fail";
+  const style = ok === null ? "border-line bg-surface text-fg" : ok ? "border-ok-line bg-ok-bg text-ok-fg" : "border-danger-line bg-danger-bg text-danger-fg";
+  const mark = ok === null ? "Unknown" : ok ? "Pass" : "Fail";
+  const Icon = ok === null ? InfoIcon : ok ? CheckIcon : CrossIcon;
   return (
-    <div className={`rounded-md border p-3 text-sm ${style}`}>
-      <p className="font-semibold">
-        {mark}: {title}
-      </p>
-      <div className="mt-1 space-y-1 break-words">{children}</div>
+    <div className={`flex gap-4 rounded-lg border p-4 sm:p-5 ${style}`}>
+      <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-current/30">
+        <Icon size={18} />
+      </span>
+      <div className="min-w-0 space-y-1">
+        <p className="text-base font-bold">
+          <span className="sr-only">{mark}: </span>
+          {title}
+        </p>
+        <div className="space-y-1 text-sm leading-relaxed break-words">{children}</div>
+      </div>
     </div>
   );
 }
@@ -137,29 +145,41 @@ export default function VerifyPage() {
   };
 
   return (
-    <Section title="Verify evidence">
-      <form className="flex flex-col gap-2 sm:flex-row" onSubmit={onSubmit}>
-        <label className="sr-only" htmlFor="hash">
+    <>
+      <PageHeader
+        title="Verify evidence"
+        description="Anyone can check that evidence was not changed after it was recorded. This page fetches the stored bundle, hashes it again in your browser, and compares it with the hash on chain."
+      />
+      <form className="rounded-lg border border-line bg-surface p-5 sm:p-6" onSubmit={onSubmit} noValidate>
+        <label className="mb-1.5 block text-sm font-semibold text-fg" htmlFor="hash">
           Evidence or complaint hash
         </label>
-        <input
-          id="hash"
-          placeholder="Evidence or complaint hash (0x…)"
-          value={input}
-          onChange={(event) => setInput(event.target.value)}
-          autoComplete="off"
-          spellCheck={false}
-          className="w-full rounded-md border border-slate-300 px-3 py-2 font-mono text-sm"
-        />
-        <button type="submit" className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700">
-          Verify
-        </button>
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <input
+            id="hash"
+            placeholder="0x followed by 64 hex characters"
+            value={input}
+            onChange={(event) => setInput(event.target.value)}
+            autoComplete="off"
+            spellCheck={false}
+            aria-invalid={inputError !== null}
+            aria-describedby={inputError ? "hash-error" : undefined}
+            className={`${inputClass} font-mono`}
+          />
+          <button type="submit" className={buttonClass("primary")}>
+            Verify
+          </button>
+        </div>
+        {inputError && (
+          <p id="hash-error" className="mt-2 text-sm text-danger-fg">
+            {inputError}
+          </p>
+        )}
       </form>
-      {inputError && <p className="mt-2 text-sm text-red-700">{inputError}</p>}
-      <div className="mt-4">
+      <div aria-live="polite">
         {hash === undefined && !inputError && <Empty label="Enter a hash to check it against the chain and the backend." />}
         {hash !== undefined && <Results key={hash} hash={hash} />}
       </div>
-    </Section>
+    </>
   );
 }

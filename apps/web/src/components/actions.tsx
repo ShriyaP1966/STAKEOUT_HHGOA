@@ -2,7 +2,7 @@
 
 import { formatEther } from "viem";
 import { useAppConfig } from "@/components/AppConfigContext";
-import { ErrorPanel, ExplorerLink, Section } from "@/components/ui";
+import { buttonClass, ErrorPanel, ExplorerLink, Section } from "@/components/ui";
 import { combinedAbi, stakeoutAbi } from "@/lib/abi";
 import {
   anyoneGate,
@@ -25,7 +25,7 @@ type Action = ReturnType<typeof useContractAction>;
 function TxFeedback({ action }: { action: Action }) {
   if (action.isPending) {
     return (
-      <p role="status" className="text-xs text-slate-600">
+      <p role="status" className="text-sm text-fg-muted">
         {action.hash ? (
           <>
             Waiting for confirmation of <ExplorerLink kind="tx" value={action.hash} />
@@ -38,7 +38,7 @@ function TxFeedback({ action }: { action: Action }) {
   }
   if (action.isSuccess) {
     return (
-      <p role="status" className="text-xs text-emerald-800">
+      <p role="status" className="text-sm text-ok-fg">
         Confirmed in <ExplorerLink kind="tx" value={action.data} />
       </p>
     );
@@ -49,7 +49,7 @@ function TxFeedback({ action }: { action: Action }) {
       <div className="space-y-1">
         <ErrorPanel error={decodeError(action.error, combinedAbi)} />
         {failedHash && (
-          <p className="text-xs text-red-800">
+          <p className="text-sm text-danger-fg">
             Failed transaction <ExplorerLink kind="tx" value={failedHash} />
           </p>
         )}
@@ -63,27 +63,27 @@ function GatedButton({ gate, label, action, onClick }: { gate: Gate; label: stri
   const mounted = useMounted();
   if (!mounted) return null;
   return (
-    <div className="space-y-1">
+    <div className="space-y-2">
       {gate.visible && (
         <button
           type="button"
           disabled={!gate.enabled || action.isPending}
           onClick={onClick}
-          className="rounded-md bg-indigo-600 px-3 py-1 text-xs font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+          className={buttonClass("primary", "sm")}
         >
           {action.isPending ? `${label}…` : label}
         </button>
       )}
-      {gate.reason && <p className="text-xs text-slate-500">{gate.reason}</p>}
+      {gate.reason && <p className="text-sm text-fg-muted">{gate.reason}</p>}
       <TxFeedback action={action} />
     </div>
   );
 }
 
 function StakeNote({ minStake }: { minStake: bigint | undefined }) {
-  if (minStake === undefined) return <p className="text-xs text-slate-500">Reading the minimum stake from the contract…</p>;
+  if (minStake === undefined) return <p className="text-sm text-fg-muted">Reading the minimum stake from the contract…</p>;
   return (
-    <p className="text-xs text-slate-600">
+    <p className="text-sm text-fg-muted">
       Stake: {formatEther(minStake)} {NATIVE_CURRENCY.symbol} (minStake on the contract)
     </p>
   );
@@ -99,7 +99,7 @@ export function PromoteAction({ reportId, targetStatus }: { reportId: bigint; ta
     targetStatus === undefined ? "Reading the target's current status." : minStake.data === undefined ? "Reading the minimum stake." : promoteBlocker(targetStatus);
   const gate = reporterGate(wallet, isReporter.data, blocker);
   return (
-    <div className="space-y-1">
+    <div className="space-y-2">
       {gate.visible && <StakeNote minStake={minStake.data} />}
       <GatedButton
         gate={gate}
@@ -135,7 +135,7 @@ export function ChallengeAction({ flagId, flag }: { flagId: bigint; flag: FlagFa
         : challengeBlocker(flag, account, now);
   const gate = reporterGate(wallet, isReporter.data, blocker);
   return (
-    <div className="space-y-1">
+    <div className="space-y-2">
       {gate.visible && <StakeNote minStake={minStake.data} />}
       <GatedButton
         gate={gate}
@@ -182,10 +182,10 @@ export function WithdrawPanel() {
   const action = useContractAction();
   const gate = anyoneGate(wallet, withdrawBlocker(credits.data));
   return (
-    <Section title="Your withdrawable credit">
+    <Section title="Your withdrawable credit" description="Returned stakes and rewards wait here until you withdraw them to your wallet.">
       {mounted && account !== undefined && credits.isError && <ErrorPanel error={decodeError(credits.error, combinedAbi)} />}
       {mounted && account !== undefined && credits.isSuccess && (
-        <p className="mb-2 text-2xl font-semibold">
+        <p className="mb-4 font-mono text-3xl font-semibold tabular-nums">
           {formatEther(credits.data)} {NATIVE_CURRENCY.symbol}
         </p>
       )}

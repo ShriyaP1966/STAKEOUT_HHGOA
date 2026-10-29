@@ -6,7 +6,7 @@ import type { Address } from "viem";
 import { useAccount, useWriteContract } from "wagmi";
 import { VoiceInput } from "@shared/ui/VoiceInput";
 import { useAppConfig } from "@/components/AppConfigContext";
-import { ErrorPanel, ExplorerLink, Field, Loading, Mono, Section } from "@/components/ui";
+import { buttonClass, ErrorPanel, ExplorerLink, Field, inputClass, Loading, Mono, Notice, PageHeader, Section } from "@/components/ui";
 import { combinedAbi } from "@/lib/abi";
 import { findAddresses } from "@/lib/address-pick";
 import { backend, BackendError, candidatesOf } from "@/lib/backend";
@@ -59,9 +59,18 @@ export default function ReportPage() {
 
   return (
     <>
-      <Section title="Report a scam">
+      <PageHeader
+        title="Report a scam"
+        description="Reporting is free. Only the scam address and a hash of your complaint go on chain. The complaint text stays with the backend."
+      />
+      <ol className="flex flex-wrap gap-2 text-sm" aria-label="Progress">
+        <li className={`rounded-sm border px-3 py-1.5 font-semibold ${extract.data ? "border-line bg-surface text-fg-muted" : "border-fg bg-brand text-brand-fg"}`}>1. Describe</li>
+        <li className={`rounded-sm border px-3 py-1.5 font-semibold ${extract.data && !send.isSuccess ? "border-fg bg-brand text-brand-fg" : "border-line bg-surface text-fg-muted"}`}>2. Check details</li>
+        <li className={`rounded-sm border px-3 py-1.5 font-semibold ${send.isSuccess ? "border-fg bg-brand text-brand-fg" : "border-line bg-surface text-fg-muted"}`}>3. Submit on chain</li>
+      </ol>
+      <Section title="What happened?" description="Include the address you sent funds to, the amount, and roughly when it happened.">
         <form
-          className="space-y-3"
+          className="space-y-4"
           onSubmit={(event) => {
             event.preventDefault();
             send.reset();
@@ -73,25 +82,28 @@ export default function ReportPage() {
             extract.mutate({ text, targetAddress: choices.length > 1 ? selected : undefined });
           }}
         >
-          <label htmlFor="complaint" className="block text-sm font-medium text-slate-700">
-            Describe what happened, including the address you sent funds to
+          <label htmlFor="complaint" className="block text-sm font-semibold text-fg">
+            Your complaint
           </label>
           <textarea
             id="complaint"
             rows={6}
             value={text}
             onChange={(event) => setText(event.target.value)}
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            className={`${inputClass} leading-relaxed`}
           />
-          <VoiceInput lang={config.voiceLang} onText={(spoken) => setText(spoken)} />
+          <div className="text-sm text-fg-muted [&>div]:flex [&>div]:flex-wrap [&>div]:items-center [&>div]:gap-3 [&_p]:basis-full [&_button]:inline-flex [&_button]:min-h-11 [&_button]:items-center [&_button]:rounded-md [&_button]:border [&_button]:border-line-strong [&_button]:bg-surface [&_button]:px-4 [&_button]:font-semibold [&_button]:text-fg [&_button]:transition-colors [&_button:hover]:bg-sunken [&_p]:mt-2 [&_p]:text-danger-fg">
+            <VoiceInput lang={config.voiceLang} onText={(spoken) => setText(spoken)} />
+          </div>
           {choices.length > 1 && (
-            <fieldset className="space-y-2 rounded-md border border-amber-300 bg-amber-50 p-3">
-              <legend className="px-1 text-sm font-medium text-amber-900">
+            <fieldset className="space-y-2 rounded-md border border-warn-line bg-warn-bg p-4 text-warn-fg">
+              <legend className="px-1 text-sm font-semibold">
                 Your text has {choices.length} wallet addresses. Which one received the money?
               </legend>
               {choices.map((candidate) => (
-                <label key={candidate} className="flex items-center gap-2 text-sm">
+                <label key={candidate} className="flex min-h-11 items-center gap-3 rounded-md border border-line bg-surface px-3 text-sm text-fg">
                   <input
+                    className="h-4 w-4 accent-[var(--fg)]"
                     type="radio"
                     name="target"
                     value={candidate}
@@ -101,34 +113,35 @@ export default function ReportPage() {
                       setNeedsChoice(false);
                     }}
                   />
-                  <span className="font-mono text-xs break-all">{candidate}</span>
+                  <span className="font-mono text-[13px] break-all">{candidate}</span>
                 </label>
               ))}
-              {needsChoice && <p className="text-sm text-red-700">Choose the receiving address before extracting.</p>}
+              {needsChoice && <p className="text-sm font-semibold text-danger-fg">Choose the receiving address before extracting.</p>}
             </fieldset>
           )}
           <button
             type="submit"
             disabled={text.trim() === "" || extract.isPending}
-            className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50"
+            className={buttonClass("primary")}
           >
-            {extract.isPending ? "Extracting…" : "Extract complaint"}
+            {extract.isPending ? "Extracting…" : "Extract details"}
           </button>
+          <p className="text-sm text-fg-muted">An AI model reads your words and pulls out the address, amount and time. Addresses are checked by code, never by the AI.</p>
         </form>
-        <div className="mt-4">
+        <div className="mt-4" aria-live="polite">
           {extract.isError && <ErrorPanel error={describe(extract.error)} />}
         </div>
       </Section>
 
       {extract.isPending && (
         <Section title="Structured complaint">
-          <Loading label="The backend is extracting the complaint…" />
+          <Loading label="The backend is reading your complaint…" />
         </Section>
       )}
 
       {extract.data && hashCheck && (
-        <Section title="Structured complaint">
-          <dl className="space-y-2">
+        <Section title="Check the details" description="Make sure these match what happened before you submit.">
+          <dl>
             <Field label="Target address">
               <ExplorerLink kind="address" value={extract.data.complaint.targetAddress} />
             </Field>
@@ -144,9 +157,9 @@ export default function ReportPage() {
           </dl>
           <div className="mt-4">
             {hashCheck.matches ? (
-              <p role="status" className="text-sm text-emerald-800">
-                Recomputed hash matches the backend&apos;s complaint hash.
-              </p>
+              <Notice tone="ok" title="Hash matches the backend">
+                This app recomputed the complaint hash and got the same value the backend stored.
+              </Notice>
             ) : (
               <ErrorPanel
                 error={{
@@ -157,24 +170,24 @@ export default function ReportPage() {
             )}
           </div>
           {hashCheck.matches && (
-            <div className="mt-4 space-y-2">
-              <p className="text-sm text-slate-600">
-                Only the address and the complaint hash go on-chain. The complaint text stays in the backend.
+            <div className="mt-5 space-y-3 border-t border-line pt-5" aria-live="polite">
+              <p className="text-sm text-fg-muted">
+                Free, with no stake. You only pay network gas. Only the address and the complaint hash go on chain.
               </p>
               <button
                 type="button"
                 disabled={sendBlocked !== undefined || send.isPending || send.isSuccess}
                 onClick={() => send.mutate()}
-                className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+                className={buttonClass("accent")}
               >
-                {send.isPending ? "Submitting…" : "Submit report on-chain"}
+                {send.isPending ? "Submitting…" : send.isSuccess ? "Report submitted" : "Submit report on-chain"}
               </button>
-              {sendBlocked && <p className="text-sm text-slate-600">{sendBlocked}</p>}
+              {sendBlocked && <p className="text-sm text-fg-muted">{sendBlocked}</p>}
               {send.isError && <ErrorPanel error={describe(send.error)} />}
               {send.isSuccess && (
-                <p role="status" className="text-sm text-emerald-800">
-                  Report submitted. Transaction <ExplorerLink kind="tx" value={send.data} />
-                </p>
+                <Notice tone="ok" title="Report submitted">
+                  Transaction <ExplorerLink kind="tx" value={send.data} />
+                </Notice>
               )}
             </div>
           )}

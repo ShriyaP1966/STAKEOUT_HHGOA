@@ -1,0 +1,3246 @@
+diff --git a/apps/web/.env.example b/apps/web/.env.example
+index fe3ec00..84b06c6 100644
+--- a/apps/web/.env.example
++++ b/apps/web/.env.example
+@@ -5,3 +5,4 @@ NEXT_PUBLIC_DEPLOYMENT=
+ NEXT_PUBLIC_DATA_SOURCE=
+ NEXT_PUBLIC_BACKEND_URL=
+ NEXT_PUBLIC_VOICE_LANG=
++NEXT_PUBLIC_SITE_URL=
+diff --git a/apps/web/package.json b/apps/web/package.json
+index 9bb05db..8f45f05 100644
+--- a/apps/web/package.json
++++ b/apps/web/package.json
+@@ -12,6 +12,8 @@
+     "test": "vitest run"
+   },
+   "dependencies": {
++    "@fontsource-variable/jetbrains-mono": "5.3.0",
++    "@fontsource-variable/space-grotesk": "5.3.0",
+     "@tanstack/react-query": "5.105.0",
+     "next": "16.4.3",
+     "react": "19.3.1",
+diff --git a/apps/web/src/app/apple-icon.png b/apps/web/src/app/apple-icon.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..a5d2e222b633e72f3e6eb9f93f4d9c982a67aa4d
+GIT binary patch
+literal 7144
+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
+
+literal 0
+HcmV?d00001
+
+diff --git a/apps/web/src/app/dashboard/layout.tsx b/apps/web/src/app/dashboard/layout.tsx
+new file mode 100644
+index 0000000..aef4313
+--- /dev/null
++++ b/apps/web/src/app/dashboard/layout.tsx
+@@ -0,0 +1,11 @@
++import type { Metadata } from "next";
++import type { ReactNode } from "react";
++
++export const metadata: Metadata = {
++  title: "Dashboard",
++  description: "Reports, flags, confirmed clusters and reward payouts read from Stakeout contract events.",
++};
++
++export default function Layout({ children }: { children: ReactNode }) {
++  return children;
++}
+diff --git a/apps/web/src/app/dashboard/page.tsx b/apps/web/src/app/dashboard/page.tsx
+index 6908883..d7184fb 100644
+--- a/apps/web/src/app/dashboard/page.tsx
++++ b/apps/web/src/app/dashboard/page.tsx
+@@ -3,33 +3,33 @@
+ import { formatEther, zeroAddress, type Address } from "viem";
+ import { FlagState, Role } from "@shared/enums";
+ import { ChallengeAction, ExpireAction, PromoteAction, WithdrawPanel } from "@/components/actions";
+-import { Countdown, Empty, ErrorPanel, ExplorerLink, Loading, Mono, RefreshButton, Section } from "@/components/ui";
++import { Countdown, Empty, ErrorPanel, ExplorerLink, Loading, Mono, PageHeader, RefreshButton, Section, Tag } from "@/components/ui";
+ import { combinedAbi } from "@/lib/abi";
+ import { isLive } from "@/lib/action-rules";
+ import { NATIVE_CURRENCY } from "@/lib/chain";
+ import type { StatusResult } from "@/lib/contract";
+ import { decodeError } from "@/lib/errors";
+ import type { ClusterRow, FlagRow, ReportRow, RewardRow } from "@/lib/events";
+-import { useFlagStates, useStakeoutIndex, useStatuses } from "@/lib/hooks";
++import { useFlagStates, useRewardPool, useStakeoutIndex, useStatuses } from "@/lib/hooks";
+ import { useNowSeconds } from "@/lib/now";
+ 
+ function Reports({ reports, statuses }: { reports: ReportRow[]; statuses: Map<Address, StatusResult> | undefined }) {
+   if (reports.length === 0) return <Empty label="No reports yet." />;
+   return (
+-    <ul className="divide-y divide-slate-100">
++    <ul className="divide-y divide-line">
+       {[...reports].reverse().map((report) => (
+-        <li key={report.reportId.toString()} className="space-y-1 py-3">
+-          <p className="text-sm font-medium">Report #{report.reportId.toString()}</p>
+-          <p className="text-xs text-slate-600">
++        <li key={report.reportId.toString()} className="space-y-1.5 py-4 first:pt-0 last:pb-0">
++          <p className="font-semibold text-fg">Report #{report.reportId.toString()}</p>
++          <p className="text-sm text-fg-muted">
+             Target <ExplorerLink kind="address" value={report.target} />
+           </p>
+-          <p className="text-xs text-slate-600">
++          <p className="text-sm text-fg-muted">
+             Reporter <ExplorerLink kind="address" value={report.reporter} />
+           </p>
+-          <p className="text-xs text-slate-600">
++          <p className="text-sm text-fg-muted">
+             Evidence hash <Mono>{report.evidenceHash}</Mono>
+           </p>
+-          <p className="text-xs text-slate-600">
++          <p className="text-sm text-fg-muted">
+             Block {report.ref.blockNumber.toString()}, tx <ExplorerLink kind="tx" value={report.ref.transactionHash} />
+           </p>
+           <PromoteAction reportId={report.reportId} targetStatus={statuses?.get(report.target)?.status} />
+@@ -46,37 +46,37 @@ function Flags({ flags }: { flags: FlagRow[] }) {
+   if (states.isPending) return <Loading label="Reading flag states…" />;
+   if (states.isError) return <ErrorPanel error={decodeError(states.error, combinedAbi)} />;
+   return (
+-    <ul className="divide-y divide-slate-100">
++    <ul className="divide-y divide-line">
+       {[...flags].reverse().map((flag) => {
+         const state = states.data.get(flag.flagId.toString());
+         if (!state) return null;
+         const live = now !== 0 && isLive(state, now);
+         const challenged = state.state === FlagState.Active && state.challenger !== zeroAddress;
+         return (
+-          <li key={flag.flagId.toString()} className="space-y-1 py-3">
+-            <p className="flex flex-wrap items-center gap-2 text-sm font-medium">
++          <li key={flag.flagId.toString()} className="space-y-1.5 py-4 first:pt-0 last:pb-0">
++            <p className="flex flex-wrap items-center gap-2 font-semibold text-fg">
+               Flag #{flag.flagId.toString()}
+-              <span className="rounded bg-slate-100 px-2 py-0.5 text-xs">{FlagState[state.state]}</span>
+-              {live && <span className="rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-900">Live</span>}
+-              {challenged && <span className="rounded bg-violet-100 px-2 py-0.5 text-xs text-violet-900">Challenged</span>}
++              <Tag>{FlagState[state.state]}</Tag>
++              {live && <Tag tone="warn">Live</Tag>}
++              {challenged && <Tag tone="info">Challenged</Tag>}
+             </p>
+-            <p className="text-xs text-slate-600">
++            <p className="text-sm text-fg-muted">
+               Target <ExplorerLink kind="address" value={flag.target} />
+             </p>
+-            <p className="text-xs text-slate-600">
++            <p className="text-sm text-fg-muted">
+               Flagger <ExplorerLink kind="address" value={flag.flagger} /> staked {formatEther(state.stake)}{" "}
+               {NATIVE_CURRENCY.symbol} on report #{flag.reportId.toString()}
+             </p>
+             {state.state === FlagState.Active && !challenged && (
+-              <p className="text-xs text-slate-600">
++              <p className="text-sm text-fg-muted">
+                 Lapses in <Countdown expiresAt={state.expiresAt} />
+               </p>
+             )}
+-            <p className="text-xs text-slate-600">
++            <p className="text-sm text-fg-muted">
+               Promoted in block {flag.ref.blockNumber.toString()}, tx{" "}
+               <ExplorerLink kind="tx" value={flag.ref.transactionHash} />
+             </p>
+-            <div className="flex flex-col gap-3 pt-1 sm:flex-row">
++            <div className="flex flex-col gap-4 pt-2 sm:flex-row">
+               <ChallengeAction flagId={flag.flagId} flag={state} />
+               <ExpireAction flagId={flag.flagId} flag={state} />
+             </div>
+@@ -92,23 +92,24 @@ function Clusters({ clusters }: { clusters: ClusterRow[] }) {
+   return (
+     <ul className="space-y-4">
+       {clusters.map((cluster) => (
+-        <li key={cluster.clusterId} className="rounded-md border border-slate-200 p-3">
+-          <p className="text-sm font-medium">
++        <li key={cluster.clusterId} className="rounded-md border border-line bg-surface-2 p-4">
++          <p className="flex flex-wrap items-center gap-2 font-semibold text-fg">
++            <Tag tone="danger">Confirmed</Tag>
+             Cluster <Mono>{cluster.clusterId}</Mono>
+           </p>
+-          <p className="text-xs text-slate-600">
++          <p className="text-sm text-fg-muted">
+             First confirmed in block {cluster.ref.blockNumber.toString()}, tx{" "}
+             <ExplorerLink kind="tx" value={cluster.ref.transactionHash} />
+           </p>
+-          <ul className="mt-2 divide-y divide-slate-100">
++          <ul className="mt-3 divide-y divide-line">
+             {cluster.entries.map((entry) => (
+-              <li key={`${entry.address}-${entry.ref.transactionHash}-${entry.ref.logIndex}`} className="space-y-1 py-2">
+-                <p className="flex flex-wrap items-center gap-2 text-xs">
+-                  <span className="rounded bg-slate-100 px-2 py-0.5">{Role[entry.role]}</span>
+-                  {entry.removed && <span className="rounded bg-slate-200 px-2 py-0.5">Removed</span>}
++              <li key={`${entry.address}-${entry.ref.transactionHash}-${entry.ref.logIndex}`} className="space-y-1 py-3">
++                <p className="flex flex-wrap items-center gap-2 text-sm">
++                  <Tag>{Role[entry.role]}</Tag>
++                  {entry.removed && <Tag tone="info">Removed</Tag>}
+                   <ExplorerLink kind="address" value={entry.address} />
+                 </p>
+-                <p className="text-xs text-slate-600">
++                <p className="text-sm text-fg-muted">
+                   Evidence hash <Mono>{entry.evidenceHash}</Mono>, tx{" "}
+                   <ExplorerLink kind="tx" value={entry.ref.transactionHash} />
+                 </p>
+@@ -124,16 +125,16 @@ function Clusters({ clusters }: { clusters: ClusterRow[] }) {
+ function Activity({ rewards }: { rewards: RewardRow[] }) {
+   if (rewards.length === 0) return <Empty label="No reward payouts yet." />;
+   return (
+-    <ul className="divide-y divide-slate-100">
++    <ul className="divide-y divide-line">
+       {[...rewards].reverse().map((reward) => (
+-        <li key={`${reward.ref.transactionHash}-${reward.ref.logIndex}`} className="space-y-1 py-3">
+-          <p className="text-sm font-medium">
++        <li key={`${reward.ref.transactionHash}-${reward.ref.logIndex}`} className="space-y-1.5 py-4 first:pt-0 last:pb-0">
++          <p className="font-semibold text-fg">
+             Reward paid: {formatEther(reward.amount)} {NATIVE_CURRENCY.symbol}
+           </p>
+-          <p className="text-xs text-slate-600">
++          <p className="text-sm text-fg-muted">
+             Recipient <ExplorerLink kind="address" value={reward.recipient} />
+           </p>
+-          <p className="text-xs text-slate-600">
++          <p className="text-sm text-fg-muted">
+             Block {reward.ref.blockNumber.toString()}, tx <ExplorerLink kind="tx" value={reward.ref.transactionHash} />
+           </p>
+         </li>
+@@ -142,38 +143,73 @@ function Activity({ rewards }: { rewards: RewardRow[] }) {
+   );
+ }
+ 
++function Tile({ label, value, emphasis }: { label: string; value: string; emphasis?: boolean }) {
++  return (
++    <div className={`space-y-1 p-5 ${emphasis ? "bg-header text-header-fg" : "bg-surface text-fg"}`}>
++      <p className={`text-sm ${emphasis ? "text-header-muted" : "text-fg-muted"}`}>{label}</p>
++      <p className={`font-mono text-3xl font-semibold tabular-nums ${emphasis ? "text-accent" : ""}`}>{value}</p>
++    </div>
++  );
++}
++
++function Summary({ reports, flags, clusters }: { reports: number; flags: number; clusters: number }) {
++  const pool = useRewardPool();
++  const poolValue = pool.isSuccess ? `${formatEther(pool.data)} ${NATIVE_CURRENCY.symbol}` : pool.isError ? "Unavailable" : "…";
++  return (
++    <div className="grid gap-px overflow-hidden rounded-lg border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
++      <Tile label="Reports" value={reports.toString()} />
++      <Tile label="Flags" value={flags.toString()} />
++      <Tile label="Confirmed clusters" value={clusters.toString()} />
++      <Tile label="Reward pool" value={poolValue} emphasis />
++    </div>
++  );
++}
++
+ export default function DashboardPage() {
+   const index = useStakeoutIndex();
+   const statuses = useStatuses(index.data?.reports.map((report) => report.target) ?? []);
+   const refresh = <RefreshButton onClick={() => index.refetch()} busy={index.isFetching} />;
++  const header = (
++    <PageHeader
++      title="Dashboard"
++      description="Everything on this page is read from Stakeout contract events, starting at the deployment block."
++      action={index.isPending ? undefined : refresh}
++    />
++  );
+   if (index.isPending) {
+     return (
+-      <Section title="Dashboard">
+-        <Loading label="Reading contract events…" />
+-      </Section>
++      <>
++        {header}
++        <Section title="Loading">
++          <Loading label="Reading contract events…" />
++        </Section>
++      </>
+     );
+   }
+   if (index.isError) {
+     return (
+-      <Section title="Dashboard" action={refresh}>
++      <>
++        {header}
+         <ErrorPanel error={decodeError(index.error, combinedAbi)} />
+-      </Section>
++      </>
+     );
+   }
+   return (
+     <>
++      {header}
++      <Summary reports={index.data.reports.length} flags={index.data.flags.length} clusters={index.data.clusters.length} />
+       <WithdrawPanel />
+-      <Section title={`Reports (${index.data.reports.length})`} action={refresh}>
++      <Section title={`Reports (${index.data.reports.length})`} description="Free reports. A verified reporter can promote one into a flag with a stake.">
+         {statuses.isError && <ErrorPanel error={decodeError(statuses.error, combinedAbi)} />}
+         <Reports reports={index.data.reports} statuses={statuses.data} />
+       </Section>
+-      <Section title={`Flags (${index.data.flags.length})`}>
++      <Section title={`Flags (${index.data.flags.length})`} description="Staked flags. A flag lapses and returns its stake unless it is confirmed or challenged first.">
+         <Flags flags={index.data.flags} />
+       </Section>
+-      <Section title={`Clusters (${index.data.clusters.length})`}>
++      <Section title={`Clusters (${index.data.clusters.length})`} description="Confirmed scam clusters with their members, exit points and linked wallets.">
+         <Clusters clusters={index.data.clusters} />
+       </Section>
+-      <Section title={`Activity: reward payouts (${index.data.rewards.length})`}>
++      <Section title={`Reward payouts (${index.data.rewards.length})`} description="Rewards paid from slashed stakes by the reviewer multisig.">
+         <Activity rewards={index.data.rewards} />
+       </Section>
+     </>
+diff --git a/apps/web/src/app/decisions/layout.tsx b/apps/web/src/app/decisions/layout.tsx
+new file mode 100644
+index 0000000..c4539e7
+--- /dev/null
++++ b/apps/web/src/app/decisions/layout.tsx
+@@ -0,0 +1,11 @@
++import type { Metadata } from "next";
++import type { ReactNode } from "react";
++
++export const metadata: Metadata = {
++  title: "Verifier decisions",
++  description: "What the verifier checked, which rule applied and whether it sent a transaction.",
++};
++
++export default function Layout({ children }: { children: ReactNode }) {
++  return children;
++}
+diff --git a/apps/web/src/app/decisions/page.tsx b/apps/web/src/app/decisions/page.tsx
+index 0c42e1f..bb79b1f 100644
+--- a/apps/web/src/app/decisions/page.tsx
++++ b/apps/web/src/app/decisions/page.tsx
+@@ -2,17 +2,25 @@
+ 
+ import { useQuery } from "@tanstack/react-query";
+ import { isAddress, isHex, size } from "viem";
+-import { Empty, ErrorPanel, ExplorerLink, Field, Loading, Mono, RefreshButton, Section } from "@/components/ui";
++import { Empty, ErrorPanel, ExplorerLink, Field, Loading, Mono, PageHeader, RefreshButton, Section, Tag, type Tone } from "@/components/ui";
+ import { backend, BackendError } from "@/lib/backend";
+ import { combinedAbi } from "@/lib/abi";
+ import { decodeError } from "@/lib/errors";
+ 
++const OUTCOME_TONE: Record<string, Tone> = { sent: "ok", refused: "danger", skipped: "neutral" };
++
+ export default function DecisionsPage() {
+   const decisions = useQuery({ queryKey: ["decisions"], queryFn: () => backend.decisions() });
+   const refresh = <RefreshButton onClick={() => decisions.refetch()} busy={decisions.isFetching} />;
+ 
+   return (
+-    <Section title="Verifier decisions" action={refresh}>
++    <>
++    <PageHeader
++      title="Verifier decisions"
++      description="Every time the verifier checks a promoted flag it records what it checked, which rule applied and whether it sent a transaction. Refusals are shown too."
++      action={refresh}
++    />
++    <Section title="Decision log">
+       {decisions.isPending && <Loading label="Reading decisions from the backend…" />}
+       {decisions.isError && (
+         <ErrorPanel
+@@ -21,19 +29,23 @@ export default function DecisionsPage() {
+       )}
+       {decisions.isSuccess && (
+         <>
+-          <p className="mb-3 text-xs text-slate-500">Data source: {decisions.data.dataSource}</p>
++          <p className="mb-4">
++            <Tag tone="warn">Data: {decisions.data.dataSource}</Tag>
++          </p>
+           {decisions.data.decisions.length === 0 ? (
+             <Empty label="The verifier has not handled any events yet." />
+           ) : (
+-            <ul className="divide-y divide-slate-100">
++            <ul className="space-y-4">
+               {decisions.data.decisions.map((decision) => (
+-                <li key={decision.id} className="py-3">
++                <li key={decision.id} className="rounded-md border border-line bg-surface-2 p-4">
+                   <dl className="space-y-1">
+                     <Field label="Target">
+                       {isAddress(decision.target) ? <ExplorerLink kind="address" value={decision.target} /> : <Mono>{decision.target}</Mono>}
+                     </Field>
+                     <Field label="Kind">{decision.kind}</Field>
+-                    <Field label="Outcome">{decision.outcome}</Field>
++                    <Field label="Outcome">
++                      <Tag tone={OUTCOME_TONE[decision.outcome] ?? "neutral"}>{decision.outcome}</Tag>
++                    </Field>
+                     <Field label="Rule">{decision.rule}</Field>
+                     <Field label="Reason">{decision.reason}</Field>
+                     <Field label="Created at">{decision.created_at}</Field>
+@@ -54,5 +66,6 @@ export default function DecisionsPage() {
+         </>
+       )}
+     </Section>
++    </>
+   );
+ }
+diff --git a/apps/web/src/app/faq/page.tsx b/apps/web/src/app/faq/page.tsx
+new file mode 100644
+index 0000000..ff2c9e2
+--- /dev/null
++++ b/apps/web/src/app/faq/page.tsx
+@@ -0,0 +1,199 @@
++import type { Metadata } from "next";
++import Link from "next/link";
++import type { ReactNode } from "react";
++import { ChevronIcon } from "@/components/icons";
++import { PageHeader } from "@/components/ui";
++
++export const metadata: Metadata = {
++  title: "FAQ",
++  description: "How Stakeout reports, flags and confirms scam wallets, and what each status means.",
++};
++
++const linkClass = "font-semibold underline underline-offset-4";
++
++const GROUPS: { title: string; items: { q: string; a: ReactNode }[] }[] = [
++  {
++    title: "General",
++    items: [
++      {
++        q: "What does Stakeout do?",
++        a: (
++          <p>
++            It tells you whether a wallet address has been reported, flagged by a staked reporter, or confirmed as part of a scam cluster, so you can stop
++            before sending money. The answer comes from the Stakeout contract, which any wallet or app can also query.
++          </p>
++        ),
++      },
++      {
++        q: "Is this live with real money?",
++        a: <p>No. Stakeout is a hackathon prototype on a public test network. Test tokens have no value. Do not send real funds through it.</p>,
++      },
++      {
++        q: "Do I need an account?",
++        a: (
++          <p>
++            No. There are no accounts or passwords. You can check any address without a wallet. Connect a wallet only to report, stake, challenge, withdraw or
++            send through the guard.
++          </p>
++        ),
++      },
++    ],
++  },
++  {
++    title: "Using Stakeout",
++    items: [
++      {
++        q: "How do I check an address?",
++        a: (
++          <p>
++            Open <Link href="/wallet" className={linkClass}>Check address</Link>, paste the address and press Check status. The result shows the status, the
++            evidence hash behind it and, for confirmed wallets, a plain-language summary of the evidence.
++          </p>
++        ),
++      },
++      {
++        q: "How do I report a scam?",
++        a: (
++          <p>
++            Open <Link href="/report" className={linkClass}>Report</Link> and describe what happened, typed or by voice. The backend extracts the address,
++            amount and time. You check the details, then submit. Reporting is free apart from network gas.
++          </p>
++        ),
++      },
++      {
++        q: "What is sending through StakeoutGuard?",
++        a: (
++          <p>
++            The guard is a small contract that forwards a payment only if the recipient is not Confirmed or Linked. If it is, the transaction reverts and
++            nothing leaves your wallet.
++          </p>
++        ),
++      },
++    ],
++  },
++  {
++    title: "Statuses, staking and flags",
++    items: [
++      {
++        q: "What do the five statuses mean?",
++        a: (
++          <ul>
++            <li>None: no reports, flags or cluster entries.</li>
++            <li>Reported: someone filed a free, unverified report.</li>
++            <li>Flagged: a verified reporter staked a deposit on a report. The flag lapses unless it is confirmed or challenged.</li>
++            <li>Confirmed: the address belongs to a confirmed scam cluster.</li>
++            <li>Linked: the address moves funds like a member of a confirmed cluster.</li>
++          </ul>
++        ),
++      },
++      {
++        q: "Who can promote a report into a flag?",
++        a: <p>Only verified reporters, approved by the reviewer multisig. They must stake the minimum deposit set in the contract.</p>,
++      },
++      {
++        q: "What happens if a flag is wrong?",
++        a: (
++          <p>
++            Another verified reporter can challenge it by staking at least the minimum deposit. The reviewer multisig resolves the challenge, and the losing side&apos;s stake
++            goes into the reward pool. If nobody acts before the time limit, the flag lapses and its stake is returned in full.
++          </p>
++        ),
++      },
++      {
++        q: "Can reports alone get a wallet confirmed?",
++        a: (
++          <p>
++            No. Confirmation needs the wallet&apos;s own behavior to match a scam pattern, such as rapid splitting, merging and forwarding to exit points.
++            Reports only add confidence. This makes it hard to frame an innocent wallet with fake reports.
++          </p>
++        ),
++      },
++    ],
++  },
++  {
++    title: "Security and privacy",
++    items: [
++      {
++        q: "Does Stakeout ever ask for my seed phrase?",
++        a: <p>Never. If anything claiming to be Stakeout asks for a seed phrase or private key, it is a scam.</p>,
++      },
++      {
++        q: "What goes on chain when I report?",
++        a: (
++          <p>
++            The reported address and a hash of your complaint record. The complaint text stays with the backend, but anyone with the hash can fetch it, so
++            leave out personal details. See <Link href="/privacy" className={linkClass}>Privacy</Link>.
++          </p>
++        ),
++      },
++      {
++        q: "What does the AI do?",
++        a: (
++          <p>
++            It reads complaints to extract the address, amount and time, and writes plain summaries of evidence. It never decides whether a wallet is
++            confirmed, and addresses are always checked by code.
++          </p>
++        ),
++      },
++      {
++        q: "How can I check that evidence was not edited?",
++        a: (
++          <p>
++            Paste the hash on <Link href="/verify" className={linkClass}>Verify</Link>. Your browser fetches the stored bundle, hashes it again and compares it
++            with the hash on chain. Any change, even one character, shows as a mismatch.
++          </p>
++        ),
++      },
++    ],
++  },
++  {
++    title: "Troubleshooting",
++    items: [
++      {
++        q: "The app says wrong network.",
++        a: <p>Your wallet is on a different chain. Use the Switch button in the yellow bar, or change the network in your wallet.</p>,
++      },
++      {
++        q: "A button is missing or disabled.",
++        a: (
++          <p>
++            Some actions are limited by role or timing. Promote and challenge need a verified reporter wallet. Expire works only after the time limit. The line
++            under each button explains why it is unavailable.
++          </p>
++        ),
++      },
++      {
++        q: "The backend cannot be reached.",
++        a: <p>Report, Verify, evidence summaries and Decisions need the backend. Checking an address and the dashboard work from the chain alone.</p>,
++      },
++    ],
++  },
++];
++
++export default function FaqPage() {
++  return (
++    <>
++      <PageHeader title="Frequently asked questions" description="Short answers about how Stakeout works. Each answer describes what the prototype actually does today." />
++      <div className="space-y-10">
++        {GROUPS.map((group, index) => (
++          <section key={group.title} aria-labelledby={`faq-group-${index}`} className="space-y-3">
++            <h2 id={`faq-group-${index}`} className="text-xl font-bold text-fg">
++              {group.title}
++            </h2>
++            <div className="divide-y divide-line rounded-lg border border-line bg-surface">
++              {group.items.map((item) => (
++                <details key={item.q} className="group">
++                  <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 font-semibold text-fg [&::-webkit-details-marker]:hidden">
++                    {item.q}
++                    <ChevronIcon className="shrink-0 text-fg-muted transition-transform duration-150 group-open:rotate-180" />
++                  </summary>
++                  <div className="space-y-2 px-5 pb-5 leading-relaxed text-fg-muted [&_li]:pl-1 [&_ul]:list-disc [&_ul]:space-y-1.5 [&_ul]:pl-5">{item.a}</div>
++                </details>
++              ))}
++            </div>
++          </section>
++        ))}
++      </div>
++    </>
++  );
++}
+diff --git a/apps/web/src/app/globals.css b/apps/web/src/app/globals.css
+index 4cbb9ee..146fd5d 100644
+--- a/apps/web/src/app/globals.css
++++ b/apps/web/src/app/globals.css
+@@ -1,6 +1,153 @@
+ @import "tailwindcss";
+ 
++@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
++
++:root {
++  --bg: #f5f1e8;
++  --surface: #ffffff;
++  --surface-2: #fbf9f4;
++  --sunken: #efeadf;
++  --fg: #0b1020;
++  --fg-muted: #4a4f5e;
++  --line: #e2dccf;
++  --line-strong: #cfc8ba;
++  --brand: #0b1020;
++  --brand-hover: #1c2336;
++  --brand-fg: #f5f1e8;
++  --accent: #ffb020;
++  --accent-hover: #f0a000;
++  --accent-fg: #0b1020;
++  --accent-text: #7a4f00;
++  --focus: #b86e00;
++  --ok-bg: #e6f4ec;
++  --ok-line: #9fd3b5;
++  --ok-fg: #14532d;
++  --info-bg: #e8f0fb;
++  --info-line: #a9c4ea;
++  --info-fg: #1f4e8a;
++  --warn-bg: #fff4db;
++  --warn-line: #f1cf84;
++  --warn-fg: #5c3d00;
++  --danger-bg: #fdecea;
++  --danger-line: #e8a39c;
++  --danger-fg: #7a1a12;
++  --danger: #b42318;
++  --danger-hover: #93190f;
++  --header: #0b1020;
++  --header-fg: #f5f1e8;
++  --header-muted: #c9cdd8;
++  --header-line: #2a3248;
++  --header-active: #1c2336;
++  color-scheme: light;
++}
++
++[data-theme="dark"] {
++  --bg: #0b1020;
++  --surface: #121829;
++  --surface-2: #161d31;
++  --sunken: #0e1424;
++  --fg: #edeae2;
++  --fg-muted: #a6acbb;
++  --line: #252d44;
++  --line-strong: #343d57;
++  --brand: #f5f1e8;
++  --brand-hover: #ffffff;
++  --brand-fg: #0b1020;
++  --accent: #ffb020;
++  --accent-hover: #ffc04d;
++  --accent-fg: #0b1020;
++  --accent-text: #ffc857;
++  --focus: #ffc857;
++  --ok-bg: #0f2a1e;
++  --ok-line: #24563e;
++  --ok-fg: #8fe0b4;
++  --info-bg: #11223d;
++  --info-line: #2a4670;
++  --info-fg: #a9c8f2;
++  --warn-bg: #2b2110;
++  --warn-line: #6a4e14;
++  --warn-fg: #ffd585;
++  --danger-bg: #2a1416;
++  --danger-line: #6b2a24;
++  --danger-fg: #ffb4ab;
++  --danger: #c93a34;
++  --danger-hover: #b42318;
++  --header: #070a14;
++  --header-fg: #edeae2;
++  --header-muted: #b4b9c6;
++  --header-line: #1f2638;
++  --header-active: #161d31;
++  color-scheme: dark;
++}
++
++@theme inline {
++  --font-sans: "Space Grotesk Variable", ui-sans-serif, system-ui, sans-serif;
++  --font-mono: "JetBrains Mono Variable", ui-monospace, "SFMono-Regular", monospace;
++  --color-bg: var(--bg);
++  --color-surface: var(--surface);
++  --color-surface-2: var(--surface-2);
++  --color-sunken: var(--sunken);
++  --color-fg: var(--fg);
++  --color-fg-muted: var(--fg-muted);
++  --color-line: var(--line);
++  --color-line-strong: var(--line-strong);
++  --color-brand: var(--brand);
++  --color-brand-hover: var(--brand-hover);
++  --color-brand-fg: var(--brand-fg);
++  --color-accent: var(--accent);
++  --color-accent-hover: var(--accent-hover);
++  --color-accent-fg: var(--accent-fg);
++  --color-accent-text: var(--accent-text);
++  --color-focus: var(--focus);
++  --color-ok-bg: var(--ok-bg);
++  --color-ok-line: var(--ok-line);
++  --color-ok-fg: var(--ok-fg);
++  --color-info-bg: var(--info-bg);
++  --color-info-line: var(--info-line);
++  --color-info-fg: var(--info-fg);
++  --color-warn-bg: var(--warn-bg);
++  --color-warn-line: var(--warn-line);
++  --color-warn-fg: var(--warn-fg);
++  --color-danger-bg: var(--danger-bg);
++  --color-danger-line: var(--danger-line);
++  --color-danger-fg: var(--danger-fg);
++  --color-danger: var(--danger);
++  --color-danger-hover: var(--danger-hover);
++  --color-header: var(--header);
++  --color-header-fg: var(--header-fg);
++  --color-header-muted: var(--header-muted);
++  --color-header-line: var(--header-line);
++  --color-header-active: var(--header-active);
++}
++
++html {
++  background: var(--bg);
++}
++
+ body {
+-  background: #f8fafc;
+-  color: #0f172a;
++  background: var(--bg);
++  color: var(--fg);
++  font-family: var(--font-sans);
++  font-feature-settings: "ss01";
++}
++
++:focus-visible {
++  outline: 2px solid var(--focus);
++  outline-offset: 2px;
++}
++
++::selection {
++  background: var(--accent);
++  color: var(--accent-fg);
++}
++
++@media (prefers-reduced-motion: reduce) {
++  *,
++  *::before,
++  *::after {
++    animation-duration: 0.01ms !important;
++    animation-iteration-count: 1 !important;
++    transition-duration: 0.01ms !important;
++    scroll-behavior: auto !important;
++  }
+ }
+diff --git a/apps/web/src/app/icon.svg b/apps/web/src/app/icon.svg
+new file mode 100644
+index 0000000..6203cdc
+--- /dev/null
++++ b/apps/web/src/app/icon.svg
+@@ -0,0 +1 @@
++<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#0B1020"/><g transform="translate(9 8) scale(0.4)"><path d="M96 14 L58 34 L68 56 L28 74 L38 98" fill="none" stroke="#F5F1E8" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/><circle cx="96" cy="14" r="13" fill="#F5F1E8"/><circle cx="58" cy="34" r="11" fill="#F5F1E8"/><circle cx="68" cy="56" r="11" fill="#F5F1E8"/><circle cx="28" cy="74" r="11" fill="#F5F1E8"/><circle cx="38" cy="98" r="19" fill="#0B1020" stroke="#F5F1E8" stroke-width="11"/><circle cx="38" cy="98" r="10" fill="#FFB020"/><path d="M58 92 L92 82" stroke="#F5F1E8" stroke-width="15" stroke-linecap="round"/></g></svg>
+diff --git a/apps/web/src/app/layout.tsx b/apps/web/src/app/layout.tsx
+index 5336d9b..6b97667 100644
+--- a/apps/web/src/app/layout.tsx
++++ b/apps/web/src/app/layout.tsx
+@@ -1,22 +1,45 @@
++import "@fontsource-variable/space-grotesk";
++import "@fontsource-variable/jetbrains-mono";
+ import type { Metadata, Viewport } from "next";
+ import type { ReactNode } from "react";
+ import { ConfigError } from "@/components/ConfigError";
+ import { Providers } from "@/components/Providers";
+ import { Shell } from "@/components/Shell";
+ import { loadAppConfig } from "@/lib/app-config.server";
++import { SITE_DESCRIPTION, SITE_NAME, siteUrl } from "@/lib/site";
++import { THEME_BOOT_SCRIPT } from "@/lib/theme";
+ import "./globals.css";
+ 
+ export const metadata: Metadata = {
+-  title: "Stakeout",
+-  description: "Check the scam status of a wallet before sending funds.",
++  metadataBase: siteUrl(process.env.NEXT_PUBLIC_SITE_URL),
++  title: { default: `${SITE_NAME}: check a wallet before you send`, template: `%s | ${SITE_NAME}` },
++  description: SITE_DESCRIPTION,
++  applicationName: SITE_NAME,
++  openGraph: {
++    type: "website",
++    siteName: SITE_NAME,
++    title: `${SITE_NAME}: check a wallet before you send`,
++    description: SITE_DESCRIPTION,
++  },
++  twitter: { card: "summary", title: `${SITE_NAME}: check a wallet before you send`, description: SITE_DESCRIPTION },
+ };
+ 
+-export const viewport: Viewport = { width: "device-width", initialScale: 1 };
++export const viewport: Viewport = {
++  width: "device-width",
++  initialScale: 1,
++  themeColor: [
++    { media: "(prefers-color-scheme: light)", color: "#f5f1e8" },
++    { media: "(prefers-color-scheme: dark)", color: "#0b1020" },
++  ],
++};
+ 
+ export default function RootLayout({ children }: { children: ReactNode }) {
+   const config = loadAppConfig();
+   return (
+-    <html lang="en">
++    <html lang="en" data-theme="light" suppressHydrationWarning>
++      <head>
++        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
++      </head>
+       <body className="antialiased">
+         {config.ok ? (
+           <Providers config={config.value}>
+diff --git a/apps/web/src/app/not-found.tsx b/apps/web/src/app/not-found.tsx
+new file mode 100644
+index 0000000..563d8fd
+--- /dev/null
++++ b/apps/web/src/app/not-found.tsx
+@@ -0,0 +1,29 @@
++import type { Metadata } from "next";
++import Link from "next/link";
++import { SearchIcon } from "@/components/icons";
++import { buttonClass } from "@/components/styles";
++
++export const metadata: Metadata = {
++  title: "Page not found",
++};
++
++export default function NotFound() {
++  return (
++    <div className="mx-auto max-w-xl space-y-6 py-12 text-center">
++      <p className="font-mono text-sm text-fg-muted">404</p>
++      <h1 className="text-3xl font-bold tracking-tight text-fg sm:text-4xl">This page does not exist</h1>
++      <p className="leading-relaxed text-fg-muted">
++        The link may be mistyped or out of date. If you were about to send funds, you can still check the recipient first.
++      </p>
++      <div className="flex flex-wrap justify-center gap-3">
++        <Link href="/wallet" className={buttonClass("primary")}>
++          <SearchIcon size={17} />
++          Check an address
++        </Link>
++        <Link href="/" className={buttonClass("secondary")}>
++          Go to the home page
++        </Link>
++      </div>
++    </div>
++  );
++}
+diff --git a/apps/web/src/app/page.tsx b/apps/web/src/app/page.tsx
+index 511265d..c3157fe 100644
+--- a/apps/web/src/app/page.tsx
++++ b/apps/web/src/app/page.tsx
+@@ -1,5 +1,189 @@
+-import { redirect } from "next/navigation";
++import type { Metadata } from "next";
++import Link from "next/link";
++import { Status } from "@shared/enums";
++import { AlertIcon, ArrowRightIcon, CheckIcon, DocumentIcon, FlagIcon, SearchIcon, ShieldIcon } from "@/components/icons";
++import { LEVEL_DOT, LEVEL_PANEL } from "@/components/status";
++import { buttonClass } from "@/components/styles";
++import { warningFor } from "@/lib/warning";
++
++export const metadata: Metadata = {
++  title: { absolute: "Stakeout: check a wallet before you send" },
++};
++
++const STATUSES = [Status.None, Status.Reported, Status.Flagged, Status.Confirmed, Status.Linked];
++
++const STEPS = [
++  {
++    Icon: DocumentIcon,
++    title: "Victims report for free",
++    body: "Describe what happened in your own words or by voice. Only the scam address and a hash of your complaint go on chain.",
++  },
++  {
++    Icon: FlagIcon,
++    title: "Verified reporters stake to flag",
++    body: "A reporter puts a deposit behind a report. If nobody confirms or challenges it in time, the flag lapses and the deposit is returned.",
++  },
++  {
++    Icon: ShieldIcon,
++    title: "Wallet behavior confirms",
++    body: "A cluster is confirmed only when the wallet itself moves money like a scam: rapid splitting, merging and forwarding to exit points.",
++  },
++];
++
++const TRUST = [
++  { title: "Reports alone never confirm a wallet", body: "The wallet's own transaction pattern is required. Reports only add confidence." },
++  { title: "Evidence can be checked by anyone", body: "Each evidence bundle is hashed on chain. Recompute the hash on the Verify page to see if it was changed." },
++  { title: "The AI explains, it does not decide", body: "Summaries are written from the evidence. Confirmation comes from published rules and the verifier role." },
++  { title: "Trust points are named", body: "A reviewer multisig whitelists reporters and settles disputes. One verifier role posts confirmations." },
++];
++
++const EXPLORE = [
++  { href: "/report", title: "Report a scam", body: "Turn a complaint into a free on-chain report." },
++  { href: "/verify", title: "Verify evidence", body: "Check that a stored bundle matches its on-chain hash." },
++  { href: "/dashboard", title: "Dashboard", body: "Reports, flags, clusters and payouts read from contract events." },
++  { href: "/faq", title: "FAQ", body: "How staking, challenges and confirmation work." },
++];
++
++function ExampleWarning() {
++  const warning = warningFor(Status.Confirmed);
++  return (
++    <figure className="rounded-lg border border-line bg-surface p-5 sm:p-6">
++      <figcaption className="mb-4 flex items-center justify-between gap-3">
++        <span className="text-sm font-semibold text-fg">What you see before sending</span>
++        <span className="rounded-sm border border-line px-2 py-0.5 text-xs font-semibold text-fg-muted">Example</span>
++      </figcaption>
++      <div className="space-y-2">
++        <p className="text-xs font-semibold tracking-wide text-fg-muted uppercase">Recipient address</p>
++        <p className="rounded-md border border-line-strong bg-surface-2 px-3 py-3 font-mono text-[13px] text-fg-muted">0x…</p>
++      </div>
++      <div className={`mt-4 flex gap-3 rounded-md border p-4 ${LEVEL_PANEL.strong}`}>
++        <AlertIcon size={22} className="mt-0.5 shrink-0" />
++        <div className="space-y-1">
++          <p className="text-base font-bold">{warning.label}</p>
++          <p className="text-sm leading-relaxed">{warning.message}</p>
++        </div>
++      </div>
++      <div className="mt-4 rounded-md border border-line bg-sunken p-4 text-sm text-fg">
++        <p className="font-semibold">Sending through StakeoutGuard</p>
++        <p className="mt-1 leading-relaxed text-fg-muted">
++          The guard contract refuses to forward funds to confirmed and linked addresses, so the transfer reverts and nothing leaves your wallet.
++        </p>
++      </div>
++    </figure>
++  );
++}
+ 
+ export default function Home() {
+-  redirect("/wallet");
++  return (
++    <div className="space-y-16 sm:space-y-20">
++      <section className="grid items-center gap-10 pt-2 lg:grid-cols-[1.1fr_1fr]">
++        <div className="space-y-6">
++          <p className="text-sm font-semibold tracking-wide text-accent-text uppercase">Scam oracle for crypto wallets. Testnet prototype.</p>
++          <h1 className="text-4xl leading-[1.05] font-bold tracking-tight text-fg sm:text-5xl lg:text-6xl">Check a wallet before you send.</h1>
++          <p className="max-w-xl text-lg leading-relaxed text-fg-muted">
++            Stakeout follows the money trail from scam reports, lets verified reporters stake on their claims, and warns you when a recipient belongs to a
++            confirmed scam cluster.
++          </p>
++          <div className="flex flex-wrap gap-3">
++            <Link href="/wallet" className={buttonClass("primary")}>
++              <SearchIcon size={17} />
++              Check an address
++            </Link>
++            <Link href="/report" className={buttonClass("secondary")}>
++              Report a scam
++            </Link>
++          </div>
++          <p className="max-w-xl text-sm leading-relaxed text-fg-muted">
++            There are no accounts or passwords. Looking up an address needs no wallet. Connect a wallet only to report, stake or send.
++          </p>
++        </div>
++        <ExampleWarning />
++      </section>
++
++      <section aria-labelledby="how-heading" className="space-y-6">
++        <h2 id="how-heading" className="text-2xl font-bold tracking-tight text-fg sm:text-3xl">
++          How a wallet gets confirmed
++        </h2>
++        <ol className="grid gap-px overflow-hidden rounded-lg border border-line bg-line md:grid-cols-3">
++          {STEPS.map(({ Icon, title, body }, index) => (
++            <li key={title} className="space-y-3 bg-surface p-6">
++              <div className="flex items-center gap-3">
++                <span className="font-mono text-sm text-fg-muted">0{index + 1}</span>
++                <Icon className="text-fg" />
++              </div>
++              <h3 className="text-lg font-bold text-fg">{title}</h3>
++              <p className="text-sm leading-relaxed text-fg-muted">{body}</p>
++            </li>
++          ))}
++        </ol>
++      </section>
++
++      <section aria-labelledby="status-heading" className="grid gap-8 lg:grid-cols-[1fr_1.4fr]">
++        <div className="space-y-3">
++          <h2 id="status-heading" className="text-2xl font-bold tracking-tight text-fg sm:text-3xl">
++            Five statuses, read straight from the contract
++          </h2>
++          <p className="leading-relaxed text-fg-muted">
++            Any wallet or contract can call getStatus on the Stakeout contract. This app shows the same answer, with the evidence behind it.
++          </p>
++        </div>
++        <ul className="divide-y divide-line rounded-lg border border-line bg-surface">
++          {STATUSES.map((status) => {
++            const warning = warningFor(status);
++            return (
++              <li key={status} className="flex gap-4 p-4 sm:p-5">
++                <span className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${LEVEL_DOT[warning.level]}`} aria-hidden="true" />
++                <div className="space-y-1">
++                  <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1 font-semibold text-fg">
++                    {warning.label}
++                    <span className="font-mono text-xs font-normal text-fg-muted">{Status[status]}</span>
++                  </p>
++                  <p className="text-sm leading-relaxed text-fg-muted">{warning.message}</p>
++                </div>
++              </li>
++            );
++          })}
++        </ul>
++      </section>
++
++      <section aria-labelledby="trust-heading" className="space-y-6">
++        <h2 id="trust-heading" className="text-2xl font-bold tracking-tight text-fg sm:text-3xl">
++          Why the answer can be trusted
++        </h2>
++        <ul className="grid gap-x-10 gap-y-6 md:grid-cols-2">
++          {TRUST.map((item) => (
++            <li key={item.title} className="flex gap-3">
++              <CheckIcon className="mt-1 shrink-0 text-ok-fg" />
++              <div className="space-y-1">
++                <p className="font-semibold text-fg">{item.title}</p>
++                <p className="text-sm leading-relaxed text-fg-muted">{item.body}</p>
++              </div>
++            </li>
++          ))}
++        </ul>
++      </section>
++
++      <section aria-labelledby="explore-heading" className="space-y-6">
++        <h2 id="explore-heading" className="text-2xl font-bold tracking-tight text-fg sm:text-3xl">
++          Try the rest of Stakeout
++        </h2>
++        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
++          {EXPLORE.map((item) => (
++            <li key={item.href}>
++              <Link
++                href={item.href}
++                className="group flex h-full flex-col justify-between gap-4 rounded-lg border border-line bg-surface p-5 transition-colors duration-150 hover:border-fg"
++              >
++                <span className="space-y-1">
++                  <span className="block font-semibold text-fg">{item.title}</span>
++                  <span className="block text-sm leading-relaxed text-fg-muted">{item.body}</span>
++                </span>
++                <ArrowRightIcon className="text-fg-muted transition-colors duration-150 group-hover:text-fg" />
++              </Link>
++            </li>
++          ))}
++        </ul>
++      </section>
++    </div>
++  );
+ }
+diff --git a/apps/web/src/app/privacy/page.tsx b/apps/web/src/app/privacy/page.tsx
+new file mode 100644
+index 0000000..0cc6d3e
+--- /dev/null
++++ b/apps/web/src/app/privacy/page.tsx
+@@ -0,0 +1,157 @@
++import type { Metadata } from "next";
++import Link from "next/link";
++import { DocPage, Pending, type DocSection } from "@/components/DocPage";
++
++export const metadata: Metadata = {
++  title: "Privacy",
++  description: "What the Stakeout testnet prototype collects, where it goes, and what is public on chain.",
++};
++
++const SECTIONS: DocSection[] = [
++  {
++    id: "scope",
++    heading: "Scope",
++    body: (
++      <p>
++        This policy describes the Stakeout prototype as it is built today: a web app, a backend service run by the Stakeout team, and smart contracts on a
++        public test network. It is a draft. It has not been reviewed by a lawyer and it does not describe a production service.
++      </p>
++    ),
++  },
++  {
++    id: "public",
++    heading: "What is public on chain",
++    body: (
++      <>
++        <p>Blockchain data is public and permanent. When you use Stakeout, the following can be recorded on the test network and seen by anyone:</p>
++        <ul>
++          <li>Your wallet address, when you report, promote, challenge, expire, withdraw or send through the guard contract.</li>
++          <li>The address you report, and a hash of your complaint record.</li>
++          <li>Stakes, rewards and the time of each transaction.</li>
++        </ul>
++        <p>Your complaint text is not written on chain. Only its hash is. Nothing on chain can be deleted, by us or anyone else.</p>
++      </>
++    ),
++  },
++  {
++    id: "backend",
++    heading: "What the backend stores",
++    body: (
++      <>
++        <p>When you submit a complaint on the Report page, the web app sends the backend:</p>
++        <ul>
++          <li>The text you typed or dictated.</li>
++          <li>Your browser&apos;s time zone name, so that times like &quot;yesterday at 9 pm&quot; are read correctly.</li>
++          <li>The receiving address you chose, when your text contains more than one address.</li>
++        </ul>
++        <p>
++          The backend stores a record of your original text, the extracted details and the data source, under the record&apos;s hash, in a database on the
++          machine that runs the backend. It also stores evidence bundles and a log of verifier decisions.
++        </p>
++        <p>
++          Important: the complaint hash is public on chain, and the backend returns the stored record to anyone who requests it by that hash. This is how
++          the Verify page works. Do not include names, phone numbers, bank details or other personal information in a complaint.
++        </p>
++        <p>
++          Retention: <Pending>to be confirmed by the team</Pending>. The prototype has no automatic deletion.
++        </p>
++      </>
++    ),
++  },
++  {
++    id: "ai",
++    heading: "AI processing",
++    body: (
++      <p>
++        To pull the address, amount and time out of a complaint, the backend sends your complaint text and time zone to an AI model provider chosen by the team
++        operating the backend. The same provider writes plain-language summaries of evidence. Which provider is used, and its own data terms:{" "}
++        <Pending>to be confirmed by the team</Pending>. The AI never decides whether a wallet is confirmed.
++      </p>
++    ),
++  },
++  {
++    id: "third-parties",
++    heading: "Other services your browser talks to",
++    body: (
++      <ul>
++        <li>
++          Your browser wallet extension, which you choose and control. Stakeout never asks for, receives or stores your seed phrase or private keys.
++        </li>
++        <li>The blockchain RPC provider configured for this app, which receives read requests and your signed transactions, and can see your IP address.</li>
++        <li>The block explorer, but only when you open one of its links.</li>
++      </ul>
++    ),
++  },
++  {
++    id: "cookies",
++    heading: "Cookies and browser storage",
++    body: (
++      <>
++        <p>
++          The web app sets no cookies and uses no analytics, advertising or tracking scripts. Fonts are served from this site, not from a third party.
++        </p>
++        <p>It uses your browser&apos;s local storage for two conveniences that never leave your device:</p>
++        <ul>
++          <li>Your color theme choice (light, dark or system).</li>
++          <li>Which wallet you last connected, kept by the wallet connection library so it can reconnect.</li>
++        </ul>
++        <p>Clearing your browser&apos;s site data removes both.</p>
++      </>
++    ),
++  },
++  {
++    id: "security",
++    heading: "Security",
++    body: (
++      <p>
++        Addresses are validated in code before they are used, contract calls are simulated before you sign, and the backend keeps its API keys on the
++        server. No system is perfectly secure, and this is a prototype that has not had an independent security audit.
++      </p>
++    ),
++  },
++  {
++    id: "rights",
++    heading: "Your choices and requests",
++    body: (
++      <>
++        <p>
++          You can use the Check address and Verify pages without connecting a wallet or sending any text. To ask about or remove a complaint record held by
++          the backend, contact the team below with the complaint hash. Records on chain cannot be removed.
++        </p>
++        <p>
++          Rights under data protection laws that apply to you (for example India&apos;s Digital Personal Data Protection Act):{" "}
++          <Pending>needs legal review</Pending>.
++        </p>
++      </>
++    ),
++  },
++  {
++    id: "contact",
++    heading: "Contact",
++    body: (
++      <p>
++        Privacy questions: <Pending>team contact email to be confirmed</Pending>. See also the <Link href="/terms" className="underline underline-offset-4">Terms</Link>.
++      </p>
++    ),
++  },
++  {
++    id: "changes",
++    heading: "Changes to this policy",
++    body: <p>If the prototype changes how it handles data, this page will be updated and the date at the top will change.</p>,
++  },
++];
++
++export default function PrivacyPage() {
++  return (
++    <DocPage
++      title="Privacy"
++      updated="29 October 2026"
++      intro={
++        <p>
++          Stakeout is a hackathon prototype on a test network. This page explains, in plain words, what it collects, where that goes and what becomes public.
++        </p>
++      }
++      sections={SECTIONS}
++    />
++  );
++}
+diff --git a/apps/web/src/app/report/layout.tsx b/apps/web/src/app/report/layout.tsx
+new file mode 100644
+index 0000000..c4877c3
+--- /dev/null
++++ b/apps/web/src/app/report/layout.tsx
+@@ -0,0 +1,11 @@
++import type { Metadata } from "next";
++import type { ReactNode } from "react";
++
++export const metadata: Metadata = {
++  title: "Report a scam",
++  description: "Describe a scam in your own words or by voice and submit a free on-chain report.",
++};
++
++export default function Layout({ children }: { children: ReactNode }) {
++  return children;
++}
+diff --git a/apps/web/src/app/report/page.tsx b/apps/web/src/app/report/page.tsx
+index dcf69d2..d90a0b6 100644
+--- a/apps/web/src/app/report/page.tsx
++++ b/apps/web/src/app/report/page.tsx
+@@ -6,7 +6,7 @@ import type { Address } from "viem";
+ import { useAccount, useWriteContract } from "wagmi";
+ import { VoiceInput } from "@shared/ui/VoiceInput";
+ import { useAppConfig } from "@/components/AppConfigContext";
+-import { ErrorPanel, ExplorerLink, Field, Loading, Mono, Section } from "@/components/ui";
++import { buttonClass, ErrorPanel, ExplorerLink, Field, inputClass, Loading, Mono, Notice, PageHeader, Section } from "@/components/ui";
+ import { combinedAbi } from "@/lib/abi";
+ import { findAddresses } from "@/lib/address-pick";
+ import { backend, BackendError, candidatesOf } from "@/lib/backend";
+@@ -59,9 +59,18 @@ export default function ReportPage() {
+ 
+   return (
+     <>
+-      <Section title="Report a scam">
++      <PageHeader
++        title="Report a scam"
++        description="Reporting is free. Only the scam address and a hash of your complaint go on chain. The complaint text stays with the backend."
++      />
++      <ol className="flex flex-wrap gap-2 text-sm" aria-label="Progress">
++        <li className={`rounded-sm border px-3 py-1.5 font-semibold ${extract.data ? "border-line bg-surface text-fg-muted" : "border-fg bg-brand text-brand-fg"}`}>1. Describe</li>
++        <li className={`rounded-sm border px-3 py-1.5 font-semibold ${extract.data && !send.isSuccess ? "border-fg bg-brand text-brand-fg" : "border-line bg-surface text-fg-muted"}`}>2. Check details</li>
++        <li className={`rounded-sm border px-3 py-1.5 font-semibold ${send.isSuccess ? "border-fg bg-brand text-brand-fg" : "border-line bg-surface text-fg-muted"}`}>3. Submit on chain</li>
++      </ol>
++      <Section title="What happened?" description="Include the address you sent funds to, the amount, and roughly when it happened.">
+         <form
+-          className="space-y-3"
++          className="space-y-4"
+           onSubmit={(event) => {
+             event.preventDefault();
+             send.reset();
+@@ -73,25 +82,28 @@ export default function ReportPage() {
+             extract.mutate({ text, targetAddress: choices.length > 1 ? selected : undefined });
+           }}
+         >
+-          <label htmlFor="complaint" className="block text-sm font-medium text-slate-700">
+-            Describe what happened, including the address you sent funds to
++          <label htmlFor="complaint" className="block text-sm font-semibold text-fg">
++            Your complaint
+           </label>
+           <textarea
+             id="complaint"
+             rows={6}
+             value={text}
+             onChange={(event) => setText(event.target.value)}
+-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
++            className={`${inputClass} leading-relaxed`}
+           />
+-          <VoiceInput lang={config.voiceLang} onText={(spoken) => setText(spoken)} />
++          <div className="text-sm text-fg-muted [&>div]:flex [&>div]:flex-wrap [&>div]:items-center [&>div]:gap-3 [&_p]:basis-full [&_button]:inline-flex [&_button]:min-h-11 [&_button]:items-center [&_button]:rounded-md [&_button]:border [&_button]:border-line-strong [&_button]:bg-surface [&_button]:px-4 [&_button]:font-semibold [&_button]:text-fg [&_button]:transition-colors [&_button:hover]:bg-sunken [&_p]:mt-2 [&_p]:text-danger-fg">
++            <VoiceInput lang={config.voiceLang} onText={(spoken) => setText(spoken)} />
++          </div>
+           {choices.length > 1 && (
+-            <fieldset className="space-y-2 rounded-md border border-amber-300 bg-amber-50 p-3">
+-              <legend className="px-1 text-sm font-medium text-amber-900">
++            <fieldset className="space-y-2 rounded-md border border-warn-line bg-warn-bg p-4 text-warn-fg">
++              <legend className="px-1 text-sm font-semibold">
+                 Your text has {choices.length} wallet addresses. Which one received the money?
+               </legend>
+               {choices.map((candidate) => (
+-                <label key={candidate} className="flex items-center gap-2 text-sm">
++                <label key={candidate} className="flex min-h-11 items-center gap-3 rounded-md border border-line bg-surface px-3 text-sm text-fg">
+                   <input
++                    className="h-4 w-4 accent-[var(--fg)]"
+                     type="radio"
+                     name="target"
+                     value={candidate}
+@@ -101,34 +113,35 @@ export default function ReportPage() {
+                       setNeedsChoice(false);
+                     }}
+                   />
+-                  <span className="font-mono text-xs break-all">{candidate}</span>
++                  <span className="font-mono text-[13px] break-all">{candidate}</span>
+                 </label>
+               ))}
+-              {needsChoice && <p className="text-sm text-red-700">Choose the receiving address before extracting.</p>}
++              {needsChoice && <p className="text-sm font-semibold text-danger-fg">Choose the receiving address before extracting.</p>}
+             </fieldset>
+           )}
+           <button
+             type="submit"
+             disabled={text.trim() === "" || extract.isPending}
+-            className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50"
++            className={buttonClass("primary")}
+           >
+-            {extract.isPending ? "Extracting…" : "Extract complaint"}
++            {extract.isPending ? "Extracting…" : "Extract details"}
+           </button>
++          <p className="text-sm text-fg-muted">An AI model reads your words and pulls out the address, amount and time. Addresses are checked by code, never by the AI.</p>
+         </form>
+-        <div className="mt-4">
++        <div className="mt-4" aria-live="polite">
+           {extract.isError && <ErrorPanel error={describe(extract.error)} />}
+         </div>
+       </Section>
+ 
+       {extract.isPending && (
+         <Section title="Structured complaint">
+-          <Loading label="The backend is extracting the complaint…" />
++          <Loading label="The backend is reading your complaint…" />
+         </Section>
+       )}
+ 
+       {extract.data && hashCheck && (
+-        <Section title="Structured complaint">
+-          <dl className="space-y-2">
++        <Section title="Check the details" description="Make sure these match what happened before you submit.">
++          <dl>
+             <Field label="Target address">
+               <ExplorerLink kind="address" value={extract.data.complaint.targetAddress} />
+             </Field>
+@@ -144,9 +157,9 @@ export default function ReportPage() {
+           </dl>
+           <div className="mt-4">
+             {hashCheck.matches ? (
+-              <p role="status" className="text-sm text-emerald-800">
+-                Recomputed hash matches the backend&apos;s complaint hash.
+-              </p>
++              <Notice tone="ok" title="Hash matches the backend">
++                This app recomputed the complaint hash and got the same value the backend stored.
++              </Notice>
+             ) : (
+               <ErrorPanel
+                 error={{
+@@ -157,24 +170,24 @@ export default function ReportPage() {
+             )}
+           </div>
+           {hashCheck.matches && (
+-            <div className="mt-4 space-y-2">
+-              <p className="text-sm text-slate-600">
+-                Only the address and the complaint hash go on-chain. The complaint text stays in the backend.
++            <div className="mt-5 space-y-3 border-t border-line pt-5" aria-live="polite">
++              <p className="text-sm text-fg-muted">
++                Free, with no stake. You only pay network gas. Only the address and the complaint hash go on chain.
+               </p>
+               <button
+                 type="button"
+                 disabled={sendBlocked !== undefined || send.isPending || send.isSuccess}
+                 onClick={() => send.mutate()}
+-                className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
++                className={buttonClass("accent")}
+               >
+-                {send.isPending ? "Submitting…" : "Submit report on-chain"}
++                {send.isPending ? "Submitting…" : send.isSuccess ? "Report submitted" : "Submit report on-chain"}
+               </button>
+-              {sendBlocked && <p className="text-sm text-slate-600">{sendBlocked}</p>}
++              {sendBlocked && <p className="text-sm text-fg-muted">{sendBlocked}</p>}
+               {send.isError && <ErrorPanel error={describe(send.error)} />}
+               {send.isSuccess && (
+-                <p role="status" className="text-sm text-emerald-800">
+-                  Report submitted. Transaction <ExplorerLink kind="tx" value={send.data} />
+-                </p>
++                <Notice tone="ok" title="Report submitted">
++                  Transaction <ExplorerLink kind="tx" value={send.data} />
++                </Notice>
+               )}
+             </div>
+           )}
+diff --git a/apps/web/src/app/reviewer/layout.tsx b/apps/web/src/app/reviewer/layout.tsx
+new file mode 100644
+index 0000000..9598079
+--- /dev/null
++++ b/apps/web/src/app/reviewer/layout.tsx
+@@ -0,0 +1,11 @@
++import type { Metadata } from "next";
++import type { ReactNode } from "react";
++
++export const metadata: Metadata = {
++  title: "Reviewer",
++  description: "Read-only view of open challenges, verified reporters and the reward pool for the reviewer multisig.",
++};
++
++export default function Layout({ children }: { children: ReactNode }) {
++  return children;
++}
+diff --git a/apps/web/src/app/reviewer/page.tsx b/apps/web/src/app/reviewer/page.tsx
+index 61b2baa..9ace2bf 100644
+--- a/apps/web/src/app/reviewer/page.tsx
++++ b/apps/web/src/app/reviewer/page.tsx
+@@ -3,7 +3,7 @@
+ import { formatEther, zeroAddress } from "viem";
+ import { FlagState } from "@shared/enums";
+ import { useAppConfig } from "@/components/AppConfigContext";
+-import { Empty, ErrorPanel, ExplorerLink, Loading, RefreshButton, Section } from "@/components/ui";
++import { Empty, ErrorPanel, ExplorerLink, Loading, Notice, PageHeader, RefreshButton, Section } from "@/components/ui";
+ import { combinedAbi } from "@/lib/abi";
+ import { NATIVE_CURRENCY } from "@/lib/chain";
+ import { decodeError } from "@/lib/errors";
+@@ -20,16 +20,16 @@ const SAFE_ACTIONS = [
+ ];
+ 
+ function Command({ text }: { text: string }) {
+-  return <code className="block rounded bg-slate-100 px-2 py-1 font-mono text-xs break-all">{text}</code>;
++  return <code className="block rounded-md border border-line bg-sunken px-3 py-2 font-mono text-[13px] break-all text-fg">{text}</code>;
+ }
+ 
+ function SafeCommands() {
+   const config = useAppConfig();
+   return (
+-    <ul className="space-y-3">
++    <ul className="space-y-4">
+       {SAFE_ACTIONS.map((action) => (
+-        <li key={action.args} className="space-y-1">
+-          <p className="text-sm">{action.label}</p>
++        <li key={action.args} className="space-y-1.5">
++          <p className="text-sm font-semibold text-fg">{action.label}</p>
+           <Command text={`npm run safe:calldata -- ${config.deploymentName} ${action.args}`} />
+         </li>
+       ))}
+@@ -49,25 +49,25 @@ function OpenChallenges({ flags }: { flags: FlagRow[] }) {
+   });
+   if (open.length === 0) return <Empty label="No open challenges." />;
+   return (
+-    <ul className="divide-y divide-slate-100">
++    <ul className="divide-y divide-line">
+       {open.map(({ flag, state }) => (
+-        <li key={flag.flagId.toString()} className="space-y-1 py-3">
+-          <p className="text-sm font-medium">Flag #{flag.flagId.toString()}</p>
+-          <p className="text-xs text-slate-600">
++        <li key={flag.flagId.toString()} className="space-y-1.5 py-4 first:pt-0 last:pb-0">
++          <p className="font-semibold text-fg">Flag #{flag.flagId.toString()}</p>
++          <p className="text-sm text-fg-muted">
+             Target <ExplorerLink kind="address" value={flag.target} />
+           </p>
+-          <p className="text-xs text-slate-600">
++          <p className="text-sm text-fg-muted">
+             Flagger <ExplorerLink kind="address" value={state.flagger} /> staked {formatEther(state.stake)}{" "}
+             {NATIVE_CURRENCY.symbol}
+           </p>
+-          <p className="text-xs text-slate-600">
++          <p className="text-sm text-fg-muted">
+             Challenger <ExplorerLink kind="address" value={state.challenger} /> staked{" "}
+             {formatEther(state.challengeStake)} {NATIVE_CURRENCY.symbol}
+           </p>
+-          <p className="text-xs text-slate-600">
++          <p className="text-sm text-fg-muted">
+             Promoted in tx <ExplorerLink kind="tx" value={flag.ref.transactionHash} />
+           </p>
+-          <p className="text-xs text-slate-600">Safe calldata to resolve it (true upholds the flag, false overturns it):</p>
++          <p className="text-sm text-fg-muted">Safe calldata to resolve it (true upholds the flag, false overturns it):</p>
+           <Command text={`npm run safe:calldata -- ${config.deploymentName} resolve ${flag.flagId.toString()} <true|false>`} />
+         </li>
+       ))}
+@@ -90,30 +90,33 @@ export default function ReviewerPage() {
+   );
+   return (
+     <>
+-      <Section title="Reviewer overview" action={refresh}>
+-        <div className="rounded-md border border-sky-200 bg-sky-50 p-3 text-sm text-sky-900">
+-          This page is read-only. Every reviewer action (adding or removing reporters, resolving challenges, removing
+-          cluster members, rotating the verifier) is a transaction from the reviewer Safe{" "}
+-          <ExplorerLink kind="address" value={config.deployment.reviewer} />. Prepare calldata with{" "}
+-          <code className="font-mono text-xs">npm run safe:calldata</code> and submit it through the Safe.
+-        </div>
+-      </Section>
+-      <Section title="Reviewer actions through the Safe">
+-        <p className="mb-3 text-sm text-slate-600">
+-          Run a command from the repository root. It prints the target address, value and calldata to paste into the Safe
+-          transaction builder. It never sends anything.
+-        </p>
+-        <SafeCommands />
+-      </Section>
+-      <Section title="Reward pool">
+-        {pool.isPending && <Loading label="Reading rewardPool…" />}
+-        {pool.isError && <ErrorPanel error={decodeError(pool.error, combinedAbi)} />}
+-        {pool.isSuccess && (
+-          <p className="text-2xl font-semibold">
+-            {formatEther(pool.data)} {NATIVE_CURRENCY.symbol}
+-          </p>
+-        )}
+-      </Section>
++      <PageHeader
++        title="Reviewer"
++        description="A read-only view for the reviewer multisig: open challenges, verified reporters and the reward pool."
++        action={refresh}
++      />
++      <Notice tone="info" title="This page never sends transactions">
++        Every reviewer action (adding or removing reporters, resolving challenges, removing cluster members, rotating the
++        verifier) is a transaction from the reviewer Safe <ExplorerLink kind="address" value={config.deployment.reviewer} />.
++        Prepare calldata with <code className="font-mono text-[13px]">npm run safe:calldata</code> and submit it through the Safe.
++      </Notice>
++      <div className="grid gap-6 lg:grid-cols-[1fr_1.4fr]">
++        <Section title="Reward pool" description="Slashed stakes that the Safe can pay out as rewards.">
++          {pool.isPending && <Loading label="Reading rewardPool…" />}
++          {pool.isError && <ErrorPanel error={decodeError(pool.error, combinedAbi)} />}
++          {pool.isSuccess && (
++            <p className="font-mono text-3xl font-semibold tabular-nums">
++              {formatEther(pool.data)} {NATIVE_CURRENCY.symbol}
++            </p>
++          )}
++        </Section>
++        <Section
++          title="Reviewer actions through the Safe"
++          description="Run a command from the repository root. It prints the target address, value and calldata to paste into the Safe transaction builder. It never sends anything."
++        >
++          <SafeCommands />
++        </Section>
++      </div>
+       <Section title="Open challenges">
+         {index.isPending && <Loading label="Reading contract events…" />}
+         {index.isError && <ErrorPanel error={decodeError(index.error, combinedAbi)} />}
+diff --git a/apps/web/src/app/robots.ts b/apps/web/src/app/robots.ts
+new file mode 100644
+index 0000000..fba961f
+--- /dev/null
++++ b/apps/web/src/app/robots.ts
+@@ -0,0 +1,10 @@
++import type { MetadataRoute } from "next";
++import { siteUrl } from "@/lib/site";
++
++export default function robots(): MetadataRoute.Robots {
++  const base = siteUrl(process.env.NEXT_PUBLIC_SITE_URL);
++  return {
++    rules: { userAgent: "*", allow: "/" },
++    ...(base ? { sitemap: new URL("/sitemap.xml", base).toString() } : {}),
++  };
++}
+diff --git a/apps/web/src/app/sitemap.ts b/apps/web/src/app/sitemap.ts
+new file mode 100644
+index 0000000..36ba52a
+--- /dev/null
++++ b/apps/web/src/app/sitemap.ts
+@@ -0,0 +1,8 @@
++import type { MetadataRoute } from "next";
++import { PUBLIC_PATHS, siteUrl } from "@/lib/site";
++
++export default function sitemap(): MetadataRoute.Sitemap {
++  const base = siteUrl(process.env.NEXT_PUBLIC_SITE_URL);
++  if (!base) return [];
++  return PUBLIC_PATHS.map((path) => ({ url: new URL(path, base).toString() }));
++}
+diff --git a/apps/web/src/app/terms/page.tsx b/apps/web/src/app/terms/page.tsx
+new file mode 100644
+index 0000000..4b71f0c
+--- /dev/null
++++ b/apps/web/src/app/terms/page.tsx
+@@ -0,0 +1,144 @@
++import type { Metadata } from "next";
++import Link from "next/link";
++import { DocPage, Pending, type DocSection } from "@/components/DocPage";
++
++export const metadata: Metadata = {
++  title: "Terms",
++  description: "Terms for using the Stakeout testnet prototype.",
++};
++
++const SECTIONS: DocSection[] = [
++  {
++    id: "acceptance",
++    heading: "Using this prototype",
++    body: (
++      <p>
++        By using Stakeout you agree to these terms. If you do not agree, do not use it. These terms are a draft written for a hackathon prototype and{" "}
++        <Pending>need legal review</Pending> before any public launch.
++      </p>
++    ),
++  },
++  {
++    id: "service",
++    heading: "What Stakeout is",
++    body: (
++      <>
++        <p>
++          Stakeout is an experimental tool that records scam reports, staked flags and confirmed scam clusters in smart contracts on a public test network, and
++          shows the status of any wallet address.
++        </p>
++        <ul>
++          <li>It runs on a test network. Test tokens have no real value. Do not send real funds through it.</li>
++          <li>Data shown may be synthetic, generated for testing. Every evidence view shows its data source.</li>
++          <li>A status is information, not advice. A wallet with no record is not proven safe, and a status can be wrong.</li>
++        </ul>
++      </>
++    ),
++  },
++  {
++    id: "responsibilities",
++    heading: "Your responsibilities",
++    body: (
++      <ul>
++        <li>Report only what you believe to be true, and only addresses involved in what you describe.</li>
++        <li>Do not put names, phone numbers, bank details or other personal information in a complaint. Stored complaints can be read by anyone who has their hash.</li>
++        <li>Keep your wallet, seed phrase and private keys to yourself. Stakeout never asks for them.</li>
++        <li>Check every transaction in your wallet before you sign it. Signed transactions cannot be reversed.</li>
++      </ul>
++    ),
++  },
++  {
++    id: "acceptable-use",
++    heading: "Acceptable use",
++    body: (
++      <ul>
++        <li>Do not file false reports or flags to harm someone. Flags can be challenged, and a flag overturned by the reviewers loses its stake.</li>
++        <li>Do not try to disrupt the app, the backend or the contracts, or to overload the backend with automated requests.</li>
++        <li>Do not use Stakeout for anything unlawful.</li>
++      </ul>
++    ),
++  },
++  {
++    id: "staking",
++    heading: "Stakes, challenges and rewards",
++    body: (
++      <p>
++        Stakes, challenges, expiry, slashing and rewards follow the rules coded in the Stakeout contract. A reviewer multisig run by the team resolves
++        challenges and pays rewards, and one verifier role posts confirmations. These are named trust points, explained in the{" "}
++        <Link href="/faq" className="underline underline-offset-4">
++          FAQ
++        </Link>
++        .
++      </p>
++    ),
++  },
++  {
++    id: "third-party",
++    heading: "Third-party services",
++    body: (
++      <p>
++        Stakeout depends on services it does not control: your wallet software, the test network and its RPC providers, the block explorer and the AI model
++        provider used by the backend. Their own terms apply to your use of them.
++      </p>
++    ),
++  },
++  {
++    id: "ip",
++    heading: "Intellectual property",
++    body: (
++      <p>
++        The Stakeout name, logo and code belong to the Stakeout team. Licensing of the code: <Pending>to be confirmed by the team</Pending>. Open-source
++        libraries and fonts used by the app remain under their own licenses.
++      </p>
++    ),
++  },
++  {
++    id: "availability",
++    heading: "Availability and changes",
++    body: (
++      <p>
++        The prototype may be changed, reset, redeployed or shut down at any time without notice. Contracts may be redeployed to new addresses, and test
++        network data may be lost.
++      </p>
++    ),
++  },
++  {
++    id: "liability",
++    heading: "No warranty and limits of liability",
++    body: (
++      <p>
++        Stakeout is provided as it is, without any warranty. To the extent the law allows, the team is not liable for any loss arising from using it or relying
++        on a status it shows. Exact wording for the applicable jurisdiction: <Pending>needs legal review</Pending>.
++      </p>
++    ),
++  },
++  {
++    id: "changes",
++    heading: "Changes to these terms",
++    body: <p>These terms may change. The date at the top shows the latest version. Continuing to use Stakeout means you accept the current version.</p>,
++  },
++  {
++    id: "contact",
++    heading: "Contact",
++    body: (
++      <p>
++        Questions about these terms: <Pending>team contact email to be confirmed</Pending>. See also the{" "}
++        <Link href="/privacy" className="underline underline-offset-4">
++          Privacy
++        </Link>{" "}
++        page.
++      </p>
++    ),
++  },
++];
++
++export default function TermsPage() {
++  return (
++    <DocPage
++      title="Terms"
++      updated="29 October 2026"
++      intro={<p>Stakeout is a testnet prototype built at Hacker House Goa 2026. These terms set out how it may be used and what it does not promise.</p>}
++      sections={SECTIONS}
++    />
++  );
++}
+diff --git a/apps/web/src/app/verify/layout.tsx b/apps/web/src/app/verify/layout.tsx
+new file mode 100644
+index 0000000..d1d57c7
+--- /dev/null
++++ b/apps/web/src/app/verify/layout.tsx
+@@ -0,0 +1,11 @@
++import type { Metadata } from "next";
++import type { ReactNode } from "react";
++
++export const metadata: Metadata = {
++  title: "Verify evidence",
++  description: "Recompute an evidence hash in your browser and compare it with the hash recorded on chain.",
++};
++
++export default function Layout({ children }: { children: ReactNode }) {
++  return children;
++}
+diff --git a/apps/web/src/app/verify/page.tsx b/apps/web/src/app/verify/page.tsx
+index f6efdf3..1a94c31 100644
+--- a/apps/web/src/app/verify/page.tsx
++++ b/apps/web/src/app/verify/page.tsx
+@@ -4,7 +4,8 @@ import { useQuery } from "@tanstack/react-query";
+ import { useState, type FormEvent, type ReactNode } from "react";
+ import { isHex, size, type Hex } from "viem";
+ import { useAppConfig } from "@/components/AppConfigContext";
+-import { Empty, ErrorPanel, ExplorerLink, Loading, Mono, Section } from "@/components/ui";
++import { CheckIcon, CrossIcon, InfoIcon } from "@/components/icons";
++import { buttonClass, Empty, ErrorPanel, ExplorerLink, inputClass, Loading, Mono, PageHeader } from "@/components/ui";
+ import { combinedAbi } from "@/lib/abi";
+ import { backend, BackendError } from "@/lib/backend";
+ import { decodeError } from "@/lib/errors";
+@@ -17,14 +18,21 @@ function isBytes32(value: string): value is Hex {
+ }
+ 
+ function Result({ ok, title, children }: { ok: boolean | null; title: string; children: ReactNode }) {
+-  const style = ok === null ? "border-slate-300 bg-slate-50" : ok ? "border-emerald-300 bg-emerald-50" : "border-red-300 bg-red-50";
+-  const mark = ok === null ? "–" : ok ? "Pass" : "Fail";
++  const style = ok === null ? "border-line bg-surface text-fg" : ok ? "border-ok-line bg-ok-bg text-ok-fg" : "border-danger-line bg-danger-bg text-danger-fg";
++  const mark = ok === null ? "Unknown" : ok ? "Pass" : "Fail";
++  const Icon = ok === null ? InfoIcon : ok ? CheckIcon : CrossIcon;
+   return (
+-    <div className={`rounded-md border p-3 text-sm ${style}`}>
+-      <p className="font-semibold">
+-        {mark}: {title}
+-      </p>
+-      <div className="mt-1 space-y-1 break-words">{children}</div>
++    <div className={`flex gap-4 rounded-lg border p-4 sm:p-5 ${style}`}>
++      <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-current/30">
++        <Icon size={18} />
++      </span>
++      <div className="min-w-0 space-y-1">
++        <p className="text-base font-bold">
++          <span className="sr-only">{mark}: </span>
++          {title}
++        </p>
++        <div className="space-y-1 text-sm leading-relaxed break-words">{children}</div>
++      </div>
+     </div>
+   );
+ }
+@@ -137,29 +145,41 @@ export default function VerifyPage() {
+   };
+ 
+   return (
+-    <Section title="Verify evidence">
+-      <form className="flex flex-col gap-2 sm:flex-row" onSubmit={onSubmit}>
+-        <label className="sr-only" htmlFor="hash">
++    <>
++      <PageHeader
++        title="Verify evidence"
++        description="Anyone can check that evidence was not changed after it was recorded. This page fetches the stored bundle, hashes it again in your browser, and compares it with the hash on chain."
++      />
++      <form className="rounded-lg border border-line bg-surface p-5 sm:p-6" onSubmit={onSubmit} noValidate>
++        <label className="mb-1.5 block text-sm font-semibold text-fg" htmlFor="hash">
+           Evidence or complaint hash
+         </label>
+-        <input
+-          id="hash"
+-          placeholder="Evidence or complaint hash (0x…)"
+-          value={input}
+-          onChange={(event) => setInput(event.target.value)}
+-          autoComplete="off"
+-          spellCheck={false}
+-          className="w-full rounded-md border border-slate-300 px-3 py-2 font-mono text-sm"
+-        />
+-        <button type="submit" className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700">
+-          Verify
+-        </button>
++        <div className="flex flex-col gap-3 sm:flex-row">
++          <input
++            id="hash"
++            placeholder="0x followed by 64 hex characters"
++            value={input}
++            onChange={(event) => setInput(event.target.value)}
++            autoComplete="off"
++            spellCheck={false}
++            aria-invalid={inputError !== null}
++            aria-describedby={inputError ? "hash-error" : undefined}
++            className={`${inputClass} font-mono`}
++          />
++          <button type="submit" className={buttonClass("primary")}>
++            Verify
++          </button>
++        </div>
++        {inputError && (
++          <p id="hash-error" className="mt-2 text-sm text-danger-fg">
++            {inputError}
++          </p>
++        )}
+       </form>
+-      {inputError && <p className="mt-2 text-sm text-red-700">{inputError}</p>}
+-      <div className="mt-4">
++      <div aria-live="polite">
+         {hash === undefined && !inputError && <Empty label="Enter a hash to check it against the chain and the backend." />}
+         {hash !== undefined && <Results key={hash} hash={hash} />}
+       </div>
+-    </Section>
++    </>
+   );
+ }
+diff --git a/apps/web/src/app/wallet/layout.tsx b/apps/web/src/app/wallet/layout.tsx
+new file mode 100644
+index 0000000..40c0210
+--- /dev/null
++++ b/apps/web/src/app/wallet/layout.tsx
+@@ -0,0 +1,11 @@
++import type { Metadata } from "next";
++import type { ReactNode } from "react";
++
++export const metadata: Metadata = {
++  title: "Check an address",
++  description: "Look up whether a wallet is reported, flagged or part of a confirmed scam cluster, then send through the guard contract.",
++};
++
++export default function Layout({ children }: { children: ReactNode }) {
++  return children;
++}
+diff --git a/apps/web/src/app/wallet/page.tsx b/apps/web/src/app/wallet/page.tsx
+index df842b8..148d6ca 100644
+--- a/apps/web/src/app/wallet/page.tsx
++++ b/apps/web/src/app/wallet/page.tsx
+@@ -6,7 +6,9 @@ import { getAddress, isAddress, type Address, type Hex } from "viem";
+ import { useAccount, useWriteContract } from "wagmi";
+ import { PromoteAction } from "@/components/actions";
+ import { useAppConfig } from "@/components/AppConfigContext";
+-import { Countdown, Empty, ErrorPanel, ExplorerLink, Field, Loading, Mono, Section } from "@/components/ui";
++import { AlertIcon, CheckIcon, InfoIcon, SearchIcon } from "@/components/icons";
++import { LEVEL_PANEL } from "@/components/status";
++import { buttonClass, Countdown, Empty, ErrorPanel, ExplorerLink, Field, inputClass, Loading, Mono, Notice, PageHeader, Section } from "@/components/ui";
+ import { Role, Status } from "@shared/enums";
+ import { abiEvent, combinedAbi } from "@/lib/abi";
+ import { readStatus, type StatusResult } from "@/lib/contract";
+@@ -19,11 +21,11 @@ import { parseAmount, simulateGuardedSend } from "@/lib/send";
+ import { warningFor, type WarningLevel } from "@/lib/warning";
+ import { NATIVE_CURRENCY } from "@/lib/chain";
+ 
+-const LEVEL_STYLES: Record<WarningLevel, string> = {
+-  none: "border-emerald-300 bg-emerald-50 text-emerald-900",
+-  note: "border-sky-300 bg-sky-50 text-sky-900",
+-  soft: "border-amber-300 bg-amber-50 text-amber-900",
+-  strong: "border-red-400 bg-red-50 text-red-900",
++const LEVEL_ICON: Record<WarningLevel, typeof AlertIcon> = {
++  none: CheckIcon,
++  note: InfoIcon,
++  soft: AlertIcon,
++  strong: AlertIcon,
+ };
+ 
+ type Evidence = { hash: Hex; ref: LogRef; source: string; reportId?: bigint } | null;
+@@ -78,13 +80,13 @@ function AiSummary({ hash }: { hash: Hex }) {
+       <ErrorPanel error={summary.error instanceof BackendError ? summary.error.decoded : decodeError(summary.error, combinedAbi)} />
+     );
+   }
+-  if (summary.data === null) return <p className="text-sm">The backend has no evidence bundle for this hash.</p>;
++  if (summary.data === null) return <p className="text-sm text-fg-muted">The backend has no evidence bundle for this hash.</p>;
+   return (
+-    <div className="space-y-1 text-sm">
+-      <p className="whitespace-pre-line">{summary.data.aiSummary.text}</p>
+-      <p className="text-xs opacity-80">
++    <div className="space-y-3 text-sm">
++      <p className="leading-relaxed whitespace-pre-line text-fg">{summary.data.aiSummary.text}</p>
++      <p className="text-fg-muted">
+         Summary source: {summary.data.aiSummary.source}. Data source: {summary.data.dataSource}. The summary explains the
+-        evidence; it does not confirm anything.
++        evidence. It does not confirm anything.
+       </p>
+     </div>
+   );
+@@ -93,12 +95,18 @@ function AiSummary({ hash }: { hash: Hex }) {
+ function StatusCard({ account, status }: { account: Address; status: StatusResult }) {
+   const warning = warningFor(status.status);
+   const evidence = useEvidence(account, status);
++  const Icon = LEVEL_ICON[warning.level];
+   return (
+-    <div className={`rounded-lg border-2 p-4 ${LEVEL_STYLES[warning.level]}`} role={warning.level === "strong" ? "alert" : "status"}>
+-      <p className="text-xs font-semibold tracking-wide uppercase">Status: {Status[status.status]}</p>
+-      <p className="mt-1 text-xl font-bold">{warning.label}</p>
+-      <p className="mt-1 text-sm">{warning.message}</p>
+-      <dl className="mt-4 space-y-2">
++    <div className="overflow-hidden rounded-lg border border-line bg-surface">
++      <div className={`flex gap-4 border-b p-5 sm:p-6 ${LEVEL_PANEL[warning.level]}`} role={warning.level === "strong" ? "alert" : "status"}>
++        <Icon size={28} className="mt-0.5 shrink-0" />
++        <div className="space-y-1">
++          <p className="text-xs font-semibold tracking-wide uppercase">Status: {Status[status.status]}</p>
++          <p className="text-2xl font-bold tracking-tight">{warning.label}</p>
++          <p className="text-[15px] leading-relaxed">{warning.message}</p>
++        </div>
++      </div>
++      <dl className="p-5 sm:p-6">
+         <Field label="Address">
+           <ExplorerLink kind="address" value={account} />
+         </Field>
+@@ -123,7 +131,7 @@ function StatusCard({ account, status }: { account: Address; status: StatusResul
+             {evidence.isSuccess && evidence.data && (
+               <div className="space-y-1">
+                 <Mono>{evidence.data.hash}</Mono>
+-                <p className="text-xs opacity-80">
++                <p className="text-sm text-fg-muted">
+                   This is a hash of off-chain evidence, not the evidence itself. Source: {evidence.data.source}, tx{" "}
+                   <ExplorerLink kind="tx" value={evidence.data.ref.transactionHash} />
+                 </p>
+@@ -180,44 +188,50 @@ function SendPanel({ to }: { to: Address }) {
+         : undefined;
+ 
+   return (
+-    <Section title="Send through StakeoutGuard">
+-      <p className="mb-3 text-sm text-slate-600">
+-        Funds go through StakeoutGuard at <ExplorerLink kind="address" value={config.deployment.guardAddress} />, which
+-        refuses to forward to Confirmed or Linked addresses.
+-      </p>
++    <Section
++      title="Send through StakeoutGuard"
++      description={
++        <>
++          Funds go through the guard contract at <ExplorerLink kind="address" value={config.deployment.guardAddress} />, which
++          refuses to forward to Confirmed or Linked addresses.
++        </>
++      }
++    >
+       <form
+-        className="flex flex-col gap-2 sm:flex-row"
++        className="flex flex-col gap-3 sm:flex-row sm:items-end"
+         onSubmit={(event) => {
+           event.preventDefault();
+           send.mutate();
+         }}
+       >
+-        <label className="sr-only" htmlFor="amount">
+-          Amount in {NATIVE_CURRENCY.symbol}
+-        </label>
+-        <input
+-          id="amount"
+-          inputMode="decimal"
+-          placeholder={`Amount in ${NATIVE_CURRENCY.symbol}`}
+-          value={amount}
+-          onChange={(event) => setAmount(event.target.value)}
+-          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm sm:max-w-xs"
+-        />
++        <div className="w-full space-y-1.5 sm:max-w-xs">
++          <label className="block text-sm font-semibold text-fg" htmlFor="amount">
++            Amount in {NATIVE_CURRENCY.symbol}
++          </label>
++          <input
++            id="amount"
++            inputMode="decimal"
++            placeholder="0.01"
++            value={amount}
++            onChange={(event) => setAmount(event.target.value)}
++            className={`${inputClass} font-mono`}
++          />
++        </div>
+         <button
+           type="submit"
+           disabled={blockedReason !== undefined || value === undefined || send.isPending}
+-          className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
++          className={buttonClass("accent")}
+         >
+-          {send.isPending ? "Sending…" : "Send"}
++          {send.isPending ? "Sending…" : "Send safely"}
+         </button>
+       </form>
+-      {blockedReason && <p className="mt-2 text-sm text-slate-600">{blockedReason}</p>}
+-      <div className="mt-3">
++      {blockedReason && <p className="mt-3 text-sm text-fg-muted">{blockedReason}</p>}
++      <div className="mt-4 space-y-3" aria-live="polite">
+         {send.isError && <ErrorPanel error={decodeError(send.error, combinedAbi)} />}
+         {send.isSuccess && (
+-          <p role="status" className="text-sm text-emerald-800">
+-            Sent. Transaction <ExplorerLink kind="tx" value={send.data} />
+-          </p>
++          <Notice tone="ok" title="Sent">
++            Transaction <ExplorerLink kind="tx" value={send.data} />
++          </Notice>
+         )}
+       </div>
+     </Section>
+@@ -251,35 +265,43 @@ export default function WalletPage() {
+ 
+   return (
+     <>
+-      <Section title="Check an address before sending">
+-        <form className="flex flex-col gap-2 sm:flex-row" onSubmit={onSubmit}>
+-          <label className="sr-only" htmlFor="address">
+-            Recipient address
+-          </label>
++      <PageHeader
++        title="Check an address"
++        description="Paste any wallet address. The status comes straight from the Stakeout contract, so no wallet connection is needed to look it up."
++      />
++      <form className="rounded-lg border border-line bg-surface p-5 sm:p-6" onSubmit={onSubmit} noValidate>
++        <label className="mb-1.5 block text-sm font-semibold text-fg" htmlFor="address">
++          Recipient address
++        </label>
++        <div className="flex flex-col gap-3 sm:flex-row">
+           <input
+             id="address"
+-            placeholder="Recipient address (0x…)"
++            placeholder="0x followed by 40 hex characters"
+             value={input}
+             onChange={(event) => setInput(event.target.value)}
+             autoComplete="off"
+             spellCheck={false}
+-            className="w-full rounded-md border border-slate-300 px-3 py-2 font-mono text-sm"
++            aria-invalid={inputError !== null}
++            aria-describedby={inputError ? "address-error" : undefined}
++            className={`${inputClass} font-mono`}
+           />
+-          <button
+-            type="submit"
+-            className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
+-          >
+-            Check
++          <button type="submit" className={buttonClass("primary")}>
++            <SearchIcon size={17} />
++            Check status
+           </button>
+-        </form>
+-        {inputError && <p className="mt-2 text-sm text-red-700">{inputError}</p>}
+-        <div className="mt-4">
+-          {account === undefined && !inputError && <Empty label="Enter an address to see its status." />}
+-          {account !== undefined && status.isPending && <Loading label="Calling getStatus…" />}
+-          {status.isError && <ErrorPanel error={decodeError(status.error, combinedAbi)} />}
+-          {account !== undefined && status.isSuccess && <StatusCard account={account} status={status.data} />}
+         </div>
+-      </Section>
++        {inputError && (
++          <p id="address-error" className="mt-2 text-sm text-danger-fg">
++            {inputError}
++          </p>
++        )}
++      </form>
++      <div aria-live="polite" className="space-y-6">
++        {account === undefined && !inputError && <Empty label="Enter an address to see its status." />}
++        {account !== undefined && status.isPending && <Loading label="Calling getStatus on the contract…" />}
++        {status.isError && <ErrorPanel error={decodeError(status.error, combinedAbi)} />}
++        {account !== undefined && status.isSuccess && <StatusCard account={account} status={status.data} />}
++      </div>
+       {account !== undefined && status.isSuccess && <SendPanel key={account} to={account} />}
+     </>
+   );
+diff --git a/apps/web/src/components/ConfigError.tsx b/apps/web/src/components/ConfigError.tsx
+index 679d336..3461df8 100644
+--- a/apps/web/src/components/ConfigError.tsx
++++ b/apps/web/src/components/ConfigError.tsx
+@@ -1,13 +1,13 @@
+ export function ConfigError({ problems }: { problems: string[] }) {
+   return (
+-    <main className="mx-auto max-w-2xl px-4 py-10">
+-      <div role="alert" className="rounded-lg border border-red-300 bg-red-50 p-5 text-red-900">
+-        <h1 className="text-xl font-semibold">Configuration error</h1>
+-        <p className="mt-2 text-sm">
+-          The app cannot start until these settings are fixed in apps/web/.env.local (see apps/web/.env.example) or in
+-          the deployment file:
++    <main className="mx-auto max-w-2xl px-4 py-12">
++      <div role="alert" className="rounded-lg border border-danger-line bg-danger-bg p-6 text-danger-fg">
++        <h1 className="text-xl font-bold">Configuration error</h1>
++        <p className="mt-2 text-sm leading-relaxed">
++          The app cannot start until these settings are fixed in apps/web/.env.local (see apps/web/.env.example) or in the
++          deployment file:
+         </p>
+-        <ul className="mt-3 list-disc space-y-1 pl-5 font-mono text-sm break-words">
++        <ul className="mt-4 list-disc space-y-1 pl-5 font-mono text-[13px] break-words">
+           {problems.map((problem) => (
+             <li key={problem}>{problem}</li>
+           ))}
+diff --git a/apps/web/src/components/DocPage.tsx b/apps/web/src/components/DocPage.tsx
+new file mode 100644
+index 0000000..d792350
+--- /dev/null
++++ b/apps/web/src/components/DocPage.tsx
+@@ -0,0 +1,41 @@
++import type { ReactNode } from "react";
++
++export type DocSection = { id: string; heading: string; body: ReactNode };
++
++export function Pending({ children }: { children: ReactNode }) {
++  return (
++    <span className="rounded-sm border border-warn-line bg-warn-bg px-1.5 py-0.5 text-[13px] font-semibold text-warn-fg">{children}</span>
++  );
++}
++
++export function DocPage({ title, updated, intro, sections }: { title: string; updated: string; intro: ReactNode; sections: DocSection[] }) {
++  return (
++    <div className="grid gap-10 lg:grid-cols-[14rem_1fr]">
++      <nav aria-label={`${title} sections`} className="hidden lg:block">
++        <p className="mb-3 text-xs font-semibold tracking-wide text-fg-muted uppercase">On this page</p>
++        <ol className="space-y-1 border-l border-line">
++          {sections.map((section) => (
++            <li key={section.id}>
++              <a href={`#${section.id}`} className="-ml-px block border-l border-transparent py-1 pl-4 text-sm text-fg-muted hover:border-fg hover:text-fg">
++                {section.heading}
++              </a>
++            </li>
++          ))}
++        </ol>
++      </nav>
++      <article className="max-w-3xl space-y-10">
++        <header className="space-y-3 border-b border-line pb-8">
++          <h1 className="text-3xl font-bold tracking-tight text-fg sm:text-4xl">{title}</h1>
++          <p className="text-sm text-fg-muted">Last updated {updated}</p>
++          <div className="space-y-3 text-[17px] leading-relaxed text-fg-muted">{intro}</div>
++        </header>
++        {sections.map((section) => (
++          <section key={section.id} id={section.id} className="scroll-mt-8 space-y-3">
++            <h2 className="text-xl font-bold text-fg">{section.heading}</h2>
++            <div className="space-y-3 leading-relaxed text-fg [&_li]:pl-1 [&_ul]:list-disc [&_ul]:space-y-2 [&_ul]:pl-5">{section.body}</div>
++          </section>
++        ))}
++      </article>
++    </div>
++  );
++}
+diff --git a/apps/web/src/components/Shell.tsx b/apps/web/src/components/Shell.tsx
+index 6351488..09bbb70 100644
+--- a/apps/web/src/components/Shell.tsx
++++ b/apps/web/src/components/Shell.tsx
+@@ -2,16 +2,18 @@
+ 
+ import Link from "next/link";
+ import { usePathname } from "next/navigation";
+-import type { ReactNode } from "react";
++import { useState, type ReactNode } from "react";
+ import { useAccount, useConnect, useDisconnect, useSwitchChain } from "wagmi";
+ import { combinedAbi } from "@/lib/abi";
+ import { decodeError, type DecodedError } from "@/lib/errors";
+ import { useMounted } from "@/lib/now";
+ import { useAppConfig } from "./AppConfigContext";
+-import { ErrorPanel } from "./ui";
++import { CrossIcon, MenuIcon, TrailLensMark, WalletIcon } from "./icons";
++import { ThemeSwitch } from "./ThemeSwitch";
++import { buttonClass, ErrorPanel } from "./ui";
+ 
+ const NAV = [
+-  { href: "/wallet", label: "Wallet" },
++  { href: "/wallet", label: "Check address" },
+   { href: "/report", label: "Report" },
+   { href: "/verify", label: "Verify" },
+   { href: "/dashboard", label: "Dashboard" },
+@@ -19,6 +21,12 @@ const NAV = [
+   { href: "/reviewer", label: "Reviewer" },
+ ];
+ 
++const FOOTER_LINKS = [
++  { href: "/faq", label: "FAQ" },
++  { href: "/privacy", label: "Privacy" },
++  { href: "/terms", label: "Terms" },
++];
++
+ function walletError(error: Error): DecodedError {
+   if (error.name === "ProviderNotFoundError") {
+     return { title: "No browser wallet found", detail: "Install or enable a browser wallet extension, then reload." };
+@@ -26,22 +34,40 @@ function walletError(error: Error): DecodedError {
+   return decodeError(error, combinedAbi);
+ }
+ 
++function shortAddress(address: string): string {
++  return `${address.slice(0, 6)}…${address.slice(-4)}`;
++}
++
++export function Logo({ className = "" }: { className?: string }) {
++  return (
++    <span className={`inline-flex items-center gap-2.5 text-xl font-bold tracking-tight ${className}`}>
++      <TrailLensMark size={28} hole="var(--header)" />
++      stakeout
++    </span>
++  );
++}
++
+ function WalletButton() {
+   const mounted = useMounted();
+   const { address, isConnected } = useAccount();
+   const { connectors, connect, isPending, error } = useConnect();
+   const { disconnect } = useDisconnect();
+-  if (!mounted) return <div className="h-9 w-32" />;
++  if (!mounted) return <div className="h-11 w-36" />;
+   if (isConnected && address) {
+     return (
+       <div className="flex items-center gap-2">
+-        <span className="max-w-[9rem] truncate font-mono text-xs text-slate-600" title={address}>
+-          {address}
++        <span
++          className="inline-flex min-h-11 items-center gap-2 rounded-md border border-header-line px-3 font-mono text-[13px] text-header-fg"
++          title={address}
++        >
++          <span className="h-2 w-2 rounded-full bg-[#3dd68c]" aria-hidden="true" />
++          <span className="sr-only">Connected wallet </span>
++          {shortAddress(address)}
+         </span>
+         <button
+           type="button"
+           onClick={() => disconnect()}
+-          className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
++          className="inline-flex min-h-11 items-center rounded-md px-3 text-sm text-header-muted transition-colors duration-150 hover:bg-header-active hover:text-header-fg"
+         >
+           Disconnect
+         </button>
+@@ -56,12 +82,17 @@ function WalletButton() {
+           type="button"
+           disabled={isPending}
+           onClick={() => connect({ connector })}
+-          className="rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
++          className={buttonClass("accent")}
+         >
++          <WalletIcon size={17} />
+           {isPending ? "Connecting…" : "Connect wallet"}
+         </button>
+       ))}
+-      {error && <ErrorPanel error={walletError(error)} />}
++      {error && (
++        <div className="max-w-xs">
++          <ErrorPanel error={walletError(error)} />
++        </div>
++      )}
+     </div>
+   );
+ }
+@@ -72,29 +103,18 @@ function NetworkPrompt() {
+   const { isConnected, chainId } = useAccount();
+   const { switchChain, isPending, error } = useSwitchChain();
+   const expected = config.deployment.chainId;
+-  if (!mounted) return null;
+-  if (!isConnected) {
+-    return (
+-      <div className="border-b border-sky-200 bg-sky-50 px-4 py-2 text-sm text-sky-900">
+-        <p className="mx-auto max-w-5xl">
+-          No wallet connected. You can look up any address without one; connect a wallet to send through
+-          StakeoutGuard.
+-        </p>
+-      </div>
+-    );
+-  }
+-  if (chainId === expected) return null;
++  if (!mounted || !isConnected || chainId === expected) return null;
+   return (
+-    <div className="border-b border-amber-300 bg-amber-50 px-4 py-2 text-sm text-amber-900">
+-      <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-3">
++    <div role="alert" className="border-b border-warn-line bg-warn-bg text-warn-fg">
++      <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-4 py-3 text-sm sm:px-6">
+         <span>
+-          Wrong network: your wallet is on chain {chainId}, this app uses chain {expected}.
++          Wrong network: your wallet is on chain {chainId}, and this app uses chain {expected}.
+         </span>
+         <button
+           type="button"
+           disabled={isPending}
+           onClick={() => switchChain({ chainId: expected })}
+-          className="rounded-md bg-amber-600 px-3 py-1 text-white hover:bg-amber-700 disabled:opacity-50"
++          className={buttonClass("primary", "sm")}
+         >
+           {isPending ? "Switching…" : `Switch to chain ${expected}`}
+         </button>
+@@ -104,46 +124,109 @@ function NetworkPrompt() {
+   );
+ }
+ 
++function NavLinks({ pathname, vertical }: { pathname: string; vertical: boolean }) {
++  return (
++    <ul className={vertical ? "flex flex-col gap-1" : "flex items-center gap-1"}>
++      {NAV.map((item) => {
++        const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
++        return (
++          <li key={item.href}>
++            <Link
++              href={item.href}
++              aria-current={active ? "page" : undefined}
++              className={`flex min-h-11 items-center rounded-md px-3 text-[15px] transition-colors duration-150 ${
++                active ? "bg-header-active font-semibold text-accent" : "text-header-muted hover:text-header-fg"
++              }`}
++            >
++              {item.label}
++            </Link>
++          </li>
++        );
++      })}
++    </ul>
++  );
++}
++
+ export function Shell({ children }: { children: ReactNode }) {
+   const config = useAppConfig();
+   const pathname = usePathname();
++  const [menuPath, setMenuPath] = useState<string | null>(null);
++  const menuOpen = menuPath === pathname;
+   return (
+-    <div className="min-h-screen bg-slate-50">
+-      <header className="border-b border-slate-200 bg-white">
+-        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3">
+-          <div className="flex flex-wrap items-center gap-2">
+-            <Link href="/wallet" className="text-lg font-bold text-slate-900">
+-              Stakeout
+-            </Link>
+-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-700">
+-              Data: {config.dataSource}
+-            </span>
+-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-700">
+-              Chain {config.deployment.chainId}
+-            </span>
++    <div className="flex min-h-screen flex-col bg-bg">
++      <a
++        href="#main"
++        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-md focus:bg-accent focus:px-4 focus:py-3 focus:font-semibold focus:text-accent-fg"
++      >
++        Skip to content
++      </a>
++      <header className="border-b border-header-line bg-header text-header-fg">
++        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
++          <Link href="/" className="rounded-md text-header-fg" aria-label="Stakeout home">
++            <Logo />
++          </Link>
++          <nav aria-label="Main" className="hidden lg:block">
++            <NavLinks pathname={pathname} vertical={false} />
++          </nav>
++          <div className="flex items-center gap-2">
++            <div className="hidden lg:block">
++              <ThemeSwitch />
++            </div>
++            <div className="hidden sm:block">
++              <WalletButton />
++            </div>
++            <button
++              type="button"
++              className="inline-flex h-11 w-11 items-center justify-center rounded-md border border-header-line text-header-fg lg:hidden"
++              aria-expanded={menuOpen}
++              aria-controls="mobile-menu"
++              aria-label={menuOpen ? "Close menu" : "Open menu"}
++              onClick={() => setMenuPath(menuOpen ? null : pathname)}
++            >
++              {menuOpen ? <CrossIcon /> : <MenuIcon />}
++            </button>
+           </div>
+-          <WalletButton />
+         </div>
+-        <nav className="mx-auto flex max-w-5xl gap-1 overflow-x-auto px-4 pb-2" aria-label="Main">
+-          {NAV.map((item) => {
+-            const active = pathname === item.href;
+-            return (
+-              <Link
+-                key={item.href}
+-                href={item.href}
+-                aria-current={active ? "page" : undefined}
+-                className={`rounded-md px-3 py-1.5 text-sm ${active ? "bg-indigo-50 font-semibold text-indigo-700" : "text-slate-600 hover:bg-slate-100"}`}
+-              >
+-                {item.label}
+-              </Link>
+-            );
+-          })}
+-        </nav>
++        {menuOpen && (
++          <div id="mobile-menu" className="border-t border-header-line lg:hidden">
++            <div className="mx-auto max-w-6xl space-y-4 px-4 py-4 sm:px-6">
++              <nav aria-label="Main">
++                <NavLinks pathname={pathname} vertical />
++              </nav>
++              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-header-line pt-4">
++                <ThemeSwitch />
++                <div className="sm:hidden">
++                  <WalletButton />
++                </div>
++              </div>
++            </div>
++          </div>
++        )}
+       </header>
+       <NetworkPrompt />
+-      <main className="mx-auto max-w-5xl space-y-4 px-4 py-6">{children}</main>
+-      <footer className="mx-auto max-w-5xl px-4 pb-6 text-xs text-slate-500">
+-        Data source: {config.dataSource}. Contracts from {config.deploymentFile}, deployed {config.deployment.deployedAt}.
++      <main id="main" className="mx-auto w-full max-w-6xl flex-1 space-y-6 px-4 py-8 sm:px-6 sm:py-10">
++        {children}
++      </main>
++      <footer className="border-t border-line">
++        <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-8 text-sm text-fg-muted sm:px-6 md:flex-row md:items-start md:justify-between">
++          <div className="space-y-2">
++            <p className="font-semibold text-fg">Stakeout is a testnet prototype. Do not use real funds.</p>
++            <p>
++              Data source: {config.dataSource}. Contracts from {config.deploymentFile}, deployed {config.deployment.deployedAt}.
++            </p>
++          </div>
++          <nav aria-label="Footer">
++            <ul className="flex flex-wrap gap-1">
++              {FOOTER_LINKS.map((link) => (
++                <li key={link.href}>
++                  <Link href={link.href} className="flex min-h-11 items-center rounded-md px-3 text-fg hover:bg-sunken">
++                    {link.label}
++                  </Link>
++                </li>
++              ))}
++            </ul>
++          </nav>
++        </div>
+       </footer>
+     </div>
+   );
+diff --git a/apps/web/src/components/ThemeSwitch.tsx b/apps/web/src/components/ThemeSwitch.tsx
+new file mode 100644
+index 0000000..be4265d
+--- /dev/null
++++ b/apps/web/src/components/ThemeSwitch.tsx
+@@ -0,0 +1,86 @@
++"use client";
++
++import { useSyncExternalStore } from "react";
++import { parseThemePreference, resolveTheme, THEME_STORAGE_KEY, type ThemePreference } from "@/lib/theme";
++import { MonitorIcon, MoonIcon, SunIcon } from "./icons";
++
++const listeners = new Set<() => void>();
++const DARK_QUERY = "(prefers-color-scheme: dark)";
++
++function readPreference(): ThemePreference {
++  try {
++    return parseThemePreference(window.localStorage.getItem(THEME_STORAGE_KEY));
++  } catch {
++    return "system";
++  }
++}
++
++function applyPreference(preference: ThemePreference) {
++  const theme = resolveTheme(preference, window.matchMedia(DARK_QUERY).matches);
++  document.documentElement.setAttribute("data-theme", theme);
++}
++
++function notify() {
++  for (const listener of listeners) listener();
++}
++
++function subscribe(listener: () => void) {
++  listeners.add(listener);
++  const media = window.matchMedia(DARK_QUERY);
++  const onSystemChange = () => {
++    if (readPreference() === "system") applyPreference("system");
++    listener();
++  };
++  const onStorage = (event: StorageEvent) => {
++    if (event.key !== THEME_STORAGE_KEY) return;
++    applyPreference(readPreference());
++    listener();
++  };
++  media.addEventListener("change", onSystemChange);
++  window.addEventListener("storage", onStorage);
++  return () => {
++    listeners.delete(listener);
++    media.removeEventListener("change", onSystemChange);
++    window.removeEventListener("storage", onStorage);
++  };
++}
++
++function choose(preference: ThemePreference) {
++  try {
++    window.localStorage.setItem(THEME_STORAGE_KEY, preference);
++  } catch {}
++  applyPreference(preference);
++  notify();
++}
++
++const OPTIONS: { value: ThemePreference; label: string; Icon: typeof SunIcon }[] = [
++  { value: "light", label: "Light theme", Icon: SunIcon },
++  { value: "dark", label: "Dark theme", Icon: MoonIcon },
++  { value: "system", label: "Match system theme", Icon: MonitorIcon },
++];
++
++export function ThemeSwitch() {
++  const preference = useSyncExternalStore(subscribe, readPreference, () => "system" as ThemePreference);
++  return (
++    <div role="group" aria-label="Color theme" className="inline-flex rounded-md border border-header-line p-0.5">
++      {OPTIONS.map(({ value, label, Icon }) => {
++        const active = preference === value;
++        return (
++          <button
++            key={value}
++            type="button"
++            aria-label={label}
++            aria-pressed={active}
++            title={label}
++            onClick={() => choose(value)}
++            className={`inline-flex h-10 w-10 items-center justify-center rounded-[5px] transition-colors duration-150 ${
++              active ? "bg-header-active text-accent" : "text-header-muted hover:text-header-fg"
++            }`}
++          >
++            <Icon size={17} />
++          </button>
++        );
++      })}
++    </div>
++  );
++}
+diff --git a/apps/web/src/components/actions.tsx b/apps/web/src/components/actions.tsx
+index 71a88ce..8298fde 100644
+--- a/apps/web/src/components/actions.tsx
++++ b/apps/web/src/components/actions.tsx
+@@ -2,7 +2,7 @@
+ 
+ import { formatEther } from "viem";
+ import { useAppConfig } from "@/components/AppConfigContext";
+-import { ErrorPanel, ExplorerLink, Section } from "@/components/ui";
++import { buttonClass, ErrorPanel, ExplorerLink, Section } from "@/components/ui";
+ import { combinedAbi, stakeoutAbi } from "@/lib/abi";
+ import {
+   anyoneGate,
+@@ -25,7 +25,7 @@ type Action = ReturnType<typeof useContractAction>;
+ function TxFeedback({ action }: { action: Action }) {
+   if (action.isPending) {
+     return (
+-      <p role="status" className="text-xs text-slate-600">
++      <p role="status" className="text-sm text-fg-muted">
+         {action.hash ? (
+           <>
+             Waiting for confirmation of <ExplorerLink kind="tx" value={action.hash} />
+@@ -38,7 +38,7 @@ function TxFeedback({ action }: { action: Action }) {
+   }
+   if (action.isSuccess) {
+     return (
+-      <p role="status" className="text-xs text-emerald-800">
++      <p role="status" className="text-sm text-ok-fg">
+         Confirmed in <ExplorerLink kind="tx" value={action.data} />
+       </p>
+     );
+@@ -49,7 +49,7 @@ function TxFeedback({ action }: { action: Action }) {
+       <div className="space-y-1">
+         <ErrorPanel error={decodeError(action.error, combinedAbi)} />
+         {failedHash && (
+-          <p className="text-xs text-red-800">
++          <p className="text-sm text-danger-fg">
+             Failed transaction <ExplorerLink kind="tx" value={failedHash} />
+           </p>
+         )}
+@@ -63,27 +63,27 @@ function GatedButton({ gate, label, action, onClick }: { gate: Gate; label: stri
+   const mounted = useMounted();
+   if (!mounted) return null;
+   return (
+-    <div className="space-y-1">
++    <div className="space-y-2">
+       {gate.visible && (
+         <button
+           type="button"
+           disabled={!gate.enabled || action.isPending}
+           onClick={onClick}
+-          className="rounded-md bg-indigo-600 px-3 py-1 text-xs font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
++          className={buttonClass("primary", "sm")}
+         >
+           {action.isPending ? `${label}…` : label}
+         </button>
+       )}
+-      {gate.reason && <p className="text-xs text-slate-500">{gate.reason}</p>}
++      {gate.reason && <p className="text-sm text-fg-muted">{gate.reason}</p>}
+       <TxFeedback action={action} />
+     </div>
+   );
+ }
+ 
+ function StakeNote({ minStake }: { minStake: bigint | undefined }) {
+-  if (minStake === undefined) return <p className="text-xs text-slate-500">Reading the minimum stake from the contract…</p>;
++  if (minStake === undefined) return <p className="text-sm text-fg-muted">Reading the minimum stake from the contract…</p>;
+   return (
+-    <p className="text-xs text-slate-600">
++    <p className="text-sm text-fg-muted">
+       Stake: {formatEther(minStake)} {NATIVE_CURRENCY.symbol} (minStake on the contract)
+     </p>
+   );
+@@ -99,7 +99,7 @@ export function PromoteAction({ reportId, targetStatus }: { reportId: bigint; ta
+     targetStatus === undefined ? "Reading the target's current status." : minStake.data === undefined ? "Reading the minimum stake." : promoteBlocker(targetStatus);
+   const gate = reporterGate(wallet, isReporter.data, blocker);
+   return (
+-    <div className="space-y-1">
++    <div className="space-y-2">
+       {gate.visible && <StakeNote minStake={minStake.data} />}
+       <GatedButton
+         gate={gate}
+@@ -135,7 +135,7 @@ export function ChallengeAction({ flagId, flag }: { flagId: bigint; flag: FlagFa
+         : challengeBlocker(flag, account, now);
+   const gate = reporterGate(wallet, isReporter.data, blocker);
+   return (
+-    <div className="space-y-1">
++    <div className="space-y-2">
+       {gate.visible && <StakeNote minStake={minStake.data} />}
+       <GatedButton
+         gate={gate}
+@@ -182,10 +182,10 @@ export function WithdrawPanel() {
+   const action = useContractAction();
+   const gate = anyoneGate(wallet, withdrawBlocker(credits.data));
+   return (
+-    <Section title="Your withdrawable credit">
++    <Section title="Your withdrawable credit" description="Returned stakes and rewards wait here until you withdraw them to your wallet.">
+       {mounted && account !== undefined && credits.isError && <ErrorPanel error={decodeError(credits.error, combinedAbi)} />}
+       {mounted && account !== undefined && credits.isSuccess && (
+-        <p className="mb-2 text-2xl font-semibold">
++        <p className="mb-4 font-mono text-3xl font-semibold tabular-nums">
+           {formatEther(credits.data)} {NATIVE_CURRENCY.symbol}
+         </p>
+       )}
+diff --git a/apps/web/src/components/icons.tsx b/apps/web/src/components/icons.tsx
+new file mode 100644
+index 0000000..46f6cfa
+--- /dev/null
++++ b/apps/web/src/components/icons.tsx
+@@ -0,0 +1,167 @@
++import type { ReactNode, SVGProps } from "react";
++
++type IconProps = Omit<SVGProps<SVGSVGElement>, "children"> & { size?: number };
++
++function Icon({ size = 18, children, ...rest }: IconProps & { children: ReactNode }) {
++  return (
++    <svg
++      width={size}
++      height={size}
++      viewBox="0 0 24 24"
++      fill="none"
++      stroke="currentColor"
++      strokeWidth={2}
++      strokeLinecap="round"
++      strokeLinejoin="round"
++      aria-hidden="true"
++      focusable="false"
++      {...rest}
++    >
++      {children}
++    </svg>
++  );
++}
++
++export const AlertIcon = (props: IconProps) => (
++  <Icon {...props}>
++    <path d="M12 3 2 20h20L12 3z" />
++    <path d="M12 10v4" />
++    <path d="M12 17.5v.01" />
++  </Icon>
++);
++
++export const CheckIcon = (props: IconProps) => (
++  <Icon {...props}>
++    <path d="M20 6 9 17l-5-5" />
++  </Icon>
++);
++
++export const CrossIcon = (props: IconProps) => (
++  <Icon {...props}>
++    <path d="M18 6 6 18" />
++    <path d="m6 6 12 12" />
++  </Icon>
++);
++
++export const InfoIcon = (props: IconProps) => (
++  <Icon {...props}>
++    <circle cx="12" cy="12" r="9" />
++    <path d="M12 11v5" />
++    <path d="M12 7.5v.01" />
++  </Icon>
++);
++
++export const ClockIcon = (props: IconProps) => (
++  <Icon {...props}>
++    <circle cx="12" cy="12" r="9" />
++    <path d="M12 7v5l3 2" />
++  </Icon>
++);
++
++export const WalletIcon = (props: IconProps) => (
++  <Icon {...props}>
++    <rect x="3" y="6" width="18" height="13" rx="2" />
++    <path d="M16 12.5h2" />
++    <path d="M6 6V4.5A1.5 1.5 0 0 1 7.5 3h9" />
++  </Icon>
++);
++
++export const SearchIcon = (props: IconProps) => (
++  <Icon {...props}>
++    <circle cx="11" cy="11" r="7" />
++    <path d="m20 20-3.5-3.5" />
++  </Icon>
++);
++
++export const SunIcon = (props: IconProps) => (
++  <Icon {...props}>
++    <circle cx="12" cy="12" r="4" />
++    <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
++  </Icon>
++);
++
++export const MoonIcon = (props: IconProps) => (
++  <Icon {...props}>
++    <path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" />
++  </Icon>
++);
++
++export const MonitorIcon = (props: IconProps) => (
++  <Icon {...props}>
++    <rect x="3" y="4" width="18" height="12" rx="2" />
++    <path d="M8 20h8M12 16v4" />
++  </Icon>
++);
++
++export const MenuIcon = (props: IconProps) => (
++  <Icon {...props}>
++    <path d="M4 7h16M4 12h16M4 17h16" />
++  </Icon>
++);
++
++export const ExternalIcon = (props: IconProps) => (
++  <Icon {...props}>
++    <path d="M14 4h6v6" />
++    <path d="M20 4 11 13" />
++    <path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" />
++  </Icon>
++);
++
++export const RefreshIcon = (props: IconProps) => (
++  <Icon {...props}>
++    <path d="M20 11a8 8 0 0 0-14.3-4.9L4 8" />
++    <path d="M4 4v4h4" />
++    <path d="M4 13a8 8 0 0 0 14.3 4.9L20 16" />
++    <path d="M20 20v-4h-4" />
++  </Icon>
++);
++
++export const ArrowRightIcon = (props: IconProps) => (
++  <Icon {...props}>
++    <path d="M5 12h14" />
++    <path d="m13 6 6 6-6 6" />
++  </Icon>
++);
++
++export const ChevronIcon = (props: IconProps) => (
++  <Icon {...props}>
++    <path d="m6 9 6 6 6-6" />
++  </Icon>
++);
++
++export const ShieldIcon = (props: IconProps) => (
++  <Icon {...props}>
++    <path d="M12 3 4 6v6c0 4.4 3.4 8.2 8 9 4.6-.8 8-4.6 8-9V6l-8-3z" />
++    <path d="m9 12 2 2 4-4" />
++  </Icon>
++);
++
++export const FlagIcon = (props: IconProps) => (
++  <Icon {...props}>
++    <path d="M5 21V4" />
++    <path d="M5 4h11l-2 4 2 4H5" />
++  </Icon>
++);
++
++export const DocumentIcon = (props: IconProps) => (
++  <Icon {...props}>
++    <path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8l-5-5z" />
++    <path d="M14 3v5h5" />
++    <path d="M9 13h6M9 17h6" />
++  </Icon>
++);
++
++export function TrailLensMark({ size = 28, accent = "var(--accent)", ring = "currentColor", hole = "transparent" }: { size?: number; accent?: string; ring?: string; hole?: string }) {
++  return (
++    <svg width={size} height={size} viewBox="0 0 120 122" aria-hidden="true" focusable="false">
++      <path d="M96 14 L58 34 L68 56 L28 74 L38 98" fill="none" stroke={ring} strokeWidth="8" strokeLinejoin="round" strokeLinecap="round" />
++      <circle cx="96" cy="14" r="11" fill={ring} />
++      <circle cx="58" cy="34" r="9" fill={ring} />
++      <circle cx="68" cy="56" r="9" fill={ring} />
++      <circle cx="28" cy="74" r="9" fill={ring} />
++      <circle cx="38" cy="98" r="18" fill={hole} stroke={ring} strokeWidth="9" />
++      <circle cx="38" cy="98" r="9" fill={accent} />
++      <path d="M58 92 L90 82" stroke={ring} strokeWidth="13" strokeLinecap="round" />
++    </svg>
++  );
++}
+diff --git a/apps/web/src/components/status.tsx b/apps/web/src/components/status.tsx
+new file mode 100644
+index 0000000..d162b33
+--- /dev/null
++++ b/apps/web/src/components/status.tsx
+@@ -0,0 +1,15 @@
++import type { WarningLevel } from "@/lib/warning";
++
++export const LEVEL_PANEL: Record<WarningLevel, string> = {
++  none: "border-ok-line bg-ok-bg text-ok-fg",
++  note: "border-info-line bg-info-bg text-info-fg",
++  soft: "border-warn-line bg-warn-bg text-warn-fg",
++  strong: "border-danger-line bg-danger-bg text-danger-fg",
++};
++
++export const LEVEL_DOT: Record<WarningLevel, string> = {
++  none: "bg-ok-fg",
++  note: "bg-info-fg",
++  soft: "bg-warn-fg",
++  strong: "bg-danger",
++};
+diff --git a/apps/web/src/components/styles.ts b/apps/web/src/components/styles.ts
+new file mode 100644
+index 0000000..4a7e5aa
+--- /dev/null
++++ b/apps/web/src/components/styles.ts
+@@ -0,0 +1,34 @@
++export type ButtonVariant = "primary" | "accent" | "secondary" | "danger" | "ghost";
++export type Tone = "neutral" | "ok" | "info" | "warn" | "danger" | "accent";
++
++const BUTTON_BASE =
++  "inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-semibold transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50";
++
++const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
++  primary: "bg-brand text-brand-fg hover:bg-brand-hover",
++  accent: "bg-accent text-accent-fg hover:bg-accent-hover",
++  secondary: "border border-line-strong bg-surface text-fg hover:bg-sunken",
++  danger: "bg-danger text-white hover:bg-danger-hover",
++  ghost: "text-fg hover:bg-sunken",
++};
++
++export function buttonClass(variant: ButtonVariant = "primary", size: "md" | "sm" = "md"): string {
++  const sizing = size === "md" ? "min-h-11 px-4 text-[15px]" : "min-h-10 px-3 text-sm";
++  return `${BUTTON_BASE} ${sizing} ${BUTTON_VARIANTS[variant]}`;
++}
++
++export const inputClass =
++  "w-full min-h-11 rounded-md border border-line-strong bg-surface-2 px-3 py-2 text-[15px] text-fg placeholder:text-fg-muted/80 transition-colors duration-150 hover:border-fg-muted focus:border-fg focus:outline-none focus-visible:outline-2 focus-visible:outline-focus";
++
++export const TONE_CLASSES: Record<Tone, string> = {
++  neutral: "border-line bg-sunken text-fg",
++  ok: "border-ok-line bg-ok-bg text-ok-fg",
++  info: "border-info-line bg-info-bg text-info-fg",
++  warn: "border-warn-line bg-warn-bg text-warn-fg",
++  danger: "border-danger-line bg-danger-bg text-danger-fg",
++  accent: "border-accent bg-accent text-accent-fg",
++};
++
++export function toneClass(tone: Tone): string {
++  return TONE_CLASSES[tone];
++}
+diff --git a/apps/web/src/components/ui.tsx b/apps/web/src/components/ui.tsx
+index d01ee0b..9a343b1 100644
+--- a/apps/web/src/components/ui.tsx
++++ b/apps/web/src/components/ui.tsx
+@@ -5,12 +5,43 @@ import type { DecodedError } from "@/lib/errors";
+ import { formatCountdown, secondsUntil } from "@/lib/countdown";
+ import { useNowSeconds } from "@/lib/now";
+ import { useAppConfig } from "./AppConfigContext";
++import { AlertIcon, CheckIcon, ExternalIcon, InfoIcon, RefreshIcon } from "./icons";
++import { buttonClass, TONE_CLASSES, type Tone } from "./styles";
+ 
+-export function Section({ title, action, children }: { title: string; action?: ReactNode; children: ReactNode }) {
++export { buttonClass, inputClass, toneClass, type ButtonVariant, type Tone } from "./styles";
++
++const TONES = TONE_CLASSES;
++
++export function PageHeader({ title, description, action }: { title: string; description?: ReactNode; action?: ReactNode }) {
+   return (
+-    <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+-        <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
++    <div className="flex flex-wrap items-end justify-between gap-4">
++      <div className="max-w-2xl space-y-2">
++        <h1 className="text-3xl font-bold tracking-tight text-fg sm:text-4xl">{title}</h1>
++        {description && <p className="text-base leading-relaxed text-fg-muted sm:text-[17px]">{description}</p>}
++      </div>
++      {action}
++    </div>
++  );
++}
++
++export function Section({
++  title,
++  description,
++  action,
++  children,
++}: {
++  title: string;
++  description?: ReactNode;
++  action?: ReactNode;
++  children: ReactNode;
++}) {
++  return (
++    <section className="rounded-lg border border-line bg-surface p-5 sm:p-6">
++      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
++        <div className="space-y-1">
++          <h2 className="text-lg font-bold text-fg">{title}</h2>
++          {description && <p className="text-sm leading-relaxed text-fg-muted">{description}</p>}
++        </div>
+         {action}
+       </div>
+       {children}
+@@ -18,29 +49,55 @@ export function Section({ title, action, children }: { title: string; action?: R
+   );
+ }
+ 
++export function Tag({ tone = "neutral", children }: { tone?: Tone; children: ReactNode }) {
++  return (
++    <span className={`inline-flex items-center gap-1 rounded-sm border px-2 py-0.5 text-xs font-semibold ${TONES[tone]}`}>
++      {children}
++    </span>
++  );
++}
++
++export function Notice({ tone = "info", title, children }: { tone?: Tone; title?: string; children: ReactNode }) {
++  const Icon = tone === "ok" ? CheckIcon : tone === "danger" || tone === "warn" ? AlertIcon : InfoIcon;
++  return (
++    <div className={`flex gap-3 rounded-md border p-4 text-sm leading-relaxed ${TONES[tone]}`}>
++      <Icon className="mt-0.5 shrink-0" />
++      <div className="min-w-0 space-y-1">
++        {title && <p className="font-semibold">{title}</p>}
++        <div className="break-words">{children}</div>
++      </div>
++    </div>
++  );
++}
++
+ export function Loading({ label }: { label: string }) {
+   return (
+-    <p role="status" className="animate-pulse text-sm text-slate-500">
+-      {label}
+-    </p>
++    <div role="status" className="space-y-3">
++      <div className="h-3 w-2/3 animate-pulse rounded-sm bg-sunken" />
++      <div className="h-3 w-1/2 animate-pulse rounded-sm bg-sunken" />
++      <p className="text-sm text-fg-muted">{label}</p>
++    </div>
+   );
+ }
+ 
+ export function Empty({ label }: { label: string }) {
+-  return <p className="text-sm text-slate-500">{label}</p>;
++  return <p className="rounded-md border border-dashed border-line-strong px-4 py-5 text-sm text-fg-muted">{label}</p>;
+ }
+ 
+ export function ErrorPanel({ error }: { error: DecodedError }) {
+   return (
+-    <div role="alert" className="rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-900">
+-      <p className="font-semibold">{error.title}</p>
+-      <p className="mt-1 break-words">{error.detail}</p>
++    <div role="alert" className={`flex gap-3 rounded-md border p-4 text-sm ${TONES.danger}`}>
++      <AlertIcon className="mt-0.5 shrink-0" />
++      <div className="min-w-0">
++        <p className="font-semibold">{error.title}</p>
++        <p className="mt-1 break-words">{error.detail}</p>
++      </div>
+     </div>
+   );
+ }
+ 
+ export function Mono({ children }: { children: ReactNode }) {
+-  return <span className="font-mono text-xs break-all">{children}</span>;
++  return <span className="font-mono text-[13px] break-all">{children}</span>;
+ }
+ 
+ export function ExplorerLink({ kind, value }: { kind: "address" | "tx"; value: string }) {
+@@ -51,9 +108,11 @@ export function ExplorerLink({ kind, value }: { kind: "address" | "tx"; value: s
+       href={`${explorerUrl}/${kind}/${value}`}
+       target="_blank"
+       rel="noopener noreferrer"
+-      className="font-mono text-xs break-all text-indigo-700 underline hover:text-indigo-900"
++      className="inline font-mono text-[13px] break-all text-fg underline decoration-line-strong underline-offset-4 hover:decoration-fg"
+     >
+       {value}
++      <ExternalIcon size={12} className="ml-1 inline-block align-baseline" />
++      <span className="sr-only"> (opens the block explorer in a new tab)</span>
+     </a>
+   );
+ }
+@@ -66,12 +125,8 @@ export function Countdown({ expiresAt }: { expiresAt: bigint }) {
+ 
+ export function RefreshButton({ onClick, busy }: { onClick: () => void; busy: boolean }) {
+   return (
+-    <button
+-      type="button"
+-      onClick={onClick}
+-      disabled={busy}
+-      className="rounded-md border border-slate-300 px-3 py-1 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+-    >
++    <button type="button" onClick={onClick} disabled={busy} className={buttonClass("secondary", "sm")}>
++      <RefreshIcon size={16} className={busy ? "animate-spin" : undefined} />
+       {busy ? "Refreshing…" : "Refresh"}
+     </button>
+   );
+@@ -79,9 +134,9 @@ export function RefreshButton({ onClick, busy }: { onClick: () => void; busy: bo
+ 
+ export function Field({ label, children }: { label: string; children: ReactNode }) {
+   return (
+-    <div className="grid gap-0.5 sm:grid-cols-[10rem_1fr] sm:gap-3">
+-      <dt className="text-xs font-medium tracking-wide text-slate-500 uppercase">{label}</dt>
+-      <dd className="text-sm text-slate-900">{children}</dd>
++    <div className="grid gap-1 border-t border-line py-3 first:border-t-0 first:pt-0 sm:grid-cols-[11rem_1fr] sm:gap-4">
++      <dt className="text-xs font-semibold tracking-wide text-fg-muted uppercase">{label}</dt>
++      <dd className="min-w-0 text-sm text-fg">{children}</dd>
+     </div>
+   );
+ }
+diff --git a/apps/web/src/lib/site.test.ts b/apps/web/src/lib/site.test.ts
+new file mode 100644
+index 0000000..52ff1cb
+--- /dev/null
++++ b/apps/web/src/lib/site.test.ts
+@@ -0,0 +1,28 @@
++import { describe, expect, it } from "vitest";
++import { PUBLIC_PATHS, siteUrl } from "./site";
++
++describe("siteUrl", () => {
++  it("returns undefined when the variable is missing or blank", () => {
++    expect(siteUrl(undefined)).toBeUndefined();
++    expect(siteUrl("")).toBeUndefined();
++    expect(siteUrl("   ")).toBeUndefined();
++  });
++
++  it("rejects values that are not http or https URLs", () => {
++    expect(siteUrl("not a url")).toBeUndefined();
++    expect(siteUrl("ftp://example.org")).toBeUndefined();
++    expect(siteUrl("javascript:alert(1)")).toBeUndefined();
++  });
++
++  it("accepts http and https URLs", () => {
++    expect(siteUrl("https://example.org")?.origin).toBe("https://example.org");
++    expect(siteUrl(" http://localhost:3000 ")?.origin).toBe("http://localhost:3000");
++  });
++});
++
++describe("PUBLIC_PATHS", () => {
++  it("lists only root-relative paths without duplicates", () => {
++    expect(PUBLIC_PATHS.every((path) => path.startsWith("/"))).toBe(true);
++    expect(new Set(PUBLIC_PATHS).size).toBe(PUBLIC_PATHS.length);
++  });
++});
+diff --git a/apps/web/src/lib/site.ts b/apps/web/src/lib/site.ts
+new file mode 100644
+index 0000000..afdf28a
+--- /dev/null
++++ b/apps/web/src/lib/site.ts
+@@ -0,0 +1,17 @@
++export const SITE_NAME = "Stakeout";
++
++export const SITE_DESCRIPTION =
++  "Check whether a crypto wallet is reported, flagged or part of a confirmed scam cluster before you send funds. Testnet prototype.";
++
++export function siteUrl(raw: string | undefined): URL | undefined {
++  const value = raw?.trim();
++  if (!value) return undefined;
++  try {
++    const url = new URL(value);
++    return url.protocol === "https:" || url.protocol === "http:" ? url : undefined;
++  } catch {
++    return undefined;
++  }
++}
++
++export const PUBLIC_PATHS = ["/", "/wallet", "/report", "/verify", "/dashboard", "/faq", "/privacy", "/terms"] as const;
+diff --git a/apps/web/src/lib/theme.test.ts b/apps/web/src/lib/theme.test.ts
+new file mode 100644
+index 0000000..5dba879
+--- /dev/null
++++ b/apps/web/src/lib/theme.test.ts
+@@ -0,0 +1,35 @@
++import { describe, expect, it } from "vitest";
++import { parseThemePreference, resolveTheme, THEME_BOOT_SCRIPT, THEME_STORAGE_KEY } from "./theme";
++
++describe("parseThemePreference", () => {
++  it("accepts the three known preferences", () => {
++    expect(parseThemePreference("light")).toBe("light");
++    expect(parseThemePreference("dark")).toBe("dark");
++    expect(parseThemePreference("system")).toBe("system");
++  });
++
++  it("falls back to system for anything else", () => {
++    expect(parseThemePreference(null)).toBe("system");
++    expect(parseThemePreference("")).toBe("system");
++    expect(parseThemePreference("blue")).toBe("system");
++    expect(parseThemePreference(1)).toBe("system");
++  });
++});
++
++describe("resolveTheme", () => {
++  it("keeps an explicit choice regardless of the system setting", () => {
++    expect(resolveTheme("light", true)).toBe("light");
++    expect(resolveTheme("dark", false)).toBe("dark");
++  });
++
++  it("follows the system setting for system", () => {
++    expect(resolveTheme("system", true)).toBe("dark");
++    expect(resolveTheme("system", false)).toBe("light");
++  });
++});
++
++describe("THEME_BOOT_SCRIPT", () => {
++  it("reads the same storage key the switch writes", () => {
++    expect(THEME_BOOT_SCRIPT).toContain(`"${THEME_STORAGE_KEY}"`);
++  });
++});
+diff --git a/apps/web/src/lib/theme.ts b/apps/web/src/lib/theme.ts
+new file mode 100644
+index 0000000..c72d249
+--- /dev/null
++++ b/apps/web/src/lib/theme.ts
+@@ -0,0 +1,16 @@
++export const THEME_STORAGE_KEY = "stakeout-theme";
++
++export const THEME_PREFERENCES = ["light", "dark", "system"] as const;
++export type ThemePreference = (typeof THEME_PREFERENCES)[number];
++export type ResolvedTheme = "light" | "dark";
++
++export function parseThemePreference(value: unknown): ThemePreference {
++  return typeof value === "string" && (THEME_PREFERENCES as readonly string[]).includes(value) ? (value as ThemePreference) : "system";
++}
++
++export function resolveTheme(preference: ThemePreference, systemPrefersDark: boolean): ResolvedTheme {
++  if (preference === "system") return systemPrefersDark ? "dark" : "light";
++  return preference;
++}
++
++export const THEME_BOOT_SCRIPT = `(function(){try{var p=localStorage.getItem("${THEME_STORAGE_KEY}");if(p!=="light"&&p!=="dark")p="system";var d=p==="dark"||(p==="system"&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.setAttribute("data-theme",d?"dark":"light")}catch(e){}})()`;

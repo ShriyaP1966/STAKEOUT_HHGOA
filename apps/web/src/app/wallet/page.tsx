@@ -6,7 +6,9 @@ import { getAddress, isAddress, type Address, type Hex } from "viem";
 import { useAccount, useWriteContract } from "wagmi";
 import { PromoteAction } from "@/components/actions";
 import { useAppConfig } from "@/components/AppConfigContext";
-import { Countdown, Empty, ErrorPanel, ExplorerLink, Field, Loading, Mono, Section } from "@/components/ui";
+import { AlertIcon, CheckIcon, InfoIcon, SearchIcon } from "@/components/icons";
+import { LEVEL_PANEL } from "@/components/status";
+import { buttonClass, Countdown, Empty, ErrorPanel, ExplorerLink, Field, inputClass, Loading, Mono, Notice, PageHeader, Section } from "@/components/ui";
 import { Role, Status } from "@shared/enums";
 import { abiEvent, combinedAbi } from "@/lib/abi";
 import { readStatus, type StatusResult } from "@/lib/contract";
@@ -19,11 +21,11 @@ import { parseAmount, simulateGuardedSend } from "@/lib/send";
 import { warningFor, type WarningLevel } from "@/lib/warning";
 import { NATIVE_CURRENCY } from "@/lib/chain";
 
-const LEVEL_STYLES: Record<WarningLevel, string> = {
-  none: "border-emerald-300 bg-emerald-50 text-emerald-900",
-  note: "border-sky-300 bg-sky-50 text-sky-900",
-  soft: "border-amber-300 bg-amber-50 text-amber-900",
-  strong: "border-red-400 bg-red-50 text-red-900",
+const LEVEL_ICON: Record<WarningLevel, typeof AlertIcon> = {
+  none: CheckIcon,
+  note: InfoIcon,
+  soft: AlertIcon,
+  strong: AlertIcon,
 };
 
 type Evidence = { hash: Hex; ref: LogRef; source: string; reportId?: bigint } | null;
@@ -78,13 +80,13 @@ function AiSummary({ hash }: { hash: Hex }) {
       <ErrorPanel error={summary.error instanceof BackendError ? summary.error.decoded : decodeError(summary.error, combinedAbi)} />
     );
   }
-  if (summary.data === null) return <p className="text-sm">The backend has no evidence bundle for this hash.</p>;
+  if (summary.data === null) return <p className="text-sm text-fg-muted">The backend has no evidence bundle for this hash.</p>;
   return (
-    <div className="space-y-1 text-sm">
-      <p className="whitespace-pre-line">{summary.data.aiSummary.text}</p>
-      <p className="text-xs opacity-80">
+    <div className="space-y-3 text-sm">
+      <p className="leading-relaxed whitespace-pre-line text-fg">{summary.data.aiSummary.text}</p>
+      <p className="text-fg-muted">
         Summary source: {summary.data.aiSummary.source}. Data source: {summary.data.dataSource}. The summary explains the
-        evidence; it does not confirm anything.
+        evidence. It does not confirm anything.
       </p>
     </div>
   );
@@ -93,12 +95,18 @@ function AiSummary({ hash }: { hash: Hex }) {
 function StatusCard({ account, status }: { account: Address; status: StatusResult }) {
   const warning = warningFor(status.status);
   const evidence = useEvidence(account, status);
+  const Icon = LEVEL_ICON[warning.level];
   return (
-    <div className={`rounded-lg border-2 p-4 ${LEVEL_STYLES[warning.level]}`} role={warning.level === "strong" ? "alert" : "status"}>
-      <p className="text-xs font-semibold tracking-wide uppercase">Status: {Status[status.status]}</p>
-      <p className="mt-1 text-xl font-bold">{warning.label}</p>
-      <p className="mt-1 text-sm">{warning.message}</p>
-      <dl className="mt-4 space-y-2">
+    <div className="overflow-hidden rounded-lg border border-line bg-surface">
+      <div className={`flex gap-4 border-b p-5 sm:p-6 ${LEVEL_PANEL[warning.level]}`} role={warning.level === "strong" ? "alert" : "status"}>
+        <Icon size={28} className="mt-0.5 shrink-0" />
+        <div className="space-y-1">
+          <p className="text-xs font-semibold tracking-wide uppercase">Status: {Status[status.status]}</p>
+          <p className="text-2xl font-bold tracking-tight">{warning.label}</p>
+          <p className="text-[15px] leading-relaxed">{warning.message}</p>
+        </div>
+      </div>
+      <dl className="p-5 sm:p-6">
         <Field label="Address">
           <ExplorerLink kind="address" value={account} />
         </Field>
@@ -123,7 +131,7 @@ function StatusCard({ account, status }: { account: Address; status: StatusResul
             {evidence.isSuccess && evidence.data && (
               <div className="space-y-1">
                 <Mono>{evidence.data.hash}</Mono>
-                <p className="text-xs opacity-80">
+                <p className="text-sm text-fg-muted">
                   This is a hash of off-chain evidence, not the evidence itself. Source: {evidence.data.source}, tx{" "}
                   <ExplorerLink kind="tx" value={evidence.data.ref.transactionHash} />
                 </p>
@@ -180,44 +188,50 @@ function SendPanel({ to }: { to: Address }) {
         : undefined;
 
   return (
-    <Section title="Send through StakeoutGuard">
-      <p className="mb-3 text-sm text-slate-600">
-        Funds go through StakeoutGuard at <ExplorerLink kind="address" value={config.deployment.guardAddress} />, which
-        refuses to forward to Confirmed or Linked addresses.
-      </p>
+    <Section
+      title="Send through StakeoutGuard"
+      description={
+        <>
+          Funds go through the guard contract at <ExplorerLink kind="address" value={config.deployment.guardAddress} />, which
+          refuses to forward to Confirmed or Linked addresses.
+        </>
+      }
+    >
       <form
-        className="flex flex-col gap-2 sm:flex-row"
+        className="flex flex-col gap-3 sm:flex-row sm:items-end"
         onSubmit={(event) => {
           event.preventDefault();
           send.mutate();
         }}
       >
-        <label className="sr-only" htmlFor="amount">
-          Amount in {NATIVE_CURRENCY.symbol}
-        </label>
-        <input
-          id="amount"
-          inputMode="decimal"
-          placeholder={`Amount in ${NATIVE_CURRENCY.symbol}`}
-          value={amount}
-          onChange={(event) => setAmount(event.target.value)}
-          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm sm:max-w-xs"
-        />
+        <div className="w-full space-y-1.5 sm:max-w-xs">
+          <label className="block text-sm font-semibold text-fg" htmlFor="amount">
+            Amount in {NATIVE_CURRENCY.symbol}
+          </label>
+          <input
+            id="amount"
+            inputMode="decimal"
+            placeholder="0.01"
+            value={amount}
+            onChange={(event) => setAmount(event.target.value)}
+            className={`${inputClass} font-mono`}
+          />
+        </div>
         <button
           type="submit"
           disabled={blockedReason !== undefined || value === undefined || send.isPending}
-          className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+          className={buttonClass("accent")}
         >
-          {send.isPending ? "Sending…" : "Send"}
+          {send.isPending ? "Sending…" : "Send safely"}
         </button>
       </form>
-      {blockedReason && <p className="mt-2 text-sm text-slate-600">{blockedReason}</p>}
-      <div className="mt-3">
+      {blockedReason && <p className="mt-3 text-sm text-fg-muted">{blockedReason}</p>}
+      <div className="mt-4 space-y-3" aria-live="polite">
         {send.isError && <ErrorPanel error={decodeError(send.error, combinedAbi)} />}
         {send.isSuccess && (
-          <p role="status" className="text-sm text-emerald-800">
-            Sent. Transaction <ExplorerLink kind="tx" value={send.data} />
-          </p>
+          <Notice tone="ok" title="Sent">
+            Transaction <ExplorerLink kind="tx" value={send.data} />
+          </Notice>
         )}
       </div>
     </Section>
@@ -251,35 +265,43 @@ export default function WalletPage() {
 
   return (
     <>
-      <Section title="Check an address before sending">
-        <form className="flex flex-col gap-2 sm:flex-row" onSubmit={onSubmit}>
-          <label className="sr-only" htmlFor="address">
-            Recipient address
-          </label>
+      <PageHeader
+        title="Check an address"
+        description="Paste any wallet address. The status comes straight from the Stakeout contract, so no wallet connection is needed to look it up."
+      />
+      <form className="rounded-lg border border-line bg-surface p-5 sm:p-6" onSubmit={onSubmit} noValidate>
+        <label className="mb-1.5 block text-sm font-semibold text-fg" htmlFor="address">
+          Recipient address
+        </label>
+        <div className="flex flex-col gap-3 sm:flex-row">
           <input
             id="address"
-            placeholder="Recipient address (0x…)"
+            placeholder="0x followed by 40 hex characters"
             value={input}
             onChange={(event) => setInput(event.target.value)}
             autoComplete="off"
             spellCheck={false}
-            className="w-full rounded-md border border-slate-300 px-3 py-2 font-mono text-sm"
+            aria-invalid={inputError !== null}
+            aria-describedby={inputError ? "address-error" : undefined}
+            className={`${inputClass} font-mono`}
           />
-          <button
-            type="submit"
-            className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
-          >
-            Check
+          <button type="submit" className={buttonClass("primary")}>
+            <SearchIcon size={17} />
+            Check status
           </button>
-        </form>
-        {inputError && <p className="mt-2 text-sm text-red-700">{inputError}</p>}
-        <div className="mt-4">
-          {account === undefined && !inputError && <Empty label="Enter an address to see its status." />}
-          {account !== undefined && status.isPending && <Loading label="Calling getStatus…" />}
-          {status.isError && <ErrorPanel error={decodeError(status.error, combinedAbi)} />}
-          {account !== undefined && status.isSuccess && <StatusCard account={account} status={status.data} />}
         </div>
-      </Section>
+        {inputError && (
+          <p id="address-error" className="mt-2 text-sm text-danger-fg">
+            {inputError}
+          </p>
+        )}
+      </form>
+      <div aria-live="polite" className="space-y-6">
+        {account === undefined && !inputError && <Empty label="Enter an address to see its status." />}
+        {account !== undefined && status.isPending && <Loading label="Calling getStatus on the contract…" />}
+        {status.isError && <ErrorPanel error={decodeError(status.error, combinedAbi)} />}
+        {account !== undefined && status.isSuccess && <StatusCard account={account} status={status.data} />}
+      </div>
       {account !== undefined && status.isSuccess && <SendPanel key={account} to={account} />}
     </>
   );
