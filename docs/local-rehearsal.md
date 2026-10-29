@@ -10,8 +10,8 @@ Each step says who ran it. "NOT RUN" means the assistant did not run it; a human
 | Step | What | Status |
 |---|---|---|
 | 1 | Start the local node | NOT RUN by the assistant (a human-run node on chain 31337 was seen answering on the local RPC port, nothing more) |
-| 2 | Deploy with `VERIFIER_ADDRESS` a Hardhat account | NOT RUN by the assistant. Human-run on 2026-10-29: worked with Hardhat Account #2 (see `docs/person2-test-report.md`, section 12) |
-| 3 | Seed | NOT RUN by the assistant. Human-run on 2026-10-29: worked |
+| 2 | Deploy with `VERIFIER_ADDRESS` set (a Hardhat account, or since commit 46356fa any address) | NOT RUN by the assistant. Human-run on 2026-10-29, before Person 3's fix (commit 46356fa): worked with Hardhat Account #2 (see `docs/person2-test-report.md`, section 12). The blank `EXPLORER_API_KEY` change is NOT RUN by anyone yet |
+| 3 | Seed | NOT RUN by the assistant. Human-run on 2026-10-29, before Person 3's fix (commit 46356fa): worked with a Hardhat account as verifier, failed with "invalid account" for an external verifier address. The fixed seed script (impersonates the verifier) is NOT RUN by anyone yet |
 | 4 | Generate the fixture from the real seed file | RAN by the assistant on 2026-10-29: wrote 5 analyses and 2 clusters of link candidates, exit 0 (rules file was a temporary test fixture with threshold 1 and minimum signals 1) |
 | 5 | Start the stand-in | RAN by the assistant on 2026-10-29: printed the banner, answered the flagged target with score 2 and 2 signals, the challenged target with score 0 and 0 signals, and 3 link candidates; then stopped by its own process id |
 | 6 | Verifier in dry run | NOT RUN with the stand-in |
@@ -33,11 +33,11 @@ npm run node:local
 Leave it running. Note the RPC URL, the chain id (31337) and the printed accounts. Pick one account as the verifier (for example Account #2) and note its address and private key.
 
 ## 2. Deploy with the verifier set to a Hardhat account (terminal B, repo root)
-In `.env.localhost` (git-ignored, same variable names as `.env.example`; see `docs/local-chain-test.md` step 2) set `VERIFIER_ADDRESS` to the **Hardhat account's address**, not your real verifier address. Do not list `EXPLORER_API_KEY` at all (an empty value fails validation). Use a `FLAG_DURATION_SECONDS` long enough for the whole rehearsal: a flag nobody confirms lapses after that time, and the verifier then records "no live flag" instead of deciding.
+In `.env.localhost` (git-ignored, same variable names as `.env.example`; see `docs/local-chain-test.md` step 2) set `VERIFIER_ADDRESS`. A Hardhat account's address is the safest choice (it is the one combination a human has run). `EXPLORER_API_KEY` may be left blank on localhost since Person 3's commit 46356fa (it is still required on a real chain); before that commit a blank value failed validation (human-run, 2026-10-29). Use a `FLAG_DURATION_SECONDS` long enough for the whole rehearsal: a flag nobody confirms lapses after that time, and the verifier then records "no live flag" instead of deciding.
 ```
 npm run deploy:local
 ```
-**Why not your real verifier address?** The seed script then needs to act as that address. Human-run on 2026-10-29: with an external address as verifier the seed script fails with "invalid account". That is a bug to report to Person 3 (`scripts/seed-local.ts`); it is outside Person 2's folders, so it is not changed here.
+**What about a verifier address that is not a Hardhat account?** Before Person 3's fix (commit 46356fa), a human run on 2026-10-29 failed in the seed script with "invalid account". Reading `scripts/seed-local.ts` after the fix: the script now checks the node is a local Hardhat node (and refuses to run on any other), impersonates a verifier address that is not one of the node's own accounts, sets its balance for gas if it is lower than the first Hardhat account's, and stops impersonating when done. **NOT RUN:** a human must run the seed with such an address before this is relied on. If you do use your own address, the key in step 6 must be that address's key; use a throwaway key, never a key that holds real funds anywhere.
 
 ## 3. Seed (terminal B, repo root)
 ```
@@ -94,7 +94,7 @@ Expected, from reading the code (NOT RUN):
 
 ## 7. Run it live on the local chain only (terminal D)
 Stop the verifier. Make sure `RPC_URL` points at the local node and `CHAIN_ID` is 31337. Use a NEW `DB_PATH` (the old one remembers the events as handled). The seeded flag may have lapsed since step 3 if `FLAG_DURATION_SECONDS` was short; if the log says "no live flag", run `npm run seed:local` again, regenerate the fixture (step 4), restart the stand-in and use a new database.
-The verifier needs local ETH for gas. The Hardhat accounts are funded; if you used another address, `npm run fund:local -- <address> <amountEth>` exists in the root `package.json` (usage taken from the script's own message; NOT RUN by the assistant).
+The verifier needs local ETH for gas. The Hardhat accounts are funded. If you used another address, the fixed seed script should already have set its local balance when it impersonated it (NOT RUN: confirm with a balance check on the local node); otherwise `npm run fund:local -- <address> <amountEth>` exists in the root `package.json` (usage taken from the script's own message; NOT RUN by the assistant).
 ```
 $env:VERIFIER_DRY_RUN = "false"
 npm run verifier
