@@ -16,6 +16,7 @@ These are all the variables `apps/web` reads. Each one except `NEXT_PUBLIC_SITE_
 | `NEXT_PUBLIC_DEPLOYMENT` | `target` or `localhost` |
 | `NEXT_PUBLIC_DATA_SOURCE` | `synthetic` or `testnet` |
 | `NEXT_PUBLIC_BACKEND_URL` | http or https URL |
+| `NEXT_PUBLIC_GRAPH_URL` | http or https URL of the graph service; the browser reaches it through `/graph/*` |
 | `NEXT_PUBLIC_VOICE_LANG` | BCP-47 language tag |
 | `NEXT_PUBLIC_SITE_URL` | optional http or https URL of the deployed site, used only for link-preview metadata, `/robots.txt` and `/sitemap.xml`; empty or invalid means those are left out |
 

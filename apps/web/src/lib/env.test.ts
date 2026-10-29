@@ -10,6 +10,7 @@ const valid: RawPublicEnv = {
   NEXT_PUBLIC_DEPLOYMENT: "target",
   NEXT_PUBLIC_DATA_SOURCE: "testnet",
   NEXT_PUBLIC_BACKEND_URL: "http://127.0.0.1:9/",
+  NEXT_PUBLIC_GRAPH_URL: "http://127.0.0.1:10/",
   NEXT_PUBLIC_VOICE_LANG: "en-GB",
 };
 
@@ -30,6 +31,7 @@ describe("parsePublicEnv", () => {
         deployment: "target",
         dataSource: "testnet",
         backendUrl: "http://127.0.0.1:9",
+        graphUrl: "http://127.0.0.1:10",
         voiceLang: "en-GB",
       },
     });
@@ -43,6 +45,7 @@ describe("parsePublicEnv", () => {
       NEXT_PUBLIC_DEPLOYMENT: undefined,
       NEXT_PUBLIC_DATA_SOURCE: undefined,
       NEXT_PUBLIC_BACKEND_URL: undefined,
+      NEXT_PUBLIC_GRAPH_URL: undefined,
       NEXT_PUBLIC_VOICE_LANG: undefined,
     });
     for (const name of [
@@ -51,6 +54,7 @@ describe("parsePublicEnv", () => {
       "NEXT_PUBLIC_DEPLOYMENT",
       "NEXT_PUBLIC_DATA_SOURCE",
       "NEXT_PUBLIC_BACKEND_URL",
+      "NEXT_PUBLIC_GRAPH_URL",
       "NEXT_PUBLIC_VOICE_LANG",
     ]) {
       expect(problems).toContain(`${name}: is missing`);
@@ -120,5 +124,12 @@ describe("parseDeployment", () => {
       "deployments/x.json stakeoutAddress: must be a valid address",
       "deployments/x.json deploymentBlock: Too small: expected number to be >=0",
     ]);
+  });
+});
+
+describe("NEXT_PUBLIC_GRAPH_URL", () => {
+  it("must be an http or https URL", () => {
+    expect(problemsOf({ ...valid, NEXT_PUBLIC_GRAPH_URL: "ftp://graph.invalid" })).toEqual(["NEXT_PUBLIC_GRAPH_URL: must be an http or https URL"]);
+    expect(problemsOf({ ...valid, NEXT_PUBLIC_GRAPH_URL: "  " })).toEqual(["NEXT_PUBLIC_GRAPH_URL: is missing"]);
   });
 });

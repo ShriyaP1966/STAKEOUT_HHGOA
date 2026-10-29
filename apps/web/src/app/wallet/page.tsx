@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
+import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { getAddress, isAddress, type Address, type Hex } from "viem";
 import { useAccount, useWriteContract } from "wagmi";
@@ -15,6 +16,7 @@ import { readStatus, type StatusResult } from "@/lib/contract";
 import { backend, BackendError, bundleSummarySchema } from "@/lib/backend";
 import { decodeError } from "@/lib/errors";
 import { latestClusterEntryFor, latestReportFor, type LogRef } from "@/lib/events";
+import { clusterGraphHref } from "@/lib/graph";
 import { useStakeoutClient } from "@/lib/hooks";
 import { fetchStakeoutEvents } from "@/lib/logs";
 import { parseAmount, simulateGuardedSend } from "@/lib/send";
@@ -118,7 +120,12 @@ function StatusCard({ account, status }: { account: Address; status: StatusResul
         {warning.showCluster && (
           <>
             <Field label="Cluster id">
-              <Mono>{status.clusterId}</Mono>
+              <span className="flex flex-wrap items-center gap-3">
+                <Mono>{status.clusterId}</Mono>
+                <Link href={clusterGraphHref(status.clusterId)} className={buttonClass("secondary", "sm")}>
+                  View money trail
+                </Link>
+              </span>
             </Field>
             <Field label="Role">{Role[status.role]}</Field>
           </>

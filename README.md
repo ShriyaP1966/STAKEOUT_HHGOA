@@ -11,7 +11,7 @@ Hackathon project. Testnet only. Synthetic data only.
 | `contracts` | `Stakeout.sol`, `StakeoutGuard.sol`, test-only helpers in `contracts/test` | Person 3 |
 | `test` | Hardhat tests for the contracts | Person 3 |
 | `apps/web` | Next.js web app: `/wallet`, `/report`, `/verify`, `/dashboard`, `/decisions`, `/reviewer` | Person 3 |
-| `services/graph` | Graph service (not started) | Person 1 |
+| `services/graph` | Graph service (Python, FastAPI, TigerGraph); see `services/graph/README.md` | Person 1 |
 | `services/backend` | Backend, AI, verifier service | Person 2 |
 | `shared` | `enums.ts`, exported contract ABIs in `shared/abi`, the hash library in `shared/hash`, schemas in `shared/schemas`, and the voice component in `shared/ui` | All |
 | `config` | Shared configuration (not started) | All |
@@ -202,6 +202,7 @@ Install `shared/hash` once with `npm ci --prefix shared/hash`, because it brings
 | `NEXT_PUBLIC_DEPLOYMENT` | `target` reads `deployments/network.json`; `localhost` reads `deployments/localhost.json` |
 | `NEXT_PUBLIC_DATA_SOURCE` | `synthetic` or `testnet`. Shown on every screen |
 | `NEXT_PUBLIC_BACKEND_URL` | http or https base URL of the backend in `services/backend` |
+| `NEXT_PUBLIC_GRAPH_URL` | http or https base URL of the graph service in `services/graph`. The browser reaches it through the same-origin path `/graph/*`, which `next.config.ts` forwards here, because the graph service sends no CORS headers |
 | `NEXT_PUBLIC_VOICE_LANG` | BCP-47 language tag passed to the voice component, for example `en-US` |
 | `NEXT_PUBLIC_SITE_URL` | Optional. Public http or https base URL of the deployed site. Used as the base for absolute links in page metadata (link previews), for the `Sitemap` line in `/robots.txt`, and for the page list in `/sitemap.xml`. Leave it empty locally: the app works the same, `/robots.txt` has no sitemap line and `/sitemap.xml` is empty. A value that is not an http or https URL is treated as empty |
 
@@ -214,6 +215,7 @@ Next.js inlines these values at build time, so rebuild after changing them. If a
 | `/report` | Complaint text box with voice input. Sends the text and the viewer's IANA time zone (`timezone`, from the browser) to `POST /extract`, shows the structured complaint and `dataSource`, recomputes the complaint hash as `hashBundle({ text, complaint, dataSource })` using the text the backend returned, and only if it matches lets the user call `report(targetAddress, complaintHash)` |
 | `/verify` | Takes a hash, fetches the bundle from `GET /evidence/{hash}`, and shows three results: whether a `ReportSubmitted`, `Confirmed`, or `Linked` event carries the hash, whether the recomputed hash matches, and the bundle's `dataSource` |
 | `/decisions` | The verifier's decisions from `GET /decisions`: target, kind, outcome, rule, reason, time, and transaction |
+| `/cluster/[id]` | The money trail of one cluster from the graph service's `GET /cluster/{clusterId}/graph`: a force-directed graph of wallets and transfers coloured by the role the graph returns (member, exit point, counterparty), the data source of every wallet, and readable lists of the wallets and transfers. The id must be 0x plus 64 hex characters. Linked from each cluster on `/dashboard` and from Confirmed and Linked addresses on `/wallet`. Loading, empty, invalid-id and unreachable-service states are shown, never placeholder data |
 | `/reviewer` | Read-only view of open challenges, verified reporters, and the reward pool, plus the exact `npm run safe:calldata` command for each reviewer action. Actions go through the reviewer Safe |
 
 For Confirmed and Linked addresses, `/wallet` also fetches the evidence bundle for the event's hash and shows `aiSummary.text`, `aiSummary.source`, and `dataSource`. Every page that needs the backend shows a clear error when it is unreachable, never placeholder data.

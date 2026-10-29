@@ -1,14 +1,16 @@
 "use client";
 
+import Link from "next/link";
 import { formatEther, zeroAddress, type Address } from "viem";
 import { FlagState, Role } from "@shared/enums";
 import { ChallengeAction, ExpireAction, PromoteAction, WithdrawPanel } from "@/components/actions";
-import { Countdown, Empty, ErrorPanel, ExplorerLink, Loading, Mono, PageHeader, RefreshButton, Section, Tag } from "@/components/ui";
+import { buttonClass, Countdown, Empty, ErrorPanel, ExplorerLink, Loading, Mono, PageHeader, RefreshButton, Section, Tag } from "@/components/ui";
 import { combinedAbi } from "@/lib/abi";
 import { isLive } from "@/lib/action-rules";
 import { NATIVE_CURRENCY } from "@/lib/chain";
 import type { StatusResult } from "@/lib/contract";
 import { decodeError } from "@/lib/errors";
+import { clusterGraphHref } from "@/lib/graph";
 import type { ClusterRow, FlagRow, ReportRow, RewardRow } from "@/lib/events";
 import { useFlagStates, useRewardPool, useStakeoutIndex, useStatuses } from "@/lib/hooks";
 import { useNowSeconds } from "@/lib/now";
@@ -101,6 +103,9 @@ function Clusters({ clusters }: { clusters: ClusterRow[] }) {
             First confirmed in block {cluster.ref.blockNumber.toString()}, tx{" "}
             <ExplorerLink kind="tx" value={cluster.ref.transactionHash} />
           </p>
+          <Link href={clusterGraphHref(cluster.clusterId)} className={`${buttonClass("secondary", "sm")} mt-3`}>
+            View money trail
+          </Link>
           <ul className="mt-3 divide-y divide-line">
             {cluster.entries.map((entry) => (
               <li key={`${entry.address}-${entry.ref.transactionHash}-${entry.ref.logIndex}`} className="space-y-1 py-3">

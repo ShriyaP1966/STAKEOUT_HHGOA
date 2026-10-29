@@ -7,6 +7,7 @@ import { useAccount, useConnect, useDisconnect, useSwitchChain } from "wagmi";
 import { combinedAbi } from "@/lib/abi";
 import { decodeError, type DecodedError } from "@/lib/errors";
 import { useMounted } from "@/lib/now";
+import { SITE_TAGLINE } from "@/lib/site";
 import { useAppConfig } from "./AppConfigContext";
 import { CrossIcon, MenuIcon, TrailLensMark, WalletIcon } from "./icons";
 import { ThemeSwitch } from "./ThemeSwitch";
@@ -19,7 +20,10 @@ const NAV = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/decisions", label: "Decisions" },
   { href: "/reviewer", label: "Reviewer" },
+  { href: "/pricing", label: "Pricing" },
 ];
+
+const CONTAINER = "mx-auto w-full max-w-[1440px] px-4 sm:px-6 lg:px-10";
 
 const FOOTER_LINKS = [
   { href: "/faq", label: "FAQ" },
@@ -39,11 +43,23 @@ function shortAddress(address: string): string {
   return `${address.slice(0, 6)}…${address.slice(-4)}`;
 }
 
-export function Logo({ className = "" }: { className?: string }) {
+const LOGO_SIZES = {
+  md: { mark: 34, text: "gap-3 text-[26px]" },
+  lg: { mark: 46, text: "gap-3.5 text-[36px]" },
+};
+
+export function Logo({ size = "md", hole = "var(--header)", className = "" }: { size?: keyof typeof LOGO_SIZES; hole?: string; className?: string }) {
   return (
-    <span className={`inline-flex items-center gap-2.5 text-xl font-bold tracking-tight ${className}`}>
-      <TrailLensMark size={28} hole="var(--header)" />
-      stakeout
+    <span className={`inline-flex items-center font-bold tracking-tight ${LOGO_SIZES[size].text} ${className}`}>
+      <TrailLensMark size={LOGO_SIZES[size].mark} hole={hole} />
+      <span className="sr-only">stakeout</span>
+      <span aria-hidden="true" className="inline-flex items-baseline">
+        <span>stake</span>
+        <span className="mx-[0.03em] inline-flex h-[0.56em] w-[0.56em] items-center justify-center self-baseline rounded-full border-[0.12em] border-current">
+          <span className="h-[0.2em] w-[0.2em] rounded-full bg-accent" />
+        </span>
+        <span>ut</span>
+      </span>
     </span>
   );
 }
@@ -107,7 +123,7 @@ function NetworkPrompt() {
   if (!mounted || !isConnected || chainId === expected) return null;
   return (
     <div role="alert" className="border-b border-warn-line bg-warn-bg text-warn-fg">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-4 py-3 text-sm sm:px-6">
+      <div className={`${CONTAINER} flex flex-wrap items-center gap-3 py-3 text-sm`}>
         <span>
           Wrong network: your wallet is on chain {chainId}, and this app uses chain {expected}.
         </span>
@@ -127,7 +143,7 @@ function NetworkPrompt() {
 
 function NavLinks({ pathname, vertical }: { pathname: string; vertical: boolean }) {
   return (
-    <ul className={vertical ? "flex flex-col gap-1" : "flex items-center gap-1"}>
+    <ul className={vertical ? "flex flex-col gap-1" : "flex items-center gap-2"}>
       {NAV.map((item) => {
         const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
         return (
@@ -135,7 +151,7 @@ function NavLinks({ pathname, vertical }: { pathname: string; vertical: boolean 
             <Link
               href={item.href}
               aria-current={active ? "page" : undefined}
-              className={`flex min-h-11 items-center rounded-md px-3 text-[15px] transition-colors duration-150 ${
+              className={`flex min-h-11 items-center whitespace-nowrap rounded-md px-3.5 text-[15px] transition-colors duration-150 ${
                 active ? "bg-header-active font-semibold text-accent" : "text-header-muted hover:text-header-fg"
               }`}
             >
@@ -162,23 +178,23 @@ export function Shell({ children }: { children: ReactNode }) {
         Skip to content
       </a>
       <header className="border-b border-header-line bg-header text-header-fg">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
+        <div className={`${CONTAINER} flex items-center justify-between gap-6 py-3`}>
           <Link href="/" className="rounded-md text-header-fg" aria-label="Stakeout home">
             <Logo />
           </Link>
-          <nav aria-label="Main" className="hidden lg:block">
+          <nav aria-label="Main" className="hidden xl:block">
             <NavLinks pathname={pathname} vertical={false} />
           </nav>
-          <div className="flex items-center gap-2">
-            <div className="hidden lg:block">
-              <ThemeSwitch />
-            </div>
+          <div className="flex items-center gap-3">
             <div className="hidden sm:block">
               <WalletButton />
             </div>
+            <div className="hidden xl:block">
+              <ThemeSwitch />
+            </div>
             <button
               type="button"
-              className="inline-flex h-11 w-11 items-center justify-center rounded-md border border-header-line text-header-fg lg:hidden"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-md border border-header-line text-header-fg xl:hidden"
               aria-expanded={menuOpen}
               aria-controls="mobile-menu"
               aria-label={menuOpen ? "Close menu" : "Open menu"}
@@ -189,15 +205,17 @@ export function Shell({ children }: { children: ReactNode }) {
           </div>
         </div>
         {menuOpen && (
-          <div id="mobile-menu" className="border-t border-header-line lg:hidden">
-            <div className="mx-auto max-w-6xl space-y-4 px-4 py-4 sm:px-6">
+          <div id="mobile-menu" className="border-t border-header-line xl:hidden">
+            <div className={`${CONTAINER} space-y-4 py-4`}>
               <nav aria-label="Main">
                 <NavLinks pathname={pathname} vertical />
               </nav>
               <div className="flex flex-wrap items-center justify-between gap-3 border-t border-header-line pt-4">
-                <ThemeSwitch />
                 <div className="sm:hidden">
                   <WalletButton />
+                </div>
+                <div className="ml-auto">
+                  <ThemeSwitch />
                 </div>
               </div>
             </div>
@@ -205,29 +223,33 @@ export function Shell({ children }: { children: ReactNode }) {
         )}
       </header>
       <NetworkPrompt />
-      <main id="main" className="mx-auto w-full max-w-6xl flex-1 space-y-6 px-4 py-8 sm:px-6 sm:py-10">
+      <main id="main" className={`${CONTAINER} flex-1 space-y-6 py-8 sm:py-10`}>
         {children}
       </main>
       <footer className="border-t border-line">
-        <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-8 text-sm text-fg-muted sm:px-6 md:flex-row md:items-start md:justify-between">
-          <div className="space-y-2">
-            <p className="font-semibold text-fg">Stakeout is a testnet prototype. Do not use real funds.</p>
-            <p>
+        <div className={`${CONTAINER} flex flex-col items-center gap-8 py-14 text-center sm:py-16`}>
+          <Link href="/" className="rounded-md text-fg" aria-label="Stakeout home">
+            <Logo size="lg" hole="var(--bg)" />
+          </Link>
+          <p className="max-w-2xl text-xl leading-snug font-semibold tracking-tight text-fg sm:text-2xl">{SITE_TAGLINE}</p>
+          <div className="max-w-2xl space-y-2 text-[15px] leading-relaxed text-fg-muted">
+            <p className="font-medium text-fg">Stakeout is a testnet prototype. Do not use real funds.</p>
+            <p className="break-words">
               Data source: {config.dataSource}. Contracts from {config.deploymentFile}, deployed {config.deployment.deployedAt}.
             </p>
-            <p>© {new Date().getFullYear()} Team Synergy. Built at Hacker House Goa 2026.</p>
           </div>
-          <nav aria-label="Footer">
-            <ul className="flex flex-wrap gap-1">
+          <nav aria-label="Footer" className="w-full max-w-3xl border-t border-line pt-6">
+            <ul className="flex flex-wrap justify-center gap-x-2 gap-y-1">
               {FOOTER_LINKS.map((link) => (
                 <li key={link.href}>
-                  <Link href={link.href} className="flex min-h-11 items-center rounded-md px-3 text-fg hover:bg-sunken">
+                  <Link href={link.href} className="flex min-h-11 items-center rounded-md px-4 text-[15px] text-fg hover:bg-sunken">
                     {link.label}
                   </Link>
                 </li>
               ))}
             </ul>
           </nav>
+          <p className="text-sm text-fg-muted">© {new Date().getFullYear()} Team Synergy. Built at Hacker House Goa 2026.</p>
         </div>
       </footer>
     </div>

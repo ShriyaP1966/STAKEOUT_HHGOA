@@ -13,6 +13,7 @@ export type PublicEnv = {
   deployment: DeploymentName;
   dataSource: DataSource;
   backendUrl: string;
+  graphUrl: string;
   voiceLang: string;
 };
 
@@ -23,6 +24,7 @@ export type RawPublicEnv = Record<
   | "NEXT_PUBLIC_DEPLOYMENT"
   | "NEXT_PUBLIC_DATA_SOURCE"
   | "NEXT_PUBLIC_BACKEND_URL"
+  | "NEXT_PUBLIC_GRAPH_URL"
   | "NEXT_PUBLIC_VOICE_LANG",
   string | undefined
 >;
@@ -71,6 +73,7 @@ const schema = z.object({
   NEXT_PUBLIC_DEPLOYMENT: oneOf(DEPLOYMENT_NAMES),
   NEXT_PUBLIC_DATA_SOURCE: oneOf(DATA_SOURCES),
   NEXT_PUBLIC_BACKEND_URL: httpUrl,
+  NEXT_PUBLIC_GRAPH_URL: httpUrl,
   NEXT_PUBLIC_VOICE_LANG: text.refine(isLanguageTag, "must be a BCP-47 language tag"),
 });
 
@@ -96,6 +99,7 @@ export function parsePublicEnv(raw: RawPublicEnv): ParseResult<PublicEnv> {
       deployment: env.NEXT_PUBLIC_DEPLOYMENT,
       dataSource: env.NEXT_PUBLIC_DATA_SOURCE,
       backendUrl: env.NEXT_PUBLIC_BACKEND_URL.replace(/\/+$/, ""),
+      graphUrl: env.NEXT_PUBLIC_GRAPH_URL.replace(/\/+$/, ""),
       voiceLang: env.NEXT_PUBLIC_VOICE_LANG,
     },
   };

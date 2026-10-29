@@ -54,7 +54,8 @@ const SECTIONS: DocSection[] = [
           the Verify page works. Do not include names, phone numbers, bank details or other personal information in a complaint.
         </p>
         <p>
-          Retention: <Pending>to be confirmed by the team</Pending>. The prototype has no automatic deletion.
+          Retention: records are kept until the team running the backend deletes its database. The prototype has no automatic deletion, so treat
+          anything you submit as kept for the life of the prototype.
         </p>
       </>
     ),
@@ -64,9 +65,10 @@ const SECTIONS: DocSection[] = [
     heading: "AI processing",
     body: (
       <p>
-        To pull the address, amount and time out of a complaint, the backend sends your complaint text and time zone to an AI model provider chosen by the team
-        operating the backend. The same provider writes plain-language summaries of evidence. Which provider is used, and its own data terms:{" "}
-        <Pending>to be confirmed by the team</Pending>. The AI never decides whether a wallet is confirmed.
+        To pull the amount, time and a short summary out of a complaint, the backend sends your complaint text and time zone to an AI model provider.
+        The address is picked and checked by code, never by the AI. The same provider writes plain-language summaries of evidence. The provider is
+        whichever OpenAI-compatible service the team running the backend sets in its configuration, and your text is also covered by that
+        provider&apos;s own data terms. The AI never decides whether a wallet is confirmed.
       </p>
     ),
   },

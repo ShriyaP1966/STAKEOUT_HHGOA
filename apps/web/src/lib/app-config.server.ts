@@ -14,6 +14,7 @@ export function loadAppConfig(): ParseResult<AppConfig> {
     NEXT_PUBLIC_DEPLOYMENT: process.env.NEXT_PUBLIC_DEPLOYMENT,
     NEXT_PUBLIC_DATA_SOURCE: process.env.NEXT_PUBLIC_DATA_SOURCE,
     NEXT_PUBLIC_BACKEND_URL: process.env.NEXT_PUBLIC_BACKEND_URL,
+    NEXT_PUBLIC_GRAPH_URL: process.env.NEXT_PUBLIC_GRAPH_URL,
     NEXT_PUBLIC_VOICE_LANG: process.env.NEXT_PUBLIC_VOICE_LANG,
   });
   if (!env.ok) return env;

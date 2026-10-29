@@ -6,7 +6,7 @@ import { ConfigError } from "@/components/ConfigError";
 import { Providers } from "@/components/Providers";
 import { Shell } from "@/components/Shell";
 import { loadAppConfig } from "@/lib/app-config.server";
-import { SITE_DESCRIPTION, SITE_NAME, siteUrl } from "@/lib/site";
+import { SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE, siteUrl } from "@/lib/site";
 import { THEME_BOOT_SCRIPT } from "@/lib/theme";
 import "./globals.css";
 
@@ -19,9 +19,9 @@ export const metadata: Metadata = {
     type: "website",
     siteName: SITE_NAME,
     title: `${SITE_NAME}: check a wallet before you send`,
-    description: SITE_DESCRIPTION,
+    description: `${SITE_TAGLINE} ${SITE_DESCRIPTION}`,
   },
-  twitter: { card: "summary", title: `${SITE_NAME}: check a wallet before you send`, description: SITE_DESCRIPTION },
+  twitter: { card: "summary", title: `${SITE_NAME}: check a wallet before you send`, description: `${SITE_TAGLINE} ${SITE_DESCRIPTION}` },
 };
 
 export const viewport: Viewport = {

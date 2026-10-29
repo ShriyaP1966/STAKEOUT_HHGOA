@@ -18,6 +18,7 @@
     "next": "16.4.3",
     "react": "19.3.1",
     "react-dom": "19.3.1",
+    "react-force-graph-2d": "1.29.2",
     "viem": "2.57.13",
     "wagmi": "2.19.5",
     "zod": "4.6.7"

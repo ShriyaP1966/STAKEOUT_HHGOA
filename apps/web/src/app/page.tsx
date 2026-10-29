@@ -4,6 +4,7 @@ import { Status } from "@shared/enums";
 import { AlertIcon, ArrowRightIcon, CheckIcon, DocumentIcon, FlagIcon, SearchIcon, ShieldIcon } from "@/components/icons";
 import { LEVEL_DOT, LEVEL_PANEL } from "@/components/status";
 import { buttonClass } from "@/components/styles";
+import { SITE_TAGLINE } from "@/lib/site";
 import { warningFor } from "@/lib/warning";
 
 export const metadata: Metadata = {
@@ -80,6 +81,7 @@ export default function Home() {
         <div className="space-y-6">
           <p className="text-sm font-semibold tracking-wide text-accent-text uppercase">Scam oracle for crypto wallets. Testnet prototype.</p>
           <h1 className="text-4xl leading-[1.05] font-bold tracking-tight text-fg sm:text-5xl lg:text-6xl">Check a wallet before you send.</h1>
+          <p className="border-l-2 border-accent pl-4 text-xl leading-snug font-semibold text-fg sm:text-2xl">{SITE_TAGLINE}</p>
           <p className="max-w-xl text-lg leading-relaxed text-fg-muted">
             Stakeout follows the money trail from scam reports, lets verified reporters stake on their claims, and warns you when a recipient belongs to a
             confirmed scam cluster.
