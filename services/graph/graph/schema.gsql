@@ -1,0 +1,20 @@
+// Schema of the live graph. The graph name is NOT written here: scripts/setup_graph.py replaces __GRAPH__ with TG_GRAPH_NAME.
+// This script is only run when the graph does not exist yet. An existing graph is never dropped or altered by code:
+// setup_graph.py compares it with this file and prints the differences.
+//
+// TRANSFER_TX is a NEW global edge type with tx_id as its DISCRIMINATOR, so two transfers between the same pair of wallets stay two edges
+// (TigerGraph 4.2 reference, Defining a Graph Schema: "To create multi-edges, define a DISCRIMINATOR in the edge type").
+// It is deliberately not called TRANSFER: the global TRANSFER edge type already exists on the workspace WITHOUT a discriminator, is shared by
+// other graphs, and is never changed. MEMBER_OF and REPORTED are the unchanged existing global edges and the vertex types are the existing ones.
+// Without it the second transfer would overwrite the first and repeated flows could not be seen.
+// One statement per line (setup_graph.py runs them one at a time and checks each). No DEFAULT clauses: the loader always sends every attribute.
+// Syntax checked against the TigerGraph 4.2 GSQL reference (Defining a Graph Schema): DISCRIMINATOR comes before the other attributes,
+// CREATE GRAPH lists existing global types, primary_id_as_attribute="true" is a vertex option.
+
+CREATE VERTEX Wallet (PRIMARY_ID address STRING, is_exit_point BOOL, data_source STRING) WITH primary_id_as_attribute="true"
+CREATE VERTEX Cluster (PRIMARY_ID cluster_id STRING) WITH primary_id_as_attribute="true"
+CREATE VERTEX Report (PRIMARY_ID report_id STRING, target_address STRING, evidence_hash STRING) WITH primary_id_as_attribute="true"
+CREATE DIRECTED EDGE TRANSFER_TX (FROM Wallet, TO Wallet, DISCRIMINATOR(tx_id STRING), amount DOUBLE, timestamp INT)
+CREATE UNDIRECTED EDGE MEMBER_OF (FROM Wallet, TO Cluster)
+CREATE DIRECTED EDGE REPORTED (FROM Report, TO Wallet)
+CREATE GRAPH __GRAPH__ (Wallet, Cluster, Report, TRANSFER_TX, MEMBER_OF, REPORTED)
