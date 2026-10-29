@@ -295,3 +295,27 @@ Added `npm run dev:graph-fixture`, `npm run dev:graph-stub` and `npm run dev-gra
 - Whether the contract accepts the confirm built from the stand-in (a member list of one flagged wallet, no exit points, a new cluster id): UNVERIFIED on chain.
 - A real `link` transaction: not exercised by this fixture (the seed puts every candidate in a cluster already).
 - Anything about Person 1's real Graph Service and the agreed schema and thresholds: still blocked.
+
+
+## 13. Run of 2026-10-29 (latest): local rehearsal with the stand-in Graph Service, after Person 3's commit 46356fa
+### Human-run, output seen by the human (Shriya); recorded as reported, not seen by the assistant
+Local Hardhat node, chain 31337, the dev-only stand-in Graph Service (not Person 1's service), synthetic data, Person 3's commit 46356fa. Hashes are shortened (first characters, then last characters) so no full 64-character value appears here.
+1. `deploy:local` worked with `EXPLORER_API_KEY` not listed in `.env.localhost` (`FLAG_DURATION_SECONDS` was 3600). Message seen: "Explorer verification is skipped on localhost... EXPLORER_API_KEY is not needed here." The verifier was Hardhat Account #2.
+2. `seed:local` worked with a Hardhat account as verifier. The `getStatus` table printed: fresh 0, reported 1, flagged 2, challenged 2, member 3 / role 1, exitPoint 3 / role 2, linked 4 / role 3.
+3. `dev:graph-fixture` wrote 5 analyses and 2 clusters of link candidates. `dev:graph-stub` started with the banner on 127.0.0.1:8001.
+4. Verifier dry run, 3 decisions seen through `GET /decisions`:
+   - id 1: flagged target, `skipped`, rule `B:behavior-passed`, reason "contract call was simulated successfully", behavior score 2, 2 signals.
+   - id 2: challenged target, `refused`, rule `B:behaviorThreshold`, score 0, 2 unrelated reporters only added confidence.
+   - id 3: a target, `skipped`, rule `feasibility:no-live-flag`.
+5. Verifier live (`VERIFIER_DRY_RUN=false`, new database): flagged target outcome `sent`, rule `B:behavior-passed`, with a tx hash (0x63ba8ce0...1fb49a); the challenged target `refused` again; the third `skipped` again. Hardhat console `getStatus` before: the flagged target and the challenged target both 2. After: the flagged target returned 3, cluster id 0xa96f518b...3d79e8d6, role 1, expiresAt 0; the challenged target stayed 2 with no cluster. Evidence hash of the live run: 0x3d961e6c...29dec9f.
+6. The evidence hash of the dry run (0xdc8a4514...00ad3) differs from the live run's. **This is expected, confirmed from the code:** `src/evidence.ts` puts `createdAt` (the time the bundle is built) into the bundle before hashing it (line 70, then `hashBundle` on line 72), so every build gets a new hash. Only the timestamp was confirmed; whether anything else in the bundle (for example the AI-written summary) also differs between runs was not checked.
+
+### Finding: in PowerShell, `$env:NAME = ""` removes the variable
+Blanking `NOTIFY_WEBHOOK_URL` and `NOTIFY_TIMEOUT_MS` this way did not switch notifications off: the variables were removed from the terminal, so the verifier read the real `NOTIFY_WEBHOOK_URL` from `.env` (the log said "Decision notifications: on."). The workaround that worked: set `NOTIFY_WEBHOOK_URL` to `http://127.0.0.1:9/none` and `NOTIFY_TIMEOUT_MS` to `2000`. The decisions then logged "decision webhook failed: could not reach the webhook" warnings and sent nothing. `docs/local-rehearsal.md` now says this.
+
+### NOT RUN
+- Rehearsal step 9: the viaSocket alert with a real webhook.
+- A real `link` transaction: all link candidates were already in a cluster.
+- The seed with a verifier address that is not a Hardhat account (the impersonation path).
+- Anything against Person 1's real Graph Service or a public testnet.
+- The rules thresholds used were test numbers (threshold 1), not the team's.

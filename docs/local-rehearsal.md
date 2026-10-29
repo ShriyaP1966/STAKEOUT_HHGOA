@@ -14,17 +14,20 @@ Each step says who ran it. "NOT RUN" means the assistant did not run it; a human
 | 3 | Seed | NOT RUN by the assistant. Human-run on 2026-10-29, before Person 3's fix (commit 46356fa): worked with a Hardhat account as verifier, failed with "invalid account" for an external verifier address. The fixed seed script (impersonates the verifier) is NOT RUN by anyone yet |
 | 4 | Generate the fixture from the real seed file | RAN by the assistant on 2026-10-29: wrote 5 analyses and 2 clusters of link candidates, exit 0 (rules file was a temporary test fixture with threshold 1 and minimum signals 1) |
 | 5 | Start the stand-in | RAN by the assistant on 2026-10-29: printed the banner, answered the flagged target with score 2 and 2 signals, the challenged target with score 0 and 0 signals, and 3 link candidates; then stopped by its own process id |
-| 6 | Verifier in dry run | NOT RUN with the stand-in |
-| 7 | Verifier live (`VERIFIER_DRY_RUN=false`), see a real confirm and `getStatus` change | NOT RUN |
-| 8 | `GET /decisions` | NOT RUN |
-| 9 | viaSocket alert | NOT RUN |
+| 6 | Verifier in dry run | NOT RUN by the assistant. Human-run on 2026-10-29: 3 decisions via `GET /decisions`: flagged target `skipped` (rule `B:behavior-passed`, "contract call was simulated successfully", score 2, 2 signals); challenged target `refused` (rule `B:behaviorThreshold`, score 0, 2 unrelated reporters only added confidence); a target `skipped` (rule `feasibility:no-live-flag`) |
+| 7 | Verifier live (`VERIFIER_DRY_RUN=false`), see a real confirm and `getStatus` change | NOT RUN by the assistant. Human-run on 2026-10-29 (new database): flagged target `sent` with a tx hash (0x63ba8ce0...1fb49a), rule `B:behavior-passed`; challenged target `refused` again; third `skipped` again. `getStatus` before: flagged 2, challenged 2. After: flagged 3 (cluster 0xa96f518b...3d79e8d6, role 1, expiresAt 0); challenged stayed 2 with no cluster |
+| 8 | `GET /decisions` | NOT RUN by the assistant. Human-run on 2026-10-29: the three decisions of step 6 were read through it |
+| 9 | viaSocket alert | NOT RUN (by anyone) |
+
+Details of the human run, including the finding about blanking variables in PowerShell, are in `docs/person2-test-report.md`, section 13. Test numbers were used (threshold 1), not the team's thresholds; no real `link` was sent (all link candidates were already in a cluster); nothing was run against Person 1's real Graph Service or a public testnet.
 
 The offline self-test `npm run dev-graph-selftest` (part of `npm run check`) covers the stand-in itself with generated random addresses; it needs no chain.
 
 ## Before you start
 - Node 24 in every terminal, repo root installed (`npm ci`), backend installed (`npm ci --ignore-scripts` in `services/backend`).
 - Everything below is local only. Never use a real key. The Hardhat node prints throwaway keys; use one of those for the verifier, and do not paste it into a file that is committed.
-- Your real `.env` may contain `NOTIFY_WEBHOOK_URL`. The verifier reads it and **sends a real message for every decision it records, including skipped and refused ones**. To avoid emails during the rehearsal, set `$env:NOTIFY_WEBHOOK_URL = ""` and `$env:NOTIFY_TIMEOUT_MS = ""` in the verifier terminal (step 6), and turn them back on only for step 9.
+- Your real `.env` may contain `NOTIFY_WEBHOOK_URL`. The verifier reads it and **sends a real message for every decision it records, including skipped and refused ones**. To avoid emails during the rehearsal, point them at a dead local address in the verifier terminal (step 6): `$env:NOTIFY_WEBHOOK_URL = "http://127.0.0.1:9/none"` and `$env:NOTIFY_TIMEOUT_MS = "2000"`. **Do not set them to an empty string:** in PowerShell `$env:NAME = ""` removes the variable, so the verifier then reads the real URL from `.env` (human-run, 2026-10-29: the log said "Decision notifications: on."). With the dead address the decisions logged "decision webhook failed: could not reach the webhook" warnings and sent nothing. Restore the real values only for step 9.
+- If the API server (step 8) runs on the same machine as another backend server, give it a different `PORT`; two servers cannot listen on the same port.
 
 ## 1. Start the node (terminal A, repo root)
 ```
@@ -80,8 +83,8 @@ $env:GRAPH_SERVICE_URL = "http://127.0.0.1:8001"       # the stand-in, same port
 $env:VERIFIER_DRY_RUN = "true"
 $env:VERIFIER_PRIVATE_KEY = "<the Hardhat account's key, typed in this terminal only>"
 $env:DB_PATH = "<a NEW database path>"
-$env:NOTIFY_WEBHOOK_URL = ""
-$env:NOTIFY_TIMEOUT_MS = ""
+$env:NOTIFY_WEBHOOK_URL = "http://127.0.0.1:9/none"   # dead local address; NOT an empty string (see Before you start)
+$env:NOTIFY_TIMEOUT_MS = "2000"
 npm run verifier
 ```
 `LLM_*` come from your `.env` as usual: the verifier asks the AI for the evidence summary (that is a real call to your provider; the AI only writes the summary, it never decides).
@@ -107,7 +110,7 @@ Expected (NOT RUN):
 **Only on the local chain.** The verifier refuses nothing by itself about the chain, so never point `RPC_URL` at a public network while this stand-in is running.
 
 ## 8. Check `GET /decisions`
-In terminal E, `services/backend`, with the same `DB_PATH` and the usual `.env`:
+In terminal E, `services/backend`, with the same `DB_PATH` and the usual `.env`. If another backend server is already running on this machine, set a different `PORT` first:
 ```
 npm start
 curl "http://localhost:<PORT>/decisions"
@@ -115,7 +118,7 @@ curl "http://localhost:<PORT>/decisions"
 Expected (NOT RUN): the decisions from steps 6 and 7 with `kind`, `outcome`, `rule`, a plain `reason`, `txHash` for the sent one, and the evidence hash.
 
 ## 9. Check the viaSocket alert
-Restore `NOTIFY_WEBHOOK_URL` and `NOTIFY_TIMEOUT_MS` in the verifier terminal (or remove the two lines that blank them), use a NEW database, and run the rehearsal again from step 7. Expected (NOT RUN): one message per recorded decision in the connected inbox, with public facts only. If you only want to test the webhook, `npm run notify-test` sends one labelled sample.
+Put the real `NOTIFY_WEBHOOK_URL` and `NOTIFY_TIMEOUT_MS` back in the verifier terminal (or remove the two lines that set the dead address, so `.env` is read), use a NEW database, and run the rehearsal again from step 7. Expected (NOT RUN): one message per recorded decision in the connected inbox, with public facts only. If you only want to test the webhook, `npm run notify-test` sends one labelled sample.
 
 ## Stopping and cleaning up
 Ctrl+C in each terminal. The fixture and databases are outside the repo or git-ignored. Nothing here is committed.
