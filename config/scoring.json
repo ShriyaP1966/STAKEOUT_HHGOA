@@ -1,0 +1,22 @@
+{
+  "name": "Stakeout scam behavior scoring",
+  "version": "1.0.0-draft",
+  "weights": {
+    "passThroughRatio": 0.30,
+    "fanIn": 0.025,
+    "fanOut": 0.025,
+    "medianForwardTime": 0.40,
+    "hopsToExit": 0.15,
+    "repeatedFlows": 0.10
+  },
+  "thresholds": {
+    "behaviorScore": 0.40,
+    "minSignals": 1,
+    "fanInMin": 2,
+    "fanOutMin": 2,
+    "passThroughRatioMin": 0.4,
+    "rapidForwardTimeMaxSeconds": 3600,
+    "hopsToExitMax": 2,
+    "repeatedFlowsMin": 2
+  }
+}

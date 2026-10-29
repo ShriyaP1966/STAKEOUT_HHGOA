@@ -13,6 +13,7 @@ function createWagmiConfig(config: AppConfig) {
   return createConfig({
     chains: [chain],
     connectors: [injected()],
+    multiInjectedProviderDiscovery: false,
     transports: { [chain.id]: http(config.rpcUrl, { batch: true }) },
     ssr: true,
   });

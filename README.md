@@ -14,7 +14,7 @@ Hackathon project. Testnet only. Synthetic data only.
 | `services/graph` | Graph service (Python, FastAPI, TigerGraph); see `services/graph/README.md` | Person 1 |
 | `services/backend` | Backend, AI, verifier service | Person 2 |
 | `shared` | `enums.ts`, exported contract ABIs in `shared/abi`, the hash library in `shared/hash`, schemas in `shared/schemas`, and the voice component in `shared/ui` | All |
-| `config` | Shared configuration (not started) | All |
+| `config` | Shared configuration agreed by the team: `rules.json` (verifier thresholds, read through `RULES_PATH`) and `scoring.json` (graph behaviour scoring, read by the graph service) | All |
 | `deployments` | Deployed contract addresses per network | All |
 | `docs` | Team documentation, including `docs/person2-handoff.md` | All |
 | `scripts` | Deploy, seed, ABI export, and Safe calldata scripts | Person 3 |

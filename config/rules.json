@@ -1,0 +1,6 @@
+{
+  "behaviorThreshold": 0.4,
+  "minSignals": 1,
+  "reportConfidenceBoostPerReporter": 0.05,
+  "confirmationsToWait": 2
+}
