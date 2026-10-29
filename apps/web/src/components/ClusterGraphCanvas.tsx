@@ -2,10 +2,10 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import ForceGraph2D, { type ForceGraphMethods, type LinkObject, type NodeObject } from "react-force-graph-2d";
-import { GRAPH_ROLES, ROLE_COLOR_VARS, ROLE_LABELS, type ClusterGraph, type GraphRole } from "@/lib/graph";
+import { edgeCurvatures, escapeHtml, GRAPH_ROLES, ROLE_COLOR_VARS, ROLE_LABELS, type ClusterGraph, type GraphRole } from "@/lib/graph";
 
 type GraphNode = { id: string; role: GraphRole };
-type GraphLink = { source: string; target: string };
+type GraphLink = { source: string; target: string; curvature: number; label: string };
 type Palette = Record<GraphRole, string> & { line: string; ring: string };
 
 const CANVAS_HEIGHT = 480;
@@ -47,12 +47,18 @@ export default function ClusterGraphCanvas({ graph }: { graph: ClusterGraph }) {
   const graphRef = useRef<ForceGraphMethods<NodeObject<GraphNode>, LinkObject<GraphNode, GraphLink>> | undefined>(undefined);
   const width = useWidth(containerRef);
   const palette = usePalette();
+  const curvatures = useMemo(() => edgeCurvatures(graph.edges), [graph]);
   const data = useMemo(
     () => ({
       nodes: graph.nodes.map((node): GraphNode => ({ id: node.id.toLowerCase(), role: node.role })),
-      links: graph.edges.map((edge): GraphLink => ({ source: edge.src.toLowerCase(), target: edge.tgt.toLowerCase() })),
+      links: graph.edges.map((edge, index): GraphLink => ({
+        source: edge.src.toLowerCase(),
+        target: edge.tgt.toLowerCase(),
+        curvature: curvatures[index],
+        label: `Amount ${edge.amount ?? "not given"}${edge.txId ? `, transfer id ${escapeHtml(edge.txId)}` : ""}`,
+      })),
     }),
-    [graph],
+    [graph, curvatures],
   );
 
   return (
@@ -81,6 +87,8 @@ export default function ClusterGraphCanvas({ graph }: { graph: ClusterGraph }) {
             context.fillStyle = color;
             context.fill();
           }}
+          linkLabel="label"
+          linkCurvature="curvature"
           linkColor={() => palette.line}
           linkWidth={1.2}
           linkDirectionalArrowLength={5}

@@ -1,8 +1,19 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { bytesToHex } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
-import { clusterGraphHref, clusterGraphSchema, dataSourcesOf, describeGraphFailure, fetchClusterGraph, GraphError, isClusterId } from "./graph";
+import {
+  clusterGraphHref,
+  clusterGraphSchema,
+  dataSourcesOf,
+  describeGraphFailure,
+  edgeCurvatures,
+  escapeHtml,
+  fetchClusterGraph,
+  GraphError,
+  isClusterId,
+} from "./graph";
 import { GRAPH_PROXY_PATH } from "./graph-path";
+import sharedResponse from "./fixtures/cluster-graph-response.json";
 
 const wallet = () => privateKeyToAccount(generatePrivateKey()).address.toLowerCase();
 const clusterId = () => bytesToHex(crypto.getRandomValues(new Uint8Array(32)));
@@ -114,5 +125,65 @@ describe("fetchClusterGraph", () => {
     respond(200, JSON.stringify(fixture()));
     const asked = clusterId() as `0x${string}`;
     expect((await failureOf(fetchClusterGraph(asked))).decoded.detail).toContain(asked);
+  });
+});
+
+describe("graph service response fixture shared by the team", () => {
+  it("parses unchanged, with every role, edge and data source intact", () => {
+    const graph = clusterGraphSchema.parse(sharedResponse);
+    expect(isClusterId(graph.clusterId)).toBe(true);
+    expect(graph.nodes).toHaveLength(sharedResponse.nodes.length);
+    expect(graph.edges).toHaveLength(sharedResponse.edges.length);
+    for (const role of ["member", "exit_point", "counterparty"] as const) {
+      expect(graph.nodes.filter((node) => node.role === role).length).toBe(sharedResponse.nodes.filter((node) => node.role === role).length);
+    }
+    expect(graph.nodes.filter((node) => node.role === "exit_point").every((node) => node.isExitPoint)).toBe(true);
+    expect(dataSourcesOf(graph)).toEqual([...new Set(sharedResponse.nodes.map((node) => node.dataSource))].sort());
+  });
+
+  it("is returned by fetchClusterGraph for its own cluster id", async () => {
+    respond(200, JSON.stringify(sharedResponse));
+    await expect(fetchClusterGraph(sharedResponse.clusterId as `0x${string}`)).resolves.toEqual(sharedResponse);
+  });
+});
+
+describe("edgeCurvatures", () => {
+  it("keeps a single transfer straight and spreads repeated transfers between the same wallets", () => {
+    const [a, b, c] = [wallet(), wallet(), wallet()];
+    expect(edgeCurvatures([{ src: a, tgt: b }])).toEqual([0]);
+    const repeated = edgeCurvatures([
+      { src: a, tgt: b },
+      { src: a, tgt: b },
+      { src: a, tgt: b },
+      { src: a, tgt: c },
+    ]);
+    expect(repeated[3]).toBe(0);
+    expect(new Set(repeated.slice(0, 3)).size).toBe(3);
+  });
+
+  it("curves a transfer back the other way to the opposite side", () => {
+    const [a, b] = [wallet(), wallet()];
+    const [forward, back] = edgeCurvatures([
+      { src: a, tgt: b },
+      { src: b, tgt: a },
+    ]);
+    expect(forward).not.toBe(0);
+    expect(back).toBe(forward);
+  });
+
+  it("separates the repeated transfers in the shared response fixture", () => {
+    const curvatures = edgeCurvatures(sharedResponse.edges);
+    const pairs = new Map<string, number[]>();
+    sharedResponse.edges.forEach((edge, index) => {
+      const key = `${edge.src}|${edge.tgt}`;
+      pairs.set(key, [...(pairs.get(key) ?? []), curvatures[index]]);
+    });
+    for (const values of pairs.values()) expect(new Set(values).size).toBe(values.length);
+  });
+});
+
+describe("escapeHtml", () => {
+  it("makes text safe to place in a tooltip", () => {
+    expect(escapeHtml(`<img src=x onerror="a">&'`)).toBe("&#60;img src=x onerror=&#34;a&#34;&#62;&#38;&#39;");
   });
 });

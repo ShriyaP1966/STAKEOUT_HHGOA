@@ -126,3 +126,27 @@ export async function fetchClusterGraph(clusterId: Hex): Promise<ClusterGraph> {
   }
   return parsed.data;
 }
+
+const CURVE_STEP = 0.25;
+
+export function edgeCurvatures(edges: { src: string; tgt: string }[]): number[] {
+  const groups = new Map<string, number[]>();
+  edges.forEach((edge, index) => {
+    const key = [edge.src.toLowerCase(), edge.tgt.toLowerCase()].sort().join("|");
+    groups.set(key, [...(groups.get(key) ?? []), index]);
+  });
+  const curvatures = edges.map(() => 0);
+  for (const indexes of groups.values()) {
+    if (indexes.length < 2) continue;
+    const first = edges[indexes[0]].src.toLowerCase();
+    indexes.forEach((edgeIndex, position) => {
+      const offset = (position - (indexes.length - 1) / 2) * CURVE_STEP;
+      curvatures[edgeIndex] = edges[edgeIndex].src.toLowerCase() === first ? offset : -offset;
+    });
+  }
+  return curvatures;
+}
+
+export function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (character) => `&#${character.charCodeAt(0)};`);
+}
