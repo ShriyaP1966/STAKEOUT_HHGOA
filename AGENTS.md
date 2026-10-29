@@ -107,6 +107,7 @@ Person 3 owns this section. Run every command from the repo root. Commands for `
 - Test web app: `npm run web:test`; add `STAKEOUT_LOCAL_RPC_URL=<local node RPC URL>` after `npm run seed:local` to include the local-node checks
 - Deploy contract to testnet: fill `.env` from `.env.example`, then `npm run gen:deployer`, `npm run check:env`, `npm run create:safe`, `npm run deploy:check`, `npm run deploy:target`. Writes `deployments/network.json` and `shared/abi/*.json`, then verifies on the explorer. `EXPLORER_API_KEY` is required here.
 - Check deployment on chain: `npm run check:deployment -- <target|localhost> [--verifier-rotated]`
+- Verify deployed contracts on the explorer: `npm run verify:target` (needs only `RPC_URL`, `CHAIN_ID` and `EXPLORER_API_KEY` in `.env`, not the deployer key)
 - Deploy contract locally: `npm run node:local` in one terminal; fill `.env.localhost` with the same variable names (`EXPLORER_API_KEY` may be empty or left out; verification is skipped on the local chain), then `npm run deploy:local`. Writes the git-ignored `deployments/localhost.json`.
 - Safe transaction calldata: `npm run safe:calldata -- <target|localhost> <action> <args>`
 - Load synthetic scenario on the local chain: `npm run seed:local` after `npm run deploy:local` (local Hardhat chain only; writes the git-ignored `deployments/localhost-seed.json`)

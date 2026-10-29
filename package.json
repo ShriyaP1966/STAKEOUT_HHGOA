@@ -21,6 +21,7 @@
     "create:safe": "ts-node --transpile-only scripts/create-safe.ts",
     "deploy:check": "ts-node --transpile-only scripts/deploy-check.ts",
     "check:deployment": "ts-node --transpile-only scripts/check-deployment.ts",
+    "verify:target": "hardhat run --network target scripts/verify-target.ts",
     "web:dev": "npm --prefix apps/web run dev",
     "web:build": "npm --prefix apps/web run build",
     "web:test": "npm --prefix apps/web run test"

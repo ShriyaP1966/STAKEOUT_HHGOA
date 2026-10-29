@@ -5,12 +5,14 @@ import "@nomicfoundation/hardhat-chai-matchers";
 import "@nomicfoundation/hardhat-verify";
 import "@typechain/hardhat";
 import "solidity-coverage";
-import { DeployNetworkName, safeParseDeployEnv } from "./scripts/lib/deploy-config";
+import { DeployNetworkName, safeParseDeployEnv, safeParseRpcEnv, safeParseVerifyEnv } from "./scripts/lib/deploy-config";
 
 function networkFromEnv(network: DeployNetworkName): HttpNetworkUserConfig {
   const env = safeParseDeployEnv(network);
-  if (!env) return { url: "", accounts: [] };
-  return { url: env.RPC_URL, chainId: env.CHAIN_ID, accounts: [env.DEPLOYER_PRIVATE_KEY] };
+  if (env) return { url: env.RPC_URL, chainId: env.CHAIN_ID, accounts: [env.DEPLOYER_PRIVATE_KEY] };
+  const rpc = safeParseRpcEnv(network);
+  if (rpc) return { url: rpc.RPC_URL, chainId: rpc.CHAIN_ID, accounts: [] };
+  return { url: "", accounts: [] };
 }
 
 const config: HardhatUserConfig = {
@@ -26,7 +28,7 @@ const config: HardhatUserConfig = {
     localhost: networkFromEnv("localhost"),
   },
   etherscan: {
-    apiKey: safeParseDeployEnv("target")?.EXPLORER_API_KEY ?? "",
+    apiKey: safeParseVerifyEnv()?.EXPLORER_API_KEY ?? "",
   },
   sourcify: {
     enabled: false,

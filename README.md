@@ -62,6 +62,7 @@ Without them, contract compile and tests still work, and the web app builds but 
 | Check everything before a testnet deploy, without deploying | `npm run deploy:check` |
 | Deploy to the target network | `npm run deploy:target` |
 | Check a deployment on chain | `npm run check:deployment -- <network> [--verifier-rotated]` |
+| Verify deployed contracts on the explorer | `npm run verify:target` (needs only `RPC_URL`, `CHAIN_ID` and `EXPLORER_API_KEY` in `.env`; constructor arguments are read from the chain) |
 | Send local test ETH | `npm run fund:local -- <recipient> <amountEth>` |
 | Print Safe transaction calldata | `npm run safe:calldata -- <network> <action> <args>` |
 | Seed synthetic data on the local chain | `npm run seed:local` |

@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import { Wallet } from "ethers";
-import { DeployNetworkName, parseDeployEnv } from "../scripts/lib/deploy-config";
+import { DeployNetworkName, parseDeployEnv, parseVerifyEnv } from "../scripts/lib/deploy-config";
 
 function fixtureEnv(): Record<string, string> {
   return {
@@ -54,5 +54,20 @@ describe("deploy config EXPLORER_API_KEY", function () {
   it("accepts a key that is set on testnet", function () {
     const key = Wallet.createRandom().address;
     expect(parseDeployEnv("target", { ...fixtureEnv(), EXPLORER_API_KEY: key }).EXPLORER_API_KEY).to.equal(key);
+  });
+});
+
+describe("verify config", function () {
+  const rpcOnly = () => ({ RPC_URL: fixtureEnv().RPC_URL, CHAIN_ID: fixtureEnv().CHAIN_ID });
+
+  it("needs only RPC_URL, CHAIN_ID and EXPLORER_API_KEY, not the deployer key", function () {
+    const key = Wallet.createRandom().address;
+    expect(parseVerifyEnv({ ...rpcOnly(), EXPLORER_API_KEY: key })).to.deep.equal({ RPC_URL: rpcOnly().RPC_URL, CHAIN_ID: Number(rpcOnly().CHAIN_ID), EXPLORER_API_KEY: key });
+  });
+
+  it("rejects an empty or missing EXPLORER_API_KEY with a clear message", function () {
+    for (const raw of [{ ...rpcOnly(), EXPLORER_API_KEY: "" }, rpcOnly()]) {
+      expect(() => parseVerifyEnv(raw)).to.throw("EXPLORER_API_KEY: is missing. It is required to verify contracts on the explorer");
+    }
   });
 });

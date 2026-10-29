@@ -96,8 +96,11 @@ const deploySchemas = {
 
 const rpcSchema = z.object(rpcShape);
 
+const verifySchema = z.object({ ...rpcShape, EXPLORER_API_KEY: requiredExplorerKey });
+
 export type DeployEnv = z.infer<(typeof deploySchemas)["localhost"]>;
 type RpcEnv = z.infer<typeof rpcSchema>;
+export type VerifyEnv = z.infer<typeof verifySchema>;
 
 function formatIssues(source: string, error: z.ZodError): string {
   const lines = error.issues.map((issue) => `  ${issue.path.join(".")}: ${issue.message}`);
@@ -125,6 +128,24 @@ export function loadDeployEnv(network: DeployNetworkName): DeployEnv {
 
 export function loadRpcEnv(network: DeployNetworkName): RpcEnv {
   return parseOrThrow(rpcSchema, readEnvFile(network), DEPLOY_NETWORKS[network].envFile);
+}
+
+export function safeParseRpcEnv(network: DeployNetworkName): RpcEnv | undefined {
+  const result = rpcSchema.safeParse(readEnvFile(network));
+  return result.success ? result.data : undefined;
+}
+
+export function parseVerifyEnv(raw: Record<string, string>): VerifyEnv {
+  return parseOrThrow(verifySchema, raw, DEPLOY_NETWORKS.target.envFile);
+}
+
+export function safeParseVerifyEnv(): VerifyEnv | undefined {
+  const result = verifySchema.safeParse(readEnvFile("target"));
+  return result.success ? result.data : undefined;
+}
+
+export function loadVerifyEnv(): VerifyEnv {
+  return parseVerifyEnv(readEnvFile("target"));
 }
 
 const verifierSchema = z.object({ VERIFIER_ADDRESS: address });
