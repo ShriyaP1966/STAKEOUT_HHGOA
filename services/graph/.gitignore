@@ -1,0 +1,7 @@
+# generated data and results (synthetic, reproducible from the seed)
+data/
+results/
+__pycache__/
+*.py[cod]
+.venv/
+.env

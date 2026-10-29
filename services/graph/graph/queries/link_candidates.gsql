@@ -1,0 +1,49 @@
+// link_candidates: wallets OUTSIDE one cluster that have at least one transfer with a member, with the counts the linking rule needs.
+// The rule itself (graph/linking.py) is applied in Python; the graph supplies counts only.
+// rapid_max is rapidForwardTimeMaxSeconds from config/scoring.json. delayCount and fastDelayCount let Python decide whether a wallet's
+// lower-median forward time is at most rapid_max (it is when fastDelayCount >= (delayCount - 1) / 2 + 1).
+// UNVERIFIED: written without a TigerGraph instance to compile it. Run scripts/setup_graph.py and report any compile error.
+CREATE OR REPLACE QUERY link_candidates(VERTEX<Cluster> cluster, INT rapid_max) FOR GRAPH __GRAPH__ {
+  OrAccum @is_member;
+  OrAccum @neighbour;
+  SumAccum<DOUBLE> @total_in;
+  SumAccum<DOUBLE> @total_out;
+  SumAccum<INT> @out_count;
+  SumAccum<INT> @out_to_cluster;
+  SumAccum<INT> @in_from_cluster;
+  SumAccum<INT> @delay_count;
+  SumAccum<INT> @fast_delay_count;
+  ListAccum<INT> @in_times;
+  OrAccum @@cluster_reported;
+
+  Cl = {cluster};
+  Members = SELECT w FROM Cl:c -(MEMBER_OF)- Wallet:w ACCUM w.@is_member += TRUE;
+  All = {Wallet.*};
+
+  Pass1 = SELECT s FROM All:s -(TRANSFER_TX>:e)- Wallet:t
+          ACCUM s.@total_out += e.amount, s.@out_count += 1, t.@total_in += e.amount, t.@in_times += e.timestamp,
+                IF t.@is_member == TRUE AND s.@is_member == FALSE THEN s.@out_to_cluster += 1, s.@neighbour += TRUE END,
+                IF s.@is_member == TRUE AND t.@is_member == FALSE THEN t.@in_from_cluster += 1, t.@neighbour += TRUE END;
+
+  Pass2 = SELECT s FROM All:s -(TRANSFER_TX>:e)- Wallet:t
+          WHERE s.@neighbour == TRUE
+          ACCUM INT best = -1,
+                FOREACH ts IN s.@in_times DO
+                  IF ts <= e.timestamp AND ts > best THEN best = ts END
+                END,
+                IF best >= 0 THEN
+                  s.@delay_count += 1,
+                  IF e.timestamp - best <= rapid_max THEN s.@fast_delay_count += 1 END
+                END;
+
+  Reps = {Report.*};
+  Reported = SELECT r FROM Reps:r -(REPORTED>)- Wallet:w WHERE w.@is_member == TRUE ACCUM @@cluster_reported += TRUE;
+
+  Candidates = SELECT w FROM All:w WHERE w.@neighbour == TRUE AND w.@is_member == FALSE;
+
+  PRINT Members.size() AS memberCount;
+  PRINT Candidates[Candidates.@out_to_cluster AS outflowsToCluster, Candidates.@in_from_cluster AS inflowsFromCluster,
+                   Candidates.@total_in AS totalIn, Candidates.@total_out AS totalOut, Candidates.@out_count AS outCount,
+                   Candidates.@delay_count AS delayCount, Candidates.@fast_delay_count AS fastDelayCount] AS candidates;
+  PRINT @@cluster_reported AS clusterReported;
+}

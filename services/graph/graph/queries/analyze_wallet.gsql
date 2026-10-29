@@ -1,0 +1,110 @@
+// analyze_wallet: every fact the Graph Service needs about ONE wallet, read from the graph.
+// UNVERIFIED: written without a TigerGraph instance to compile it. Run scripts/setup_graph.py and report any compile error.
+// The graph name is replaced by scripts/setup_graph.py. max_hops and the other numbers come from config/scoring.json via the caller.
+// Only the attributes of the live schema are used: Wallet(is_exit_point, data_source), TRANSFER_TX(amount, timestamp, tx_id).
+// Edges are only followed in their own direction (TRANSFER_TX>, REPORTED>), so no reverse edge types are needed.
+CREATE OR REPLACE QUERY analyze_wallet(VERTEX<Wallet> wallet_id, INT max_hops) FOR GRAPH __GRAPH__ {
+  SumAccum<DOUBLE> @total_in;
+  SumAccum<DOUBLE> @total_out;
+  SumAccum<INT> @in_count;
+  SumAccum<INT> @out_count;
+  SetAccum<VERTEX<Wallet>> @senders;
+  SetAccum<VERTEX<Wallet>> @recipients;
+  ListAccum<INT> @in_times;
+  ListAccum<INT> @delays;
+  OrAccum @in_cluster;
+  OrAccum @in_own;
+  OrAccum @visited;
+  SetAccum<VERTEX<Cluster>> @@cluster_ids;
+  SetAccum<VERTEX<Cluster>> @@funding_clusters;
+  SetAccum<VERTEX<Cluster>> @@paid_clusters;
+  SetAccum<VERTEX<Wallet>> @@members;
+  SetAccum<VERTEX<Wallet>> @@exit_points;
+  SetAccum<VERTEX<Wallet>> @@funders;
+  SetAccum<VERTEX<Report>> @@reports;
+  SumAccum<INT> @@outflows_to_cluster;
+  ListAccum<INT> @@delays;
+  SumAccum<INT> @@less;
+  SumAccum<INT> @@equal;
+  MinAccum<INT> @@median;
+  MinAccum<INT> @@hops;
+  INT depth = 0;
+  INT k = 0;
+
+  All = {Wallet.*};
+
+  // 1. transfer totals, distinct counterparties and the times funds arrived
+  Pass1 = SELECT s FROM All:s -(TRANSFER_TX>:e)- Wallet:t
+          ACCUM s.@total_out += e.amount, s.@out_count += 1, s.@recipients += t,
+                t.@total_in += e.amount, t.@in_count += 1, t.@senders += s, t.@in_times += e.timestamp;
+
+  // 2. forward delay of each outgoing transfer: its time minus the latest arrival at or before it
+  Pass2 = SELECT s FROM All:s -(TRANSFER_TX>:e)- Wallet:t
+          ACCUM INT best = -1,
+                FOREACH ts IN s.@in_times DO
+                  IF ts <= e.timestamp AND ts > best THEN best = ts END
+                END,
+                IF best >= 0 THEN s.@delays += e.timestamp - best END;
+
+  // 3. the target itself
+  Subject = SELECT s FROM All:s WHERE s == wallet_id
+           ACCUM FOREACH d IN s.@delays DO @@delays += d END;
+
+  // 4. clusters the target belongs to, their members and exit points
+  Mine = SELECT c FROM Subject:s -(MEMBER_OF)- Cluster:c ACCUM @@cluster_ids += c;
+  Mates = SELECT w FROM Mine:c -(MEMBER_OF)- Wallet:w
+          ACCUM @@members += w, w.@in_own += TRUE,
+                IF w.is_exit_point == TRUE THEN @@exit_points += w END;
+
+  // 5. clusters that funded the target, and how many times the target paid into clusters it is NOT in
+  Members = SELECT w FROM All:w -(MEMBER_OF)- Cluster:c ACCUM w.@in_cluster += TRUE;
+  Funders = SELECT s FROM All:s -(TRANSFER_TX>:e)- Wallet:t WHERE t == wallet_id ACCUM @@funders += s;
+  FundClusters = SELECT c FROM Funders:f -(MEMBER_OF)- Cluster:c ACCUM @@funding_clusters += c;
+  Paid = SELECT t FROM Subject:s -(TRANSFER_TX>:e)- Wallet:t
+         WHERE t.@in_cluster == TRUE AND t.@in_own == FALSE
+         ACCUM @@outflows_to_cluster += 1;
+  PaidClusters = SELECT c FROM Paid:t -(MEMBER_OF)- Cluster:c ACCUM @@paid_clusters += c;
+
+  // 6. distinct reports against the target (each report has one REPORTED edge to its target)
+  Reps = {Report.*};
+  Reported = SELECT r FROM Reps:r -(REPORTED>)- Wallet:w WHERE w == wallet_id ACCUM @@reports += r;
+
+  // 7. median forward time (lower median): the delay at sorted index (n-1)/2
+  k = (@@delays.size() - 1) / 2;
+  FOREACH i IN RANGE[0, @@delays.size() - 1] DO
+    @@less = 0;
+    @@equal = 0;
+    FOREACH j IN RANGE[0, @@delays.size() - 1] DO
+      IF @@delays.get(j) < @@delays.get(i) THEN @@less += 1; END;
+      IF @@delays.get(j) == @@delays.get(i) THEN @@equal += 1; END;
+    END;
+    IF @@less <= k AND k < @@less + @@equal THEN @@median += @@delays.get(i); END;
+  END;
+
+  // 8. fewest forward hops to an exit point, at most max_hops
+  Cur = {wallet_id};
+  Seen = SELECT s FROM Subject:s ACCUM s.@visited += TRUE;
+  Self = SELECT s FROM Subject:s WHERE s.is_exit_point == TRUE ACCUM @@hops += 0;
+  WHILE Cur.size() > 0 AND depth < max_hops DO
+    depth = depth + 1;
+    Cur = SELECT t FROM Cur:s -(TRANSFER_TX>:e)- Wallet:t
+          WHERE t.@visited == FALSE
+          ACCUM t.@visited += TRUE
+          POST-ACCUM IF t.is_exit_point == TRUE THEN @@hops += depth END;
+  END;
+
+  PRINT Subject.size() AS found;
+  PRINT Subject[Subject.@total_in AS totalIn, Subject.@total_out AS totalOut, Subject.@in_count AS inCount, Subject.@out_count AS outCount,
+               Subject.is_exit_point AS isExitPoint, Subject.data_source AS dataSource] AS wallet;
+  PRINT Subject[Subject.@senders.size() AS inDegree, Subject.@recipients.size() AS outDegree] AS degrees;
+  PRINT @@cluster_ids AS clusterIds;
+  PRINT @@members AS membersList;
+  PRINT @@exit_points AS exitPointsList;
+  PRINT @@reports.size() AS reporterCount;
+  PRINT @@delays.size() AS delayCount;
+  PRINT @@median AS medianForwardTime;
+  PRINT @@hops AS hopsToExit;
+  PRINT @@funding_clusters AS fundingClusters;
+  PRINT @@paid_clusters AS paidClusters;
+  PRINT @@outflows_to_cluster AS outflowsToCluster;
+}

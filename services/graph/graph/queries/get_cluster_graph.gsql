@@ -1,0 +1,20 @@
+// get_cluster_graph: the members of one cluster, their neighbours, and every transfer that touches a member (real edges).
+// UNVERIFIED: written without a TigerGraph instance to compile it. Run scripts/setup_graph.py and report any compile error.
+CREATE OR REPLACE QUERY get_cluster_graph(VERTEX<Cluster> cluster) FOR GRAPH __GRAPH__ {
+  OrAccum @is_member;
+  OrAccum @touched;
+  SetAccum<EDGE> @@edges;
+
+  Cl = {cluster};
+  Members = SELECT w FROM Cl:c -(MEMBER_OF)- Wallet:w ACCUM w.@is_member += TRUE;
+
+  All = {Wallet.*};
+  Touching = SELECT s FROM All:s -(TRANSFER_TX>:e)- Wallet:t
+             WHERE s.@is_member == TRUE OR t.@is_member == TRUE
+             ACCUM @@edges += e, s.@touched += TRUE, t.@touched += TRUE;
+  Nodes = SELECT w FROM All:w WHERE w.@touched == TRUE;
+
+  PRINT Members.size() AS memberCount;
+  PRINT Nodes[Nodes.is_exit_point AS isExitPoint, Nodes.data_source AS dataSource, Nodes.@is_member AS isMember] AS nodes;
+  PRINT @@edges AS transfers;
+}
