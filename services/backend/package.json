@@ -24,6 +24,8 @@
     "decide-selftest": "tsx src/scripts/decide-selftest.ts",
     "blocklist-selftest": "tsx src/scripts/blocklist-selftest.ts",
     "notify-selftest": "tsx src/scripts/notify-selftest.ts",
+    "notify-test": "tsx src/scripts/notify-test.ts",
+    "notify-test-selftest": "tsx src/scripts/notify-test-selftest.ts",
     "dodo-selftest": "tsx src/scripts/dodo-selftest.ts",
     "env-parity": "tsx src/scripts/env-parity.ts",
     "check": "tsx src/scripts/check.ts"

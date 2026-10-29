@@ -144,6 +144,32 @@ check("a notifier that throws on its own cannot break a decision", await (async 
   return x.db.listDecisions(5).length === 1;
 })());
 
+console.log("\n## result hook (used by npm run notify-test)");
+{
+  type R = { ok: boolean; status?: number; elapsedMs: number };
+  const results: R[] = [];
+  const mk = (url: string | undefined, onResult?: (r: R) => void) => makeNotifier({ url, timeoutMs: 300 }, redact, () => {}, onResult);
+  const sample = { id: "notify-test", kind: "confirm", outcome: "skipped", target: addr(), txHash: null, rule: "notify-test" };
+  mode = "ok"; received.length = 0;
+  let n = mk(hookUrl, (r) => results.push(r)); n.notify(sample); await n.flush();
+  check("success: reported once with ok, the HTTP status and elapsed milliseconds", results.length === 1 && results[0].ok === true && results[0].status === 200 && Number.isFinite(results[0].elapsedMs) && results[0].elapsedMs >= 0, JSON.stringify(results[0]));
+  check("a text id is accepted and sent as given", JSON.parse(received[0]?.body ?? "{}").id === "notify-test");
+  mode = "http-500"; results.length = 0; n = mk(hookUrl, (r) => results.push(r)); n.notify(sample); await n.flush();
+  check("HTTP 500: ok false with status 500", results.length === 1 && results[0].ok === false && results[0].status === 500, JSON.stringify(results[0]));
+  mode = "hang"; results.length = 0; n = mk(hookUrl, (r) => results.push(r)); n.notify(sample); await n.flush();
+  check("no answer in time: ok false, no status, elapsed close to the timeout", results.length === 1 && results[0].ok === false && results[0].status === undefined && results[0].elapsedMs >= 250 && results[0].elapsedMs < 1500, JSON.stringify(results[0]));
+  mode = "ok"; results.length = 0; n = mk("http://127.0.0.1:9/hooks/x", (r) => results.push(r)); n.notify(sample); await n.flush();
+  check("unreachable: ok false, no status", results.length === 1 && results[0].ok === false && results[0].status === undefined, JSON.stringify(results[0]));
+  check("a result carries no URL, body or message text, only ok, status and elapsedMs", results.every((r) => Object.keys(r).every((k) => ["ok", "status", "elapsedMs"].includes(k))) && !JSON.stringify(results).includes(secretPath), JSON.stringify(Object.keys(results[0] ?? {})));
+  const warns: string[] = [];
+  mode = "http-500";
+  const throwing = makeNotifier({ url: hookUrl, timeoutMs: 300 }, redact, (m) => warns.push(m), () => { throw new Error("hook failed"); });
+  let threw = false;
+  try { throwing.notify(sample); await throwing.flush(); } catch { threw = true; }
+  check("a result hook that throws cannot break the notifier, and is reported (not swallowed)", !threw && warns.length === 2 && warns.some((m) => /500/.test(m)) && warns.some((m) => /result hook failed: hook failed/.test(m)), warns.join(" | "));
+  mode = "ok";
+}
+
 console.log("\n## the webhook URL never appears in any log line or error");
 const all = [...http500.warnings, ...hang.warnings, ...dead.warnings].join("\n");
 check("no warning contains the URL path or query token", !all.includes(secretPath) && !all.includes(secretQuery) && !all.includes(hookUrl));

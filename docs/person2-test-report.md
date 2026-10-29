@@ -251,3 +251,25 @@ No `0x` + 40-hex literal in source. In `docs/` the only values of that length ar
 
 ### Not run
 The real Dodo account and a live delivery; whether test mode has a separate signing secret; compiling the Solidity snippet; reading the Safe's owners and threshold; a live `Confirmed` or `Linked` status; anything needing the Graph Service.
+
+
+## 11. Run of 2026-10-29 (latest): `npm run notify-test`, and the viaSocket webhook
+### Human-run, recorded as reported (not run or checked by the assistant)
+On 2026-10-29 a human POSTed the sample payload by hand to a live viaSocket flow, and the flow returned a **sent Gmail message**. The assistant did not see the request, the URL, the response or the email; this line records what the human reported. What it shows: a live viaSocket flow accepted a manual POST of the sample payload and sent a Gmail message.
+
+### Run by the assistant: `npm run notify-test` and its offline self-test
+The command was added and tested only against a LOCAL stub webhook. **The assistant did not run `npm run notify-test` against the real viaSocket URL**: `NOTIFY_WEBHOOK_URL` and `NOTIFY_TIMEOUT_MS` are set in the local `.env` (checked by name only), so running it would have delivered a real Gmail message, which was not part of the request. A human must run it for that.
+- The command loads the existing config (the same two webhook fields and the same rule as the verifier: with the URL set, the timeout is required), and with `NOTIFY_WEBHOOK_URL` empty it stops with a clear message and sends nothing (exit 1).
+- Otherwise it sends ONE sample through the real notifier code in `src/verifier/notify.ts`, exactly as the verifier would: id `notify-test`, kind `confirm`, outcome `skipped`, rule `notify-test`, target the all-ones sample address (built from a repeat, so no address literal is in the source), no tx hash. The payload has exactly the notifier's six public fields.
+- It prints three lines only: `SUCCESS` or `FAILURE`, `HTTP status: <n>` (or `none (no response: timeout or unreachable)`), `Elapsed: <n> ms`. It never prints the URL, any part of it, or the response body. Exit code 0 only for a 2xx answer.
+- To get the status and elapsed time from the real notifier without copying its logic, the notifier gained an optional result callback that receives only `ok`, the HTTP status when there was one, and the elapsed milliseconds (never the URL or any text). Its `id` type was widened to a number or text (the sample's id is text). If the callback throws, that is reported as a redacted warning and the notifier carries on.
+- Tests were written first and shown failing: the four new result-hook checks failed (the callback was never called), and the script test failed because the script did not exist. After the change `npm run notify-selftest` passes (including the new result-hook section) and `npm run notify-test-selftest` passes. It runs the real script as a child process against a local stub webhook and checks, over seven runs: success (exit 0, exactly three lines, `HTTP status: 200`, one POST with the labelled sample, the exact six fields); webhook answering 500 (exit 1, `HTTP status: 500`); webhook never answering (exit 1, `HTTP status: none`, elapsed about the 500 ms timeout); webhook unreachable (exit 1, none); URL empty (exit 1, clear message, no request); timeout missing (exit 1, names `NOTIFY_TIMEOUT_MS`); a value that is not a URL (exit 1, names `NOTIFY_WEBHOOK_URL`, value not printed). A planted response body and a secret path and query token in the stub URL appeared in none of the output, and no configuration problem sent a request.
+- A first draft of one of my own tests expected exactly one warning when the callback throws; that would have meant swallowing the callback's error, so the notifier reports it as a second warning and the test was corrected before the implementation was finished.
+
+### Still NOT verified
+- That the real `npm run notify-test` (or the verifier) delivers to the real viaSocket flow: only a human's manual POST was reported, not the command itself. Whether that manual POST had exactly the JSON the code sends (the six fields) is also unknown to the assistant.
+- Which HTTP status the live viaSocket webhook returns on success, and what it returns for a bad request, a slow flow or too many requests: UNKNOWN (the command will print the status when a human runs it).
+- Whether the email arrived in the intended inbox and what it shows: "sent" as reported by the flow is not the same as delivered and read.
+- Whether viaSocket enforces a timeout, retries, rate limits or authentication on the webhook, and whether `NOTIFY_TIMEOUT_MS` as currently set is long enough for it: UNKNOWN.
+- That a real verifier decision (rather than the sample) triggers the webhook live: not run (it needs a deployed contract, a Graph Service and a flagged wallet).
+- The payload format against viaSocket's documentation: UNVERIFIED (no viaSocket documentation was consulted).

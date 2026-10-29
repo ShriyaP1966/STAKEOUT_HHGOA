@@ -53,6 +53,14 @@ export const chainEnv = z.object({
 /** An empty value in .env means "not set" for optional variables. */
 const emptyToUndefined = (v: unknown) => (v === "" ? undefined : v);
 
+/** Optional viaSocket webhook. Unset or empty means no notifications at all. If the URL is set, the timeout is required. */
+const notifyFields = {
+  NOTIFY_WEBHOOK_URL: z.preprocess(emptyToUndefined, z.url().optional()),
+  NOTIFY_TIMEOUT_MS: z.preprocess(emptyToUndefined, z.coerce.number().int().positive().optional()),
+};
+const notifyTimeoutCheck = (v: { NOTIFY_WEBHOOK_URL?: unknown; NOTIFY_TIMEOUT_MS?: unknown }) => !v.NOTIFY_WEBHOOK_URL || v.NOTIFY_TIMEOUT_MS !== undefined;
+const notifyTimeoutProblem = { path: ["NOTIFY_TIMEOUT_MS"], message: "is required when NOTIFY_WEBHOOK_URL is set" };
+
 /** Everything the verifier process reads from .env (the API server does not need these). */
 export const verifierEnv = chainEnv.extend({
   DB_PATH: nonEmpty,
@@ -63,13 +71,11 @@ export const verifierEnv = chainEnv.extend({
   VERIFIER_DRY_RUN: z.enum(["true", "false"], "must be true or false").transform((v) => v === "true"),
   VERIFIER_POLL_INTERVAL_MS: z.coerce.number().int().positive(),
   VERIFIER_LOG_CHUNK_BLOCKS: z.coerce.number().int().positive(),
-  /** Optional viaSocket webhook. Unset or empty means no notifications at all. */
-  NOTIFY_WEBHOOK_URL: z.preprocess(emptyToUndefined, z.url().optional()),
-  NOTIFY_TIMEOUT_MS: z.preprocess(emptyToUndefined, z.coerce.number().int().positive().optional()),
-}).refine((v) => !v.NOTIFY_WEBHOOK_URL || v.NOTIFY_TIMEOUT_MS !== undefined, {
-  path: ["NOTIFY_TIMEOUT_MS"],
-  message: "is required when NOTIFY_WEBHOOK_URL is set",
-});
+  ...notifyFields,
+}).refine(notifyTimeoutCheck, notifyTimeoutProblem);
+
+/** Just the optional webhook settings, for `npm run notify-test`. Same fields and same rule as the verifier's. */
+export const notifyEnv = z.object(notifyFields).refine(notifyTimeoutCheck, notifyTimeoutProblem);
 
 /**
  * Optional Dodo Payments webhook (test mode). Both empty means the route answers 503. The secret is validated here so a typo
