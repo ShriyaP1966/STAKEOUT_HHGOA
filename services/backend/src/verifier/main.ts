@@ -10,7 +10,7 @@ import { StakeoutClient } from "./contractClient.js";
 import { decide, decideLink, type DecideDeps } from "./decide.js";
 import { loadDeployment } from "./deployment.js";
 import { VerifierStartupError } from "./errors.js";
-import { fetchAnalysis, fetchLinkCandidates } from "./graphClient.js";
+import { fetchAnalysis, fetchLinkCandidates, GraphServiceError } from "./graphClient.js";
 import { log, redactText, setLogRedactor } from "./log.js";
 import { makeNotifier } from "./notify.js";
 import { startWatcher } from "./watcher.js";
@@ -57,7 +57,18 @@ async function main() {
     client, provider: chain.provider, db, rules, deployment, chainId: env.CHAIN_ID,
     pollMs: env.VERIFIER_POLL_INTERVAL_MS, chunkBlocks: env.VERIFIER_LOG_CHUNK_BLOCKS,
     decidePromoted: (event) => decide(decideDeps, event),
-    linkCandidates: async (clusterId) => (await fetchLinkCandidates(env.GRAPH_SERVICE_URL, clusterId, env.GRAPH_TIMEOUT_MS)).candidates,
+    linkCandidates: async (clusterId) => {
+      try {
+        return (await fetchLinkCandidates(env.GRAPH_SERVICE_URL, clusterId, env.GRAPH_TIMEOUT_MS)).candidates;
+      } catch (e) {
+        // the graph has no data for this cluster: there is nothing to link, and waiting would never change that
+        if (e instanceof GraphServiceError && e.kind === "not-found") {
+          log.error(`No link candidates for cluster ${clusterId.slice(0, 10)}...: ${redactText(e.message)}`);
+          return [];
+        }
+        throw e;
+      }
+    },
     decideLinkFor: (target, clusterId) => decideLink(decideDeps, target, clusterId),
     notifier,
   });

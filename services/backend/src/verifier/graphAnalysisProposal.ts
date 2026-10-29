@@ -38,12 +38,17 @@ export const analysisProposalSchema = z.object({
   behaviorScore: z.number(),
   /** passed through unmodified into the evidence bundle */
   signals: z.array(z.looseObject({ name: z.string() })),
+  /** the numbers behind the score; accepted and read, but the evidence schema (shared/) has no field for them */
+  metrics: z.array(z.looseObject({ name: z.string() })).optional(),
   members: z.array(address),
   exitPoints: z.array(address),
   unrelatedReporterCount: z.number().int().nonnegative(),
   dataSource: z.enum(["synthetic", "testnet"]),
   /** present only when the wallet is being judged as a link candidate */
   link: linkEvidenceSchema.optional(),
+  /** the graph's own link verdict and its reason; recorded in the decision inputs, never used to decide */
+  linked: z.boolean().optional(),
+  reason: z.string().optional(),
 });
 export type AnalysisProposal = z.infer<typeof analysisProposalSchema>;
 

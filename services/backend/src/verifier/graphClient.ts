@@ -5,11 +5,25 @@ import {
   type AnalysisProposal, type LinkCandidates,
 } from "./graphAnalysisProposal.js";
 
-export type GraphErrorKind = "unreachable" | "timeout" | "http" | "invalid-json" | "invalid-shape";
+/** "not-found" is the graph saying it has no data for the id asked about (HTTP 404 with a message); every other HTTP status is "http". */
+export type GraphErrorKind = "unreachable" | "timeout" | "http" | "not-found" | "invalid-json" | "invalid-shape";
 
 export class GraphServiceError extends Error {
   constructor(public readonly kind: GraphErrorKind, message: string) {
     super(message);
+  }
+}
+
+/**
+ * The graph's 404 for an unknown address or cluster carries a JSON {"detail": "<message>"}. A 404 whose detail is the web
+ * framework's default "Not Found" means the ROUTE is wrong (bad GRAPH_SERVICE_URL), which must stay a loud, retried error.
+ */
+function isNoDataBody(text: string): boolean {
+  try {
+    const detail = (JSON.parse(text) as { detail?: unknown }).detail;
+    return typeof detail === "string" && detail.trim().toLowerCase() !== "not found";
+  } catch {
+    return false;
   }
 }
 
@@ -26,6 +40,9 @@ async function getJson<T extends z.ZodType>(baseUrl: string, path: string, timeo
     throw new GraphServiceError("unreachable", `Cannot reach the Graph Service at ${url.host}: ${(e as Error).message}. Is Person 1's service running?`);
   }
   const text = await res.text();
+  if (res.status === 404 && isNoDataBody(text)) {
+    throw new GraphServiceError("not-found", `Graph Service has no data: ${text.slice(0, 200)}`);
+  }
   if (!res.ok) {
     throw new GraphServiceError("http", `Graph Service answered HTTP ${res.status}: ${text.slice(0, 200)}`);
   }
@@ -59,5 +76,5 @@ export function fetchLinkCandidates(baseUrl: string, clusterId: string, timeoutM
 /** How a Graph Service failure is shown to an API caller. */
 export function graphErrorToUserError(e: unknown): unknown {
   if (!(e instanceof GraphServiceError)) return e;
-  return new UserError(e.message, e.kind === "timeout" ? 504 : 502);
+  return new UserError(e.message, e.kind === "timeout" ? 504 : e.kind === "not-found" ? 404 : 502);
 }

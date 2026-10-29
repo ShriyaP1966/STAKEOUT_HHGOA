@@ -5,6 +5,7 @@
 // The AI plays no part here. It only writes the summary inside the evidence bundle, which no decision reads.
 import { getAddress } from "ethers";
 import type { Rules } from "../config.js";
+import { GraphServiceError } from "./graphClient.js";
 import type { PromotedEvent } from "./contractClient.js";
 import type { AnalysisProposal } from "./graphAnalysisProposal.js";
 
@@ -13,6 +14,7 @@ export const RULE = {
   behaviorPassed: "B:behavior-passed",
   behaviorThreshold: "B:behaviorThreshold",
   minSignals: "B:minSignals",
+  graphNoData: "graph:no-data",
   noCluster: "cluster:none",
   targetNotMember: "cluster:target-not-member",
   linkStructuredOutflow: "link:structured-outflow",
@@ -50,6 +52,23 @@ function inputsOf(a: AnalysisProposal, rules: Rules) {
   };
 }
 
+/** The graph answered 404 (no data for this wallet): a recorded refusal, not a failure to retry. Other errors are rethrown. */
+async function fetchOrNoData(deps: DecideDeps, target: string): Promise<AnalysisProposal | { noData: string }> {
+  try {
+    return await deps.fetchAnalysis(target);
+  } catch (e) {
+    if (e instanceof GraphServiceError && e.kind === "not-found") return { noData: e.message };
+    throw e;
+  }
+}
+
+function noDataPlan(kind: "confirm" | "link", target: string, detail: string): DecisionPlan {
+  return {
+    action: "refuse", kind, rule: RULE.graphNoData, evidenceHash: null, inputs: { target },
+    reason: `the graph has no data for this wallet, so there is no behavior to judge and nothing is ${kind === "confirm" ? "confirmed" : "linked"} (${detail})`,
+  };
+}
+
 function sameWallet(a: string, b: string) {
   return getAddress(a) === getAddress(b);
 }
@@ -61,7 +80,9 @@ function sameWallet(a: string, b: string) {
  */
 export async function decideConfirm(deps: DecideDeps, target: string): Promise<DecisionPlan> {
   const { rules } = deps;
-  const analysis = await deps.fetchAnalysis(target);
+  const fetched = await fetchOrNoData(deps, target);
+  if ("noData" in fetched) return noDataPlan("confirm", target, fetched.noData);
+  const analysis = fetched;
   if (!sameWallet(analysis.target, target)) throw new Error("The Graph Service answered for a different wallet than the one asked about.");
   const inputs = inputsOf(analysis, rules);
   const refuse = (rule: string, reason: string): DecisionPlan => ({ action: "refuse", kind: "confirm", rule, reason, inputs, evidenceHash: null });
@@ -107,9 +128,11 @@ export function decide(deps: DecideDeps, event: PromotedEvent): Promise<Decision
  * payers are never linked. The graph supplies these facts; the confirm thresholds play no part.
  */
 export async function decideLink(deps: DecideDeps, target: string, clusterId: string): Promise<DecisionPlan> {
-  const analysis = await deps.fetchAnalysis(target);
+  const fetched = await fetchOrNoData(deps, target);
+  if ("noData" in fetched) return noDataPlan("link", target, fetched.noData);
+  const analysis = fetched;
   if (!sameWallet(analysis.target, target)) throw new Error("The Graph Service answered for a different wallet than the one asked about.");
-  const inputs = { ...inputsOf(analysis, deps.rules), link: analysis.link ?? null };
+  const inputs = { ...inputsOf(analysis, deps.rules), link: analysis.link ?? null, graphLinked: analysis.linked ?? null, graphReason: analysis.reason ?? null };
   const refuse = (rule: string, reason: string): DecisionPlan => ({ action: "refuse", kind: "link", rule, reason, inputs, evidenceHash: null });
 
   const link = analysis.link;

@@ -165,28 +165,52 @@ async function watcher() {
 async function graph() {
   console.log("\n## Graph Service client (local HTTP stand-in)");
   const target = addr();
-  const good = { target, clusterId: bytes32(), behaviorScore: 0.5, signals: [{ name: "x", value: 1 }], members: [addr()], exitPoints: [addr()], unrelatedReporterCount: 2, dataSource: "synthetic" };
+  // TEST FIXTURE: the exact shape services/graph returns for GET /analyze/{address} (lowercase addresses, metrics, no link on a scam wallet)
+  const good = {
+    target: target.toLowerCase(), clusterId: bytes32(), behaviorScore: 0.5, signals: [{ name: "x", value: 1 }], metrics: [{ name: "m", value: 2 }],
+    members: [addr().toLowerCase()], exitPoints: [addr().toLowerCase()], unrelatedReporterCount: 2, dataSource: "synthetic",
+  };
+  // TEST FIXTURE: a link candidate that is not yet a member: clusterId of the cluster it would join, members [], link + linked + reason
+  const candidate = {
+    ...good, members: [], exitPoints: [],
+    link: { repeatedStructuredOutflowToCluster: true, fundedByCluster: false, forwardsOnwardLikeMember: false, isKnownVictim: false, isOneOffPayer: false },
+    linked: true, reason: "stub reason",
+  };
+  // TEST FIXTURE: a wallet in no cluster and no candidate: clusterId null
+  const loner = { ...good, clusterId: null, members: [], exitPoints: [] };
   const server = createServer();
-  let mode: "ok" | "bad-shape" | "http-500" | "not-json" | "hang" = "ok";
+  type Mode = "ok" | "candidate" | "loner" | "bad-shape" | "http-500" | "http-502" | "http-400" | "no-data-404" | "wallet-404" | "route-404" | "not-json" | "hang";
+  let mode: Mode = "ok";
+  const sendJson = (res: import("node:http").ServerResponse, status: number, body: unknown) => { res.statusCode = status; res.setHeader("content-type", "application/json"); res.end(JSON.stringify(body)); };
   server.on("request", (_req, res) => {
     if (mode === "hang") return; // never answers
     if (mode === "http-500") { res.statusCode = 500; return res.end("internal problem"); }
+    if (mode === "http-502") return sendJson(res, 502, { detail: "TigerGraph is down" });
+    if (mode === "http-400") return sendJson(res, 400, { detail: "Invalid address. Expected 0x followed by 40 hex characters." });
+    if (mode === "no-data-404") return sendJson(res, 404, { detail: "No graph data for this address." });
+    if (mode === "wallet-404") return sendJson(res, 404, { detail: "Wallet not found in the graph." });
+    if (mode === "route-404") return sendJson(res, 404, { detail: "Not Found" });
     if (mode === "not-json") return res.end("<html>nope</html>");
-    res.setHeader("content-type", "application/json");
-    res.end(JSON.stringify(mode === "bad-shape" ? { ...good, behaviorScore: "high" } : good));
+    sendJson(res, 200, mode === "bad-shape" ? { ...good, behaviorScore: "high" } : mode === "candidate" ? candidate : mode === "loner" ? loner : good);
   });
   await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
   const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
-  const kindOf = async (m: typeof mode, timeout = 300) => {
+  const kindOf = async (m: Mode, timeout = 300) => {
     mode = m;
     try { await fetchAnalysis(base, target, timeout); return "no error"; } catch (e) { return e instanceof GraphServiceError ? `${e.kind}: ${e.message}` : `other: ${(e as Error).message}`; }
   };
   mode = "ok";
   const a = await fetchAnalysis(base, target, 300);
   check("valid response parses (and addresses are checksummed)", a.behaviorScore === 0.5 && a.target === target);
-  for (const [m, kind] of [["bad-shape", "invalid-shape"], ["http-500", "http"], ["not-json", "invalid-json"], ["hang", "timeout"]] as const) {
+  check("metrics are accepted", a.metrics?.length === 1);
+  mode = "candidate";
+  const c = await fetchAnalysis(base, target, 300);
+  check("candidate: members [] and link, linked, reason are accepted", c.members.length === 0 && c.link?.repeatedStructuredOutflowToCluster === true && c.linked === true && c.reason === "stub reason");
+  mode = "loner";
+  check("clusterId null is accepted", (await fetchAnalysis(base, target, 300)).clusterId === null);
+  for (const [m, kind] of [["bad-shape", "invalid-shape"], ["http-500", "http"], ["http-502", "http"], ["http-400", "http"], ["route-404", "http"], ["no-data-404", "not-found"], ["wallet-404", "not-found"], ["not-json", "invalid-json"], ["hang", "timeout"]] as const) {
     const r = await kindOf(m);
-    check(`${m} -> ${kind}`, r.startsWith(kind), r.slice(0, 110));
+    check(`${m} -> ${kind}`, r.startsWith(kind + ":"), r.slice(0, 110));
   }
   await new Promise<void>((r) => server.close(() => r()));
   const dead = await (async () => { try { await fetchAnalysis(base, target, 300); return "no error"; } catch (e) { return e instanceof GraphServiceError ? `${e.kind}: ${e.message}` : "other"; } })();

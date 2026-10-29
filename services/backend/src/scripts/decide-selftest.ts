@@ -11,6 +11,7 @@ import type { ChatRequest, Llm } from "../llm.js";
 import { applyPlan } from "../verifier/actions.js";
 import type { ConfirmedEvent, LiveFlag, PromotedEvent, StakeoutClient, WriteResult } from "../verifier/contractClient.js";
 import { decide, decideLink, RULE, type DecideDeps, type DecisionPlan } from "../verifier/decide.js";
+import { GraphServiceError } from "../verifier/graphClient.js";
 import type { AnalysisProposal } from "../verifier/graphAnalysisProposal.js";
 import { startWatcher } from "../verifier/watcher.js";
 
@@ -126,6 +127,43 @@ async function confirmCases() {
   check("threshold just above the score: refuse", (await at({ ...baseRules, behaviorThreshold: score + 0.001 })) === "refuse");
   check("minSignals raised above the signal count: refuse", (await at({ ...baseRules, minSignals: 4 })) === "refuse");
   check("minSignals equal to the signal count: confirm", (await at({ ...baseRules, minSignals: 3 })) === "confirm");
+}
+
+async function noDataCases() {
+  console.log("\n## graph 404 (no data for the wallet) is a recorded refusal, other graph errors still throw");
+  const t = addr();
+  const failWith = (kind: GraphServiceError["kind"]): DecideDeps => ({
+    ...harness(baseRules, new Map()).deps,
+    fetchAnalysis: async () => { throw new GraphServiceError(kind, `stub ${kind}`); },
+  });
+  let p = await decide(failWith("not-found"), promoted(t));
+  check("confirm: 404 -> refuse, rule graph:no-data, no evidence", p.action === "refuse" && p.kind === "confirm" && p.rule === RULE.graphNoData && p.evidenceHash === null);
+  p = await decideLink(failWith("not-found"), t, bytes32());
+  check("link: 404 -> refuse, rule graph:no-data", p.action === "refuse" && p.kind === "link" && p.rule === RULE.graphNoData);
+  for (const kind of ["http", "timeout", "unreachable"] as const) {
+    let threw = "";
+    try { await decide(failWith(kind), promoted(t)); } catch (e) { threw = (e as Error).message; }
+    check(`${kind} still throws (the flag keeps waiting)`, threw === `stub ${kind}`);
+  }
+  // end to end through the watcher: the 404 flag is logged as refused and handled, so it no longer blocks
+  const db = openDb(":memory:");
+  const ev = promoted(t);
+  const client = {
+    promotedBetween: async () => [ev], confirmedBetween: async () => [],
+    liveFlag: async () => ({ flagId: 1n, expiresAt: 0n, challenged: false, live: true }),
+    clusterRole: async () => Role.None, maxMembersPerCall: async () => 10, clusterExists: async () => true,
+    confirm: async () => { throw new Error("must not send"); }, link: async () => { throw new Error("must not send"); }, explainRevert: (e: unknown) => String(e),
+  } as unknown as StakeoutClient;
+  const w = startWatcher({
+    client, provider: { getBlockNumber: async () => 20 } as never, db, rules: baseRules,
+    deployment: { chainId: 7, stakeoutAddress: addr(), deploymentBlock: 0 }, chainId: 7, pollMs: 20, chunkBlocks: 50,
+    decidePromoted: (e) => decide(failWith("not-found"), e), linkCandidates: async () => [], decideLinkFor: async () => { throw new Error("unused"); },
+  });
+  await new Promise((r) => setTimeout(r, 250));
+  await w.stop();
+  const rows = db.listDecisions(5) as Array<Record<string, unknown>>;
+  check("watcher: one refused row with rule graph:no-data, event handled, position moved on",
+    rows.length === 1 && rows[0].outcome === "refused" && rows[0].rule === RULE.graphNoData && db.isEventHandled(`7:${ev.blockHash}:${ev.logIndex}`) && Number(db.getKv("verifier.nextBlock")) > ev.blockNumber);
 }
 
 async function linkCases() {
@@ -270,6 +308,7 @@ async function watcherLinks() {
 }
 
 await confirmCases();
+await noDataCases();
 await linkCases();
 await logging();
 await watcherLinks();
