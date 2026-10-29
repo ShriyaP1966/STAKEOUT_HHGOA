@@ -130,8 +130,8 @@ const GROUPS: { title: string; items: { q: string; a: ReactNode }[] }[] = [
         q: "What does the AI do?",
         a: (
           <p>
-            It reads complaints to extract the address, amount and time, and writes plain summaries of evidence. It never decides whether a wallet is
-            confirmed, and addresses are always checked by code.
+            It reads complaints to extract the amount, time and a short summary, and writes plain summaries of evidence. The address is picked and
+            checked by code, never by the AI, and the AI never decides whether a wallet is confirmed.
           </p>
         ),
       },
