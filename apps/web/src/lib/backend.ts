@@ -2,6 +2,7 @@ import { getAddress, isAddress, type Address, type Hex } from "viem";
 import { z } from "zod";
 import { BACKEND_PROXY_PATH } from "./backend-path";
 import type { DecodedError } from "./errors";
+import { viewerTimeZone } from "./timezone";
 
 const dataSource = z.enum(["synthetic", "testnet"]);
 const bytes32 = z.string().regex(/^0x[0-9a-fA-F]{64}$/, "must be 0x followed by 64 hex characters") as unknown as z.ZodType<Hex>;
@@ -14,6 +15,7 @@ export const extractResponseSchema = z.object({
     narrative: z.string(),
   }),
   dataSource,
+  text: z.string(),
   complaintHash: bytes32,
 });
 
@@ -111,12 +113,14 @@ export function candidatesOf(error: unknown): Address[] {
 }
 
 export const backend = {
-  extract: (text: string, targetAddress?: Address) =>
-    callBackend("/extract", extractResponseSchema, {
+  extract: (text: string, targetAddress?: Address) => {
+    const timezone = viewerTimeZone();
+    return callBackend("/extract", extractResponseSchema, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify(targetAddress === undefined ? { text } : { text, targetAddress }),
-    }),
+      body: JSON.stringify(targetAddress === undefined ? { text, timezone } : { text, targetAddress, timezone }),
+    });
+  },
   evidence: (hash: Hex) => callBackend(`/evidence/${hash}`, evidenceResponseSchema),
   decisions: () => callBackend("/decisions", decisionsResponseSchema),
 };

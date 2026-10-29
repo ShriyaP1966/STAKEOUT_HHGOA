@@ -1,21 +1,65 @@
 import { writeFile } from "node:fs/promises";
 import path from "node:path";
-import { ethers, network } from "hardhat";
-import type { HttpNetworkConfig } from "hardhat/types";
+import { JsonRpcProvider, JsonRpcSigner } from "ethers";
+import hre, { ethers, network } from "hardhat";
+import type { HardhatNetworkAccountsConfig, HttpNetworkConfig } from "hardhat/types";
 import { Stakeout__factory } from "../typechain-types";
-import { ROOT_DIR, readDeployment } from "./lib/deploy-config";
+import { Deployment, ROOT_DIR, readDeployment } from "./lib/deploy-config";
 
 const SEED_FILE = path.join(ROOT_DIR, "deployments", "localhost-seed.json");
 
 const randomAddress = (): string => ethers.Wallet.createRandom().address;
 const randomHash = (): string => ethers.hexlify(ethers.randomBytes(32));
 
+function localAccountBalance(accounts: HardhatNetworkAccountsConfig): bigint {
+  if (Array.isArray(accounts)) {
+    if (accounts.length === 0) throw new Error("The Hardhat network config lists no accounts, so there is no local balance to copy.");
+    return BigInt(accounts[0].balance);
+  }
+  return BigInt(accounts.accountsBalance);
+}
+
+async function requireLocalHardhatChain(node: JsonRpcProvider): Promise<void> {
+  const localChainId = hre.config.networks.hardhat.chainId;
+  const { chainId } = await node.getNetwork();
+  if (Number(chainId) !== localChainId) {
+    throw new Error(`seed-local only runs on the local Hardhat chain (chain ${localChainId}), but the node reports chain ${chainId}. Refusing to run.`);
+  }
+  const client = String(await node.send("web3_clientVersion", []));
+  if (!client.toLowerCase().includes("hardhat")) {
+    throw new Error(`seed-local only runs on a local Hardhat node, but the node reports "${client}". Refusing to run.`);
+  }
+}
+
+async function verifierSigner(node: JsonRpcProvider, verifier: string, unlocked: string[]): Promise<{ signer: JsonRpcSigner; release: () => Promise<void> }> {
+  if (unlocked.includes(verifier)) return { signer: await node.getSigner(verifier), release: async () => undefined };
+  await node.send("hardhat_impersonateAccount", [verifier]);
+  const release = async () => {
+    await node.send("hardhat_stopImpersonatingAccount", [verifier]);
+    console.log(`Stopped impersonating the verifier ${verifier}.`);
+  };
+  try {
+    const wanted = localAccountBalance(hre.config.networks.hardhat.accounts);
+    if ((await node.getBalance(verifier)) < wanted) {
+      await node.send("hardhat_setBalance", [verifier, ethers.toQuantity(wanted)]);
+      console.log(`Set the verifier ${verifier} balance to ${ethers.formatEther(wanted)} ETH on the local chain for gas.`);
+    }
+  } catch (error: unknown) {
+    await release();
+    throw error;
+  }
+  console.log(`Impersonating the verifier ${verifier} on the local chain to call confirm and link.`);
+  return { signer: new JsonRpcSigner(node, verifier), release };
+}
+
 async function main(): Promise<void> {
   if (network.name !== "localhost") {
     throw new Error(`seed-local only runs on the localhost network, not "${network.name}".`);
   }
   const deployment = readDeployment("localhost");
-  const { chainId } = await ethers.provider.getNetwork();
+  const node = new JsonRpcProvider((network.config as HttpNetworkConfig).url);
+  await requireLocalHardhatChain(node);
+  const { chainId } = await node.getNetwork();
   if (Number(chainId) !== deployment.chainId) {
     throw new Error(`deployments/localhost.json is for chain ${deployment.chainId}, but the node reports chain ${chainId}.`);
   }
@@ -23,24 +67,26 @@ async function main(): Promise<void> {
     throw new Error("No Stakeout code at the address in deployments/localhost.json. Run npm run deploy:local first.");
   }
 
-  const node = new ethers.JsonRpcProvider((network.config as HttpNetworkConfig).url, deployment.chainId, { staticNetwork: true });
   const unlocked = ((await node.send("eth_accounts", [])) as string[]).map((account) => ethers.getAddress(account));
   if (!unlocked.includes(deployment.reviewer)) {
     throw new Error(`The reviewer ${deployment.reviewer} is not an unlocked account on the local node.`);
-  }
-  if (!unlocked.includes(deployment.verifier)) {
-    if ((await node.getBalance(deployment.verifier)) === 0n) {
-      throw new Error("The verifier has no ETH on the local node. Fund it first: npm run fund:local -- <verifier> <amountEth>");
-    }
-    await node.send("hardhat_impersonateAccount", [deployment.verifier]);
   }
   const [deployer] = await ethers.getSigners();
   const pool = unlocked.filter((account) => ![deployer.address, deployment.reviewer, deployment.verifier].includes(account));
   if (pool.length < 3) throw new Error("The local node needs at least three spare unlocked accounts.");
   const [reporterA, reporterB, victim] = await Promise.all(pool.slice(0, 3).map((account) => node.getSigner(account)));
   const reviewer = await node.getSigner(deployment.reviewer);
-  const verifier = await node.getSigner(deployment.verifier);
+  const { signer: verifier, release } = await verifierSigner(node, deployment.verifier, unlocked);
+  try {
+    await seed(node, deployment, { reporterA, reporterB, victim, reviewer, verifier });
+  } finally {
+    await release();
+  }
+}
 
+type Actors = Record<"reporterA" | "reporterB" | "victim" | "reviewer" | "verifier", JsonRpcSigner>;
+
+async function seed(node: JsonRpcProvider, deployment: Deployment, { reporterA, reporterB, victim, reviewer, verifier }: Actors): Promise<void> {
   const stakeout = Stakeout__factory.connect(deployment.stakeoutAddress, node);
   const minStake = await stakeout.minStake();
   const send = async (tx: Promise<{ wait: () => Promise<unknown> }>) => (await tx).wait();

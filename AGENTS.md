@@ -86,25 +86,32 @@ A task is done only if ALL are true:
 
 ## 8. Commands
 
-Person 3 owns this section. Run every command from the repo root.
+Person 3 owns this section. Run every command from the repo root. Commands for `services/backend` come from its `package.json` and README; npm runs them with `services/backend` as the working folder, so they read `services/backend/.env`.
 
-- Install: `npm ci`
+- Install (contracts and scripts): `npm ci`
+- Install web app: `npm ci --prefix apps/web`
+- Install hash library (needed by the web app and the backend): `npm ci --prefix shared/hash`
+- Install backend: `npm ci --ignore-scripts --prefix services/backend` (the backend README explains why `--ignore-scripts` is needed on Windows)
 - Compile contracts: `npm run compile`
 - Test contracts: `npm test`
 - Contract coverage: `npm run coverage`
 - Lint Solidity: `npm run lint`
 - Type-check TypeScript: `npm run typecheck`
 - Export ABIs to `shared/abi`: `npm run export-abi`
-- Run graph service: TBD
-- Run backend and verifier: TBD
-- Install web app: `npm ci --prefix apps/web`
+- Run graph service: TBD, owner Person 1. `services/graph` has no package file or README yet.
+- Run backend: fill `services/backend/.env` from `services/backend/.env.example`, then `npm --prefix services/backend start`
+- Run verifier: same `.env`, then `npm --prefix services/backend run verifier` (separate process from the backend; keep `VERIFIER_DRY_RUN=true` until a human has checked a run)
+- Check backend without a real server, chain or AI call: `npm --prefix services/backend run check`
+- Check the verifier account on chain (read-only): `npm --prefix services/backend run verifier-status`
 - Run web app: fill `apps/web/.env.local` from `apps/web/.env.example`, then `npm run web:dev` (or `npm run web:build` then `npm --prefix apps/web start`)
-- Test web app: `npm run web:test`; add `STAKEOUT_LOCAL_RPC_URL=http://127.0.0.1:8545` after `npm run seed:local` to include the local-node checks
-- Seed local test data (synthetic, localhost only): `npm run seed:local` after `npm run deploy:local`
-- Deploy contract to testnet: fill `.env` from `.env.example`, then `npm run deploy:target`. Writes `deployments/network.json` and `shared/abi/*.json`, then verifies on the explorer.
-- Deploy contract locally: `npm run node:local` in one terminal; fill `.env.localhost` with the same variable names (`EXPLORER_API_KEY` optional), then `npm run deploy:local`. Writes the git-ignored `deployments/localhost.json`.
+- Test web app: `npm run web:test`; add `STAKEOUT_LOCAL_RPC_URL=<local node RPC URL>` after `npm run seed:local` to include the local-node checks
+- Deploy contract to testnet: fill `.env` from `.env.example`, then `npm run gen:deployer`, `npm run check:env`, `npm run create:safe`, `npm run deploy:check`, `npm run deploy:target`. Writes `deployments/network.json` and `shared/abi/*.json`, then verifies on the explorer. `EXPLORER_API_KEY` is required here.
+- Check deployment on chain: `npm run check:deployment -- <target|localhost> [--verifier-rotated]`
+- Deploy contract locally: `npm run node:local` in one terminal; fill `.env.localhost` with the same variable names (`EXPLORER_API_KEY` may be empty or left out; verification is skipped on the local chain), then `npm run deploy:local`. Writes the git-ignored `deployments/localhost.json`.
 - Safe transaction calldata: `npm run safe:calldata -- <target|localhost> <action> <args>`
-- Load synthetic scenario: TBD
+- Load synthetic scenario on the local chain: `npm run seed:local` after `npm run deploy:local` (local Hardhat chain only; writes the git-ignored `deployments/localhost-seed.json`)
+- Load synthetic scenario into the graph: TBD, owner Person 1
+- Local rehearsal (dev-only Graph Service stand-in, not Person 1's service; steps and variables in `docs/local-rehearsal.md`): `npm run node:local`, `npm run deploy:local`, `npm run seed:local`, `npm --prefix services/backend run dev:graph-fixture -- ../../deployments/localhost-seed.json`, `npm --prefix services/backend run dev:graph-stub`, then `npm --prefix services/backend run verifier`
 
 ## 9. When to stop and ask a human
 

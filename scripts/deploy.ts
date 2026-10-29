@@ -118,7 +118,7 @@ async function main(): Promise<void> {
     await verifyOnExplorer(networkName, "contracts/Stakeout.sol:Stakeout", stakeoutAddress, stakeoutArgs, env);
     await verifyOnExplorer(networkName, "contracts/StakeoutGuard.sol:StakeoutGuard", guardAddress, guardArgs, env);
   } else {
-    console.log(`Explorer verification is skipped on ${networkName}.`);
+    console.log(`Explorer verification is skipped on ${networkName} because it is a local chain. EXPLORER_API_KEY is not needed here.`);
   }
 }
 

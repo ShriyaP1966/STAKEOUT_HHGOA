@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { BACKEND_PROXY_PATH } from "./backend-path";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
-import { BackendError, callBackend, candidatesOf, describeBackendFailure } from "./backend";
+import { backend, BackendError, callBackend, candidatesOf, describeBackendFailure, extractResponseSchema } from "./backend";
 
 function respond(status: number, body: string) {
   vi.stubGlobal("fetch", vi.fn(async () => new Response(body, { status, headers: { "content-type": "application/json" } })));
@@ -110,5 +110,56 @@ describe("candidatesOf", () => {
   it("returns no candidates for other errors", () => {
     expect(candidatesOf(new Error("x"))).toEqual([]);
     expect(candidatesOf(new BackendError(502, { title: "t", detail: "d" }, { candidates: [a] }))).toEqual([]);
+  });
+});
+
+describe("backend.extract", () => {
+  const target = privateKeyToAccount(generatePrivateKey()).address;
+  const reply = {
+    complaint: { targetAddress: target, amount: 1, currency: "ETH", occurredAt: "2026-10-01T10:00:00.000Z", narrative: "n" },
+    dataSource: "synthetic",
+    text: `sent to ${target}`,
+    complaintHash: `0x${"ab".repeat(32)}`,
+  };
+
+  function sentBody(): Record<string, unknown> {
+    const init = vi.mocked(fetch).mock.calls[0][1] as RequestInit;
+    return JSON.parse(init.body as string) as Record<string, unknown>;
+  }
+
+  it("sends the viewer's IANA time zone with every call", async () => {
+    const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    respond(200, JSON.stringify(reply));
+    await backend.extract(reply.text);
+    expect(sentBody()).toEqual({ text: reply.text, timezone: zone });
+    vi.unstubAllGlobals();
+    respond(200, JSON.stringify(reply));
+    await backend.extract(reply.text, target);
+    expect(sentBody()).toEqual({ text: reply.text, targetAddress: target, timezone: zone });
+  });
+
+  it("sends whatever zone the browser reports", async () => {
+    const original = Intl.DateTimeFormat;
+    vi.spyOn(Intl, "DateTimeFormat").mockImplementation(
+      () => ({ resolvedOptions: () => ({ ...new original().resolvedOptions(), timeZone: "Asia/Kolkata" }) }) as Intl.DateTimeFormat,
+    );
+    respond(200, JSON.stringify(reply));
+    await backend.extract(reply.text);
+    expect(sentBody().timezone).toBe("Asia/Kolkata");
+    vi.restoreAllMocks();
+  });
+
+  it("refuses to call the backend when the browser reports no time zone", async () => {
+    vi.spyOn(Intl, "DateTimeFormat").mockImplementation(() => ({ resolvedOptions: () => ({ timeZone: "" }) }) as unknown as Intl.DateTimeFormat);
+    respond(200, JSON.stringify(reply));
+    expect(() => backend.extract(reply.text)).toThrow("did not report a time zone");
+    expect(vi.mocked(fetch)).not.toHaveBeenCalled();
+    vi.restoreAllMocks();
+  });
+
+  it("requires the backend to return the text it hashed", () => {
+    expect(extractResponseSchema.safeParse(reply).success).toBe(true);
+    expect(extractResponseSchema.safeParse({ ...reply, text: undefined }).success).toBe(false);
+    expect(extractResponseSchema.safeParse({ ...reply, text: 1 }).success).toBe(false);
   });
 });

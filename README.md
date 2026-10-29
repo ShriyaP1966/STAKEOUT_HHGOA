@@ -92,7 +92,7 @@ Without them, contract compile and tests still work, and the web app builds but 
 | `FLAG_DURATION_SECONDS` | Flag lifetime in seconds |
 | `MAX_MEMBERS_PER_CALL` | Maximum addresses per `confirm` call |
 | `CONFIRMATIONS` | Blocks to wait after each deployment. Use 1 on a local node, which only mines on demand |
-| `EXPLORER_API_KEY` | Block explorer API key. Required for `target`, optional for `localhost` |
+| `EXPLORER_API_KEY` | Block explorer API key. Required only when deploying to a non-local chain (`target`). On `localhost`, an empty `EXPLORER_API_KEY=` behaves exactly like an unset one, and explorer verification is skipped with a message |
 | `SAFE_OWNERS` | Three distinct owner addresses for the reviewer Safe, separated by commas. Used by `create:safe` |
 | `SAFE_THRESHOLD` | Owner signatures the Safe needs, from 1 to the number of owners |
 
@@ -137,9 +137,9 @@ npm run node:local
 npm run deploy:local
 ```
 
-Run the second command in another terminal after creating `.env.localhost` with the same variable names. The local node prints funded throwaway accounts.
+Run the second command in another terminal after creating `.env.localhost` with the same variable names. `EXPLORER_API_KEY` may be left empty or left out. The local node prints funded throwaway accounts.
 
-The deploy script checks that the RPC chain id matches `CHAIN_ID`, deploys `Stakeout` and then `StakeoutGuard`, waits for `CONFIRMATIONS`, and confirms the role grants on chain. It then writes the deployment file and copies the ABIs to `shared/abi/Stakeout.json` and `shared/abi/StakeoutGuard.json`. On `target` it verifies both contracts on the explorer. If verification fails, it prints the reason and the manual `npx hardhat verify` command, and the deploy still succeeds.
+The deploy script checks that the RPC chain id matches `CHAIN_ID`, deploys `Stakeout` and then `StakeoutGuard`, waits for `CONFIRMATIONS`, and confirms the role grants on chain. It then writes the deployment file and copies the ABIs to `shared/abi/Stakeout.json` and `shared/abi/StakeoutGuard.json`. On `target` it verifies both contracts on the explorer. On `localhost` it prints that verification is skipped because the chain is local. If verification fails, it prints the reason and the manual `npx hardhat verify` command, and the deploy still succeeds.
 
 ### Hand-off file
 
@@ -179,7 +179,7 @@ To replace the verifier, put the new address in `VERIFIER_ADDRESS`, then submit 
 
 ### Local seed data
 
-`npm run seed:local` runs only on the `localhost` network, and only when `deployments/localhost.json` matches the running node. It sends real transactions from the node's unlocked accounts. Each run creates fresh random target addresses: one with no record, one reported, one flagged, one flagged and challenged, a confirmed member and exit point, and a linked address. It writes them to the git-ignored `deployments/localhost-seed.json`, labeled `"dataSource": "synthetic"`. The confirmation in this script is a local test fixture. It is not graph evidence.
+`npm run seed:local` runs only on the `localhost` network, and only when the node reports the local Hardhat chain id from the Hardhat config and identifies itself as a Hardhat node; on any other chain it refuses to run. `deployments/localhost.json` must match the running node. It sends real transactions from the node's unlocked accounts. The reviewer must be one of the node's accounts. The verifier may be any address: if it is not one of the node's accounts, the script uses `hardhat_impersonateAccount` to act as it, raises its balance with `hardhat_setBalance` to the Hardhat config's account balance when it is lower, calls `confirm` and `link` as that verifier, and then stops impersonating. Contract roles are not changed. Each run creates fresh random target addresses: one with no record, one reported, one flagged, one flagged and challenged, a confirmed member and exit point, and a linked address. It writes them to the git-ignored `deployments/localhost-seed.json`, labeled `"dataSource": "synthetic"`. The confirmation in this script is a local test fixture. It is not graph evidence.
 
 ## Web app
 
@@ -196,7 +196,7 @@ Install `shared/hash` once with `npm ci --prefix shared/hash`, because it brings
 | Variable (in `apps/web/.env.local`) | Meaning |
 |---|---|
 | `NEXT_PUBLIC_RPC_URL` | http or https RPC endpoint used for all reads |
-| `NEXT_PUBLIC_LOG_CHUNK_SIZE` | Blocks per `getLogs` request when reading events from `deploymentBlock` |
+| `NEXT_PUBLIC_LOG_CHUNK_SIZE` | Blocks per `getLogs` request when reading events from `deploymentBlock`. Must not exceed the RPC provider's block-range limit; the public Base Sepolia endpoint answered `eth_getLogs is limited to a 200 range` |
 | `NEXT_PUBLIC_EXPLORER_URL` | Block explorer base URL. Links use `/address/<a>` and `/tx/<hash>`. Required for `target`, optional for `localhost` |
 | `NEXT_PUBLIC_DEPLOYMENT` | `target` reads `deployments/network.json`; `localhost` reads `deployments/localhost.json` |
 | `NEXT_PUBLIC_DATA_SOURCE` | `synthetic` or `testnet`. Shown on every screen |
@@ -209,7 +209,7 @@ Next.js inlines these values at build time, so rebuild after changing them. If a
 |---|---|
 | `/wallet` | Checks any address with `getStatus` and shows a warning matched to the status: none, a note for Reported, a soft warning with a countdown for Flagged, a strong warning with the cluster id for Confirmed and Linked. Shows the evidence hash from the matching event. Sends go through `StakeoutGuard.sendTo`, and a blocked send shows the decoded `Blocked` error |
 | `/dashboard` | Reports, flags with live countdowns, clusters with members, exit points, and linked addresses, and reward payouts, all from events. Rows link to the explorer. Verified reporters can promote Reported targets and challenge live flags; anyone can expire a lapsed, unchallenged flag. A panel shows the connected wallet's credit with a Withdraw button |
-| `/report` | Complaint text box with voice input. Sends the text to `POST /extract`, shows the structured complaint and `dataSource`, recomputes the complaint hash with `hashBundle`, and only if it matches lets the user call `report(targetAddress, complaintHash)` |
+| `/report` | Complaint text box with voice input. Sends the text and the viewer's IANA time zone (`timezone`, from the browser) to `POST /extract`, shows the structured complaint and `dataSource`, recomputes the complaint hash as `hashBundle({ text, complaint, dataSource })` using the text the backend returned, and only if it matches lets the user call `report(targetAddress, complaintHash)` |
 | `/verify` | Takes a hash, fetches the bundle from `GET /evidence/{hash}`, and shows three results: whether a `ReportSubmitted`, `Confirmed`, or `Linked` event carries the hash, whether the recomputed hash matches, and the bundle's `dataSource` |
 | `/decisions` | The verifier's decisions from `GET /decisions`: target, kind, outcome, rule, reason, time, and transaction |
 | `/reviewer` | Read-only view of open challenges, verified reporters, and the reward pool, plus the exact `npm run safe:calldata` command for each reviewer action. Actions go through the reviewer Safe |

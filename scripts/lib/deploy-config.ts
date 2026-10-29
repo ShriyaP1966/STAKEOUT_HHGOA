@@ -82,9 +82,16 @@ const deployShape = {
   CONFIRMATIONS: safeNumber,
 };
 
+const blankAsMissing = (value: unknown) => (typeof value === "string" && value.trim() === "" ? undefined : value);
+
+const requiredExplorerKey = z.preprocess(
+  blankAsMissing,
+  z.string({ error: "is missing. It is required to verify contracts on the explorer when deploying to a non-local chain" }),
+);
+
 const deploySchemas = {
-  target: z.object({ ...deployShape, EXPLORER_API_KEY: text }),
-  localhost: z.object({ ...deployShape, EXPLORER_API_KEY: text.optional() }),
+  target: z.object({ ...deployShape, EXPLORER_API_KEY: requiredExplorerKey }),
+  localhost: z.object({ ...deployShape, EXPLORER_API_KEY: z.preprocess(blankAsMissing, text.optional()) }),
 };
 
 const rpcSchema = z.object(rpcShape);
@@ -103,13 +110,17 @@ function parseOrThrow<T>(schema: z.ZodType<T>, raw: unknown, source: string): T 
   return result.data;
 }
 
+export function parseDeployEnv(network: DeployNetworkName, raw: Record<string, string>): DeployEnv {
+  return parseOrThrow(deploySchemas[network], raw, DEPLOY_NETWORKS[network].envFile);
+}
+
 export function safeParseDeployEnv(network: DeployNetworkName): DeployEnv | undefined {
   const result = deploySchemas[network].safeParse(readEnvFile(network));
   return result.success ? result.data : undefined;
 }
 
 export function loadDeployEnv(network: DeployNetworkName): DeployEnv {
-  return parseOrThrow(deploySchemas[network], readEnvFile(network), DEPLOY_NETWORKS[network].envFile);
+  return parseDeployEnv(network, readEnvFile(network));
 }
 
 export function loadRpcEnv(network: DeployNetworkName): RpcEnv {
@@ -129,13 +140,11 @@ const safeOwners = text
   .pipe(z.array(address).length(SAFE_OWNER_COUNT, `must list exactly ${SAFE_OWNER_COUNT} addresses separated by commas`))
   .refine((owners) => new Set(owners).size === owners.length, "must not repeat an address");
 
-const blankAsMissing = (value: unknown) => (typeof value === "string" && value.trim() === "" ? undefined : value);
-
 const safeSetupSchema = z
   .object({
     ...deployShape,
     REVIEWER_ADDRESS: z.preprocess(blankAsMissing, address.optional()),
-    EXPLORER_API_KEY: text,
+    EXPLORER_API_KEY: requiredExplorerKey,
     SAFE_OWNERS: safeOwners,
     SAFE_THRESHOLD: safeNumber,
   })
