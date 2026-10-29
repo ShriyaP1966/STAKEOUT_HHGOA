@@ -203,6 +203,7 @@ Install `shared/hash` once with `npm ci --prefix shared/hash`, because it brings
 | `NEXT_PUBLIC_DATA_SOURCE` | `synthetic` or `testnet`. Shown on every screen |
 | `NEXT_PUBLIC_BACKEND_URL` | http or https base URL of the backend in `services/backend` |
 | `NEXT_PUBLIC_VOICE_LANG` | BCP-47 language tag passed to the voice component, for example `en-US` |
+| `NEXT_PUBLIC_SITE_URL` | Optional. Public http or https base URL of the deployed site. Used as the base for absolute links in page metadata (link previews), for the `Sitemap` line in `/robots.txt`, and for the page list in `/sitemap.xml`. Leave it empty locally: the app works the same, `/robots.txt` has no sitemap line and `/sitemap.xml` is empty. A value that is not an http or https URL is treated as empty |
 
 Next.js inlines these values at build time, so rebuild after changing them. If any value is missing or invalid, or the deployment file is missing or malformed, every page shows a configuration-error screen that names each problem.
 

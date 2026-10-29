@@ -6,7 +6,7 @@ For Person 1 and Person 2. Commands are in `AGENTS.md` section 8; configuration 
 The web app sends `{ text, targetAddress?, timezone }` to `POST /extract`. `timezone` is the viewer's IANA zone from `Intl.DateTimeFormat().resolvedOptions().timeZone`. It requires the response field `text` and recomputes `hashBundle({ text, complaint, dataSource })` with the text the backend returned. The report button stays disabled unless that equals `complaintHash`.
 
 ## Web app environment (`apps/web/.env.local`)
-These are all the variables `apps/web` reads. Each is validated at startup, and a problem shows a configuration-error screen naming the variable.
+These are all the variables `apps/web` reads. Each one except `NEXT_PUBLIC_SITE_URL` is validated at startup, and a problem shows a configuration-error screen naming the variable.
 
 | Variable | Rule |
 |---|---|
@@ -17,6 +17,7 @@ These are all the variables `apps/web` reads. Each is validated at startup, and 
 | `NEXT_PUBLIC_DATA_SOURCE` | `synthetic` or `testnet` |
 | `NEXT_PUBLIC_BACKEND_URL` | http or https URL |
 | `NEXT_PUBLIC_VOICE_LANG` | BCP-47 language tag |
+| `NEXT_PUBLIC_SITE_URL` | optional http or https URL of the deployed site, used only for link-preview metadata, `/robots.txt` and `/sitemap.xml`; empty or invalid means those are left out |
 
 `STAKEOUT_LOCAL_RPC_URL` is read only by the web tests, to include the local-node checks.
 
