@@ -8,7 +8,7 @@ import { SITE_TAGLINE } from "@/lib/site";
 import { warningFor } from "@/lib/warning";
 
 export const metadata: Metadata = {
-  title: { absolute: "Stakeout: check a wallet before you send" },
+  title: { absolute: "Stakeout: check the wallet before you send" },
 };
 
 const STATUSES = [Status.None, Status.Reported, Status.Flagged, Status.Confirmed, Status.Linked];

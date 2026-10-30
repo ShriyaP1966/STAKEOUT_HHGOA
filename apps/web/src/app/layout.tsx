@@ -12,16 +12,16 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   metadataBase: siteUrl(process.env.NEXT_PUBLIC_SITE_URL),
-  title: { default: `${SITE_NAME}: check a wallet before you send`, template: `%s | ${SITE_NAME}` },
+  title: { default: `${SITE_NAME}: check the wallet before you send`, template: `%s | ${SITE_NAME}` },
   description: SITE_DESCRIPTION,
   applicationName: SITE_NAME,
   openGraph: {
     type: "website",
     siteName: SITE_NAME,
-    title: `${SITE_NAME}: check a wallet before you send`,
+    title: `${SITE_NAME}: check the wallet before you send`,
     description: `${SITE_TAGLINE} ${SITE_DESCRIPTION}`,
   },
-  twitter: { card: "summary", title: `${SITE_NAME}: check a wallet before you send`, description: `${SITE_TAGLINE} ${SITE_DESCRIPTION}` },
+  twitter: { card: "summary", title: `${SITE_NAME}: check the wallet before you send`, description: `${SITE_TAGLINE} ${SITE_DESCRIPTION}` },
 };
 
 export const viewport: Viewport = {
