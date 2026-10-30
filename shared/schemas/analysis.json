@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "GraphAnalysis",
+  "description": "DRAFT for review by Person 3. The 200 answer of the Graph Service for GET /analyze/{address} (alias GET /analysis/{address}), from docs/graph-analysis-proposal.md and checked against services/graph/app/service.py. Every address and cluster id is lower-case. A non-200 answer has the shape in $defs/GraphError. Not checked here: that an exit point is left out of members (app/service.py does this; JSON Schema cannot compare two arrays).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "target", "clusterId", "behaviorScore", "signals", "metrics", "members",
+    "exitPoints", "unrelatedReporterCount", "dataSource"
+  ],
+  "properties": {
+    "target": { "$ref": "#/$defs/address", "description": "The wallet analysed" },
+    "clusterId": {
+      "type": ["string", "null"],
+      "pattern": "^0x[a-f0-9]{64}$",
+      "description": "The target's own cluster. For a wallet that is not a member but is a link candidate: the cluster it is most connected to. null if neither."
+    },
+    "behaviorScore": { "type": "number", "minimum": 0, "maximum": 1, "description": "The wallet's own behavior score; weights and thresholds come from config/scoring.json" },
+    "signals": {
+      "type": "array",
+      "description": "Only the signals that fired. Passed unmodified into the evidence bundle.",
+      "items": { "$ref": "#/$defs/signal" }
+    },
+    "metrics": {
+      "type": "array",
+      "description": "Every measured value behind the score, in the order the service returns them. A value is null when it cannot be measured for that wallet (for example hopsToExit with no path to an exit point).",
+      "items": { "$ref": "#/$defs/metric" }
+    },
+    "members": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/address" }, "description": "Cluster members, without the exit points; [] when the target is not in a cluster" },
+    "exitPoints": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/address" }, "description": "Exit points of the target's own cluster; [] when the target is not in a cluster" },
+    "unrelatedReporterCount": { "type": "integer", "minimum": 0 },
+    "dataSource": { "enum": ["synthetic", "testnet"], "description": "The backend refuses to build evidence if this differs from its DATA_SOURCE" },
+    "link": { "$ref": "#/$defs/link", "description": "Only for a wallet judged as a link candidate. The facts the graph decided." },
+    "linked": { "type": "boolean", "description": "Only for a link candidate. The graph's own verdict; the verifier records it and does not use it to decide." },
+    "reason": { "type": "string", "description": "Only for a link candidate. The graph's reason for linked." }
+  },
+  "dependentRequired": {
+    "link": ["linked", "reason"],
+    "linked": ["link", "reason"],
+    "reason": ["link", "linked"]
+  },
+  "if": {
+    "required": ["clusterId"],
+    "properties": { "clusterId": { "const": null } }
+  },
+  "then": {
+    "properties": { "members": { "maxItems": 0 }, "exitPoints": { "maxItems": 0 } },
+    "not": { "required": ["link"] }
+  },
+  "$defs": {
+    "address": { "type": "string", "pattern": "^0x[a-f0-9]{40}$" },
+    "signal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "value"],
+      "properties": { "name": { "type": "string" }, "value": { "type": "number" } }
+    },
+    "metric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "value"],
+      "properties": { "name": { "type": "string" }, "value": { "type": ["number", "null"] } }
+    },
+    "link": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repeatedStructuredOutflowToCluster", "fundedByCluster", "forwardsOnwardLikeMember", "isKnownVictim", "isOneOffPayer"],
+      "properties": {
+        "repeatedStructuredOutflowToCluster": { "type": "boolean", "description": "sends funds into the cluster or its exit points in a repeated, structured way" },
+        "fundedByCluster": { "type": "boolean", "description": "received funds from the cluster" },
+        "forwardsOnwardLikeMember": { "type": "boolean", "description": "forwards funds onward the way a cluster member does" },
+        "isKnownVictim": { "type": "boolean", "description": "a known victim of the cluster: never linked" },
+        "isOneOffPayer": { "type": "boolean", "description": "paid the cluster once and nothing more: never linked" }
+      }
+    },
+    "GraphError": {
+      "description": "The body of a non-200 answer (400 bad address, 404 no data, 502 graph failure). FastAPI's own 404 for an unknown route has the same shape with detail \"Not Found\".",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["detail"],
+      "properties": { "detail": { "type": "string" } }
+    }
+  }
+}
