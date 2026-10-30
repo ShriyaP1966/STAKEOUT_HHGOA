@@ -197,7 +197,7 @@ Install `shared/hash` once with `npm ci --prefix shared/hash`, because it brings
 | Variable (in `apps/web/.env.local`) | Meaning |
 |---|---|
 | `NEXT_PUBLIC_RPC_URL` | http or https RPC endpoint used for all reads |
-| `NEXT_PUBLIC_LOG_CHUNK_SIZE` | Blocks per `getLogs` request when reading events from `deploymentBlock`. Must not exceed the RPC provider's block-range limit; the public Base Sepolia endpoint answered `eth_getLogs is limited to a 200 range` |
+| `NEXT_PUBLIC_LOG_CHUNK_SIZE` | Blocks per `getLogs` request when reading events from `deploymentBlock`. Must not exceed the RPC provider's block-range limit. Measured on 2026-10-30 for Base Sepolia: `https://sepolia.base.org` allows 200 (about 2,700 requests and 15 minutes to read the full history), `https://base-sepolia-rpc.publicnode.com` allows 50,000 (11 requests, about 4 seconds), `https://base-sepolia.gateway.tenderly.co` allows 100,000. Both larger endpoints returned the same complete event history. For the testnet demo use publicnode with `50000`. Public limits can change without notice, so reload the Dashboard before a demo |
 | `NEXT_PUBLIC_EXPLORER_URL` | Block explorer base URL. Links use `/address/<a>` and `/tx/<hash>`. Required for `target`, optional for `localhost` |
 | `NEXT_PUBLIC_DEPLOYMENT` | `target` reads `deployments/network.json`; `localhost` reads `deployments/localhost.json` |
 | `NEXT_PUBLIC_DATA_SOURCE` | `synthetic` or `testnet`. Shown on every screen |
