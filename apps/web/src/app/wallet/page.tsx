@@ -85,7 +85,7 @@ function AiSummary({ hash }: { hash: Hex }) {
   if (summary.data === null) return <p className="text-sm text-fg-muted">The backend has no evidence bundle for this hash.</p>;
   return (
     <div className="space-y-3 text-sm">
-      <p className="leading-relaxed whitespace-pre-line text-fg">{summary.data.aiSummary.text}</p>
+      <p className="leading-relaxed break-words whitespace-pre-line text-fg">{summary.data.aiSummary.text}</p>
       <p className="text-fg-muted">
         Summary source: {summary.data.aiSummary.source}. Data source: {summary.data.dataSource}. The summary explains the
         evidence. It does not confirm anything.
