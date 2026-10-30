@@ -88,9 +88,8 @@ const SECTIONS: DocSection[] = [
     heading: "Intellectual property",
     body: (
       <p>
-        The Stakeout name and logo belong to the Stakeout team. The smart contracts and the web app are published under the MIT License, as declared
-        in their source files and package settings, and the backend service declares the ISC License. Open-source libraries and fonts used by the app
-        remain under their own licenses.
+        The Stakeout name and logo belong to the Stakeout team. The code is published under the MIT License; see the LICENSE file in the repository.
+        Open-source libraries and fonts used by the app remain under their own licenses.
       </p>
     ),
   },
