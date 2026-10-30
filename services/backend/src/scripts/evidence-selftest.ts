@@ -9,7 +9,7 @@ import { Wallet, ZeroAddress, hexlify, randomBytes } from "ethers";
 import { canonicalize, hashBundle } from "../../../../shared/hash/index.js";
 import type { Rules } from "../config.js";
 import { openDb } from "../db.js";
-import { evidenceBundleSchema } from "../evidence.js";
+import { EVIDENCE_SCHEMA_VERSION, evidenceBundleSchema } from "../evidence.js";
 import { registerEvidenceRoutes } from "../evidenceRoutes.js";
 import { installErrorHandler, makeRedactor, UserError } from "../errors.js";
 import { LlmBusyError, type ChatRequest, type Llm } from "../llm.js";
@@ -30,10 +30,13 @@ const rules: Rules = { behaviorThreshold: 3, minSignals: 2, reportConfidenceBoos
 type Mode = "ok" | "wrong-target" | "bad-shape" | "http-500" | "not-json" | "hang" | "other-datasource";
 let mode: Mode = "ok";
 let lastAnalysis: Record<string, unknown> = {};
+// metrics a stub graph returns; undefined = the graph sends none (the case of every bundle made before the field existed)
+let stubMetrics: unknown;
 const analysisFor = (target: string, dataSource = "synthetic") => ({
   target, clusterId: bytes32(), behaviorScore: 7.5,
   signals: [{ name: "rapid_split", count: 12 }, { name: "merge", count: 4 }],
   members: [target, addr(), addr()], exitPoints: [addr()], unrelatedReporterCount: 5, dataSource,
+  ...(stubMetrics === undefined ? {} : { metrics: stubMetrics }),
 });
 const graph: Server = createServer((req, res) => {
   const target = decodeURIComponent((req.url ?? "").split("/").pop() ?? "");
@@ -114,6 +117,49 @@ stored.aiSummary.text = stored.aiSummary.text.replace(/.$/, (c: string) => (c ==
 check("tamper test: one changed character in the stored bundle changes the hash", hashBundle(stored) !== r.body.hash);
 check("GET with a malformed hash: 400", (await r.app.inject({ method: "GET", url: "/evidence/0x1234" })).statusCode === 400);
 check("GET with an unknown hash: 404", (await r.app.inject({ method: "GET", url: `/evidence/${bytes32()}` })).statusCode === 404);
+
+console.log("\n## metrics: optional, so bundles without them validate and hash as before");
+// FIXTURE: a bundle in the shape made before `metrics` existed. Its hash was computed with shared/hash, which this change does not touch.
+const fx = (c: string) => "0x" + c.repeat(40);
+const oldBundle = {
+  schemaVersion: 1, target: fx("1"), clusterId: "0x" + "2".repeat(64), behaviorScore: 0.9, signals: [{ name: "fanIn", value: 6 }],
+  members: [fx("1"), fx("3")], exitPoints: [fx("4")], unrelatedReporterCount: 0, thresholdsUsed: { behaviorThreshold: 0.4 },
+  aiSummary: { text: "fixture", source: "template" }, dataSource: "synthetic", createdAt: "2026-10-28T10:00:00.000Z",
+};
+const OLD_BUNDLE_HASH = "0x771b6ced024d95d9fe65c492c819084223a15c2caf652114e1f7aa26183e2bbf";
+const oldParsed = evidenceBundleSchema.safeParse(oldBundle);
+check("a bundle without metrics validates against the mirror", oldParsed.success);
+check("parsing adds no key: the parsed old bundle has no metrics key", oldParsed.success && !("metrics" in oldParsed.data));
+check("the old bundle still hashes exactly as before", hashBundle(oldBundle) === OLD_BUNDLE_HASH && oldParsed.success && hashBundle(oldParsed.data) === OLD_BUNDLE_HASH);
+check("schema: metrics is not required, items are { name, value } only", !(jsonSchema.required as string[]).includes("metrics") && jsonSchema.properties.metrics.type === "array"
+  && jsonSchema.properties.metrics.items.additionalProperties === false && JSON.stringify(jsonSchema.properties.metrics.items.required) === '["name","value"]'
+  && jsonSchema.properties.metrics.items.properties.value.type === "number");
+check("schemaVersion is still 1", EVIDENCE_SCHEMA_VERSION === 1 && jsonSchema.properties.schemaVersion.minimum === 1);
+
+const metricsA = [{ name: "totalOut", value: 12.5253 }, { name: "fanIn", value: 6 }, { name: "passThroughRatio", value: 0.766 }];
+const withMetrics = { ...oldBundle, metrics: metricsA };
+check("a bundle with metrics validates", evidenceBundleSchema.safeParse(withMetrics).success);
+check("a metric with a non-numeric value, or an extra key, is rejected", !evidenceBundleSchema.safeParse({ ...oldBundle, metrics: [{ name: "x", value: "6" }] }).success
+  && !evidenceBundleSchema.safeParse({ ...oldBundle, metrics: [{ name: "x", value: 1, extra: true }] }).success);
+check("adding metrics changes the hash", hashBundle(withMetrics) !== OLD_BUNDLE_HASH);
+check("changing one metric value changes the hash", hashBundle({ ...oldBundle, metrics: [metricsA[0], { name: "fanIn", value: 7 }, metricsA[2]] }) !== hashBundle(withMetrics));
+check("the order of metrics is part of the bundle (a reordered list hashes differently)", hashBundle({ ...oldBundle, metrics: [metricsA[1], metricsA[0], metricsA[2]] }) !== hashBundle(withMetrics));
+
+r = await build();
+check("graph sends no metrics: the built bundle has no metrics key, and its hash matches", r.status === 200 && !("metrics" in r.body.bundle) && r.body.hash === hashBundle(r.body.bundle));
+stubMetrics = metricsA;
+r = await build();
+check("graph sends metrics: the bundle passes the schema mirror and hashes", r.status === 200 && evidenceBundleSchema.safeParse(r.body.bundle).success && r.body.hash === hashBundle(r.body.bundle));
+check("the bundle's metrics are the graph's, in the graph's order", JSON.stringify(r.body.bundle.metrics) === JSON.stringify(metricsA) && JSON.stringify(lastAnalysis.metrics) === JSON.stringify(metricsA));
+const storedBuilt = r.db.getEvidence(r.body.hash) as { metrics?: unknown } | null;
+check("the stored bundle keeps the metrics and their order", storedBuilt !== null && JSON.stringify(storedBuilt.metrics) === JSON.stringify(metricsA));
+stubMetrics = [{ name: "totalOut", value: 12.5253 }, { name: "fanIn", value: 7 }, { name: "passThroughRatio", value: 0.766 }];
+const changed = await build();
+check("a different metric value from the graph gives a different hash", changed.status === 200 && changed.body.hash !== r.body.hash);
+stubMetrics = [{ name: "fanIn", value: "six" }];
+r = await build();
+check("a metric without a numeric value: 502 naming the problem", r.status === 502 && /metrics/.test(r.body.error), r.body.error);
+stubMetrics = undefined;
 
 console.log("\n## summary guard in the build");
 r = await build({ llmKind: "bad-number" });

@@ -14,6 +14,16 @@
     "clusterId": { "type": ["string", "null"], "description": "From the Graph Service; null if the target is not in a cluster" },
     "behaviorScore": { "type": "number" },
     "signals": { "type": "array", "items": { "type": "object" }, "description": "Passed through from the Graph Service analysis, unmodified" },
+    "metrics": {
+      "type": "array",
+      "description": "OPTIONAL. The numbers behind the score, in the order the Graph Service returned them. Bundles made before this field existed have none and keep their hash.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "value"],
+        "properties": { "name": { "type": "string" }, "value": { "type": "number" } }
+      }
+    },
     "members": { "type": "array", "items": { "type": "string", "pattern": "^0x[a-fA-F0-9]{40}$" } },
     "exitPoints": { "type": "array", "items": { "type": "string", "pattern": "^0x[a-fA-F0-9]{40}$" } },
     "unrelatedReporterCount": { "type": "integer", "minimum": 0 },

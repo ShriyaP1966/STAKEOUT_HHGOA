@@ -19,6 +19,8 @@ export const evidenceBundleSchema = z.strictObject({
   clusterId: z.string().nullable(),
   behaviorScore: z.number(),
   signals: z.array(z.record(z.string(), z.unknown())),
+  /** optional: bundles made before this field existed have none and must keep their hash, so an absent field is never written as undefined */
+  metrics: z.array(z.strictObject({ name: z.string(), value: z.number() })).optional(),
   members: z.array(address),
   exitPoints: z.array(address),
   unrelatedReporterCount: z.number().int().min(0),
@@ -37,6 +39,16 @@ export type EvidenceDeps = {
   db: Db;
   now?: () => Date;
 };
+
+/** The graph's metrics, in the order it returned them; undefined when it sent none. A malformed entry is refused, not dropped. */
+function metricsOf(analysis: AnalysisProposal): EvidenceBundle["metrics"] {
+  if (analysis.metrics === undefined) return undefined;
+  const parsed = evidenceBundleSchema.shape.metrics.safeParse(analysis.metrics);
+  if (!parsed.success) {
+    throw new UserError(`The Graph Service sent metrics that are not a list of { name, value } with a numeric value: ${parsed.error.issues[0].message}`, 502);
+  }
+  return parsed.data;
+}
 
 /**
  * Builds, hashes and stores the evidence bundle for one graph analysis.
@@ -62,9 +74,11 @@ export async function createEvidence(deps: EvidenceDeps, analysis: AnalysisPropo
   };
   const aiSummary = await buildSummary(deps.llm, facts);
 
+  const metrics = metricsOf(analysis);
   const bundle = evidenceBundleSchema.parse({
     schemaVersion: EVIDENCE_SCHEMA_VERSION,
     ...facts,
+    ...(metrics ? { metrics } : {}),
     thresholdsUsed: { ...deps.rules },
     aiSummary,
     createdAt: (deps.now?.() ?? new Date()).toISOString(),
