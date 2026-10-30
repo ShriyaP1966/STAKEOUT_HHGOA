@@ -151,17 +151,15 @@ export const DocumentIcon = (props: IconProps) => (
   </Icon>
 );
 
-export function TrailLensMark({ size = 28, accent = "var(--accent)", ring = "currentColor", hole = "transparent" }: { size?: number; accent?: string; ring?: string; hole?: string }) {
+export function TrailLensMark({ size = 28, accent = "var(--accent)", ring = "currentColor" }: { size?: number; accent?: string; ring?: string; hole?: string }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 120 122" aria-hidden="true" focusable="false">
+    <svg width={Math.round((size * 92) / 114)} height={size} viewBox="17 1 92 114" aria-hidden="true" focusable="false">
       <path d="M96 14 L58 34 L68 56 L28 74 L38 98" fill="none" stroke={ring} strokeWidth="8" strokeLinejoin="round" strokeLinecap="round" />
       <circle cx="96" cy="14" r="11" fill={ring} />
       <circle cx="58" cy="34" r="9" fill={ring} />
       <circle cx="68" cy="56" r="9" fill={ring} />
       <circle cx="28" cy="74" r="9" fill={ring} />
-      <circle cx="38" cy="98" r="18" fill={hole} stroke={ring} strokeWidth="9" />
-      <circle cx="38" cy="98" r="9" fill={accent} />
-      <path d="M58 92 L90 82" stroke={ring} strokeWidth="13" strokeLinecap="round" />
+      <circle cx="38" cy="98" r="15" fill={accent} />
     </svg>
   );
 }

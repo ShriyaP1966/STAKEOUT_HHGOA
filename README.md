@@ -11,7 +11,7 @@ Hackathon project. Testnet only. Synthetic data only.
 | `contracts` | `Stakeout.sol`, `StakeoutGuard.sol`, test-only helpers in `contracts/test` | Person 3 |
 | `test` | Hardhat tests for the contracts | Person 3 |
 | `apps/web` | Next.js web app: `/wallet`, `/report`, `/verify`, `/dashboard`, `/decisions`, `/reviewer` | Person 3 |
-| `services/graph` | Graph service (Python, FastAPI, TigerGraph); see `services/graph/README.md` | Person 1 |
+| `services/graph` | Graph service (Python, FastAPI, TigerGraph); see `services/graph/README.md` | Person 1 (first version), Person 2 (completed) |
 | `services/backend` | Backend, AI, verifier service | Person 2 |
 | `shared` | `enums.ts`, exported contract ABIs in `shared/abi`, the hash library in `shared/hash`, schemas in `shared/schemas`, and the voice component in `shared/ui` | All |
 | `config` | Shared configuration agreed by the team: `rules.json` (verifier thresholds, read through `RULES_PATH`) and `scoring.json` (graph behaviour scoring, read by the graph service) | All |

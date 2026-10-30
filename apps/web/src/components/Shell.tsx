@@ -44,8 +44,8 @@ function shortAddress(address: string): string {
 }
 
 const LOGO_SIZES = {
-  md: { mark: 34, text: "gap-3 text-[26px]" },
-  lg: { mark: 46, text: "gap-3.5 text-[36px]" },
+  md: { mark: 34, text: "gap-0.5 text-[26px]" },
+  lg: { mark: 46, text: "gap-1 text-[36px]" },
 };
 
 export function Logo({ size = "md", hole = "var(--header)", className = "" }: { size?: keyof typeof LOGO_SIZES; hole?: string; className?: string }) {
@@ -53,12 +53,13 @@ export function Logo({ size = "md", hole = "var(--header)", className = "" }: { 
     <span className={`inline-flex items-center font-bold tracking-tight ${LOGO_SIZES[size].text} ${className}`}>
       <TrailLensMark size={LOGO_SIZES[size].mark} hole={hole} />
       <span className="sr-only">stakeout</span>
-      <span aria-hidden="true" className="inline-flex items-baseline">
-        <span>stake</span>
-        <span className="mx-[0.03em] inline-flex h-[0.56em] w-[0.56em] items-center justify-center self-baseline rounded-full border-[0.12em] border-current">
-          <span className="h-[0.2em] w-[0.2em] rounded-full bg-accent" />
-        </span>
-        <span>ut</span>
+      <span aria-hidden="true" className="whitespace-nowrap">
+        stake
+        <svg viewBox="0 0 100 100" className="mr-[0.034em] ml-[0.047em] inline-block h-[0.532em] w-[0.531em] align-[-0.016em]" focusable="false">
+          <circle cx="50" cy="50" r="38" fill="none" stroke="currentColor" strokeWidth="24" />
+          <circle cx="50" cy="50" r="14" fill="var(--accent)" />
+        </svg>
+        ut
       </span>
     </span>
   );

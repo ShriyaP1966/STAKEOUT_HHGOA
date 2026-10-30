@@ -98,7 +98,7 @@ Person 3 owns this section. Run every command from the repo root. Commands for `
 - Lint Solidity: `npm run lint`
 - Type-check TypeScript: `npm run typecheck`
 - Export ABIs to `shared/abi`: `npm run export-abi`
-- Install graph service (Python; tested on 3.13.15 per `services/graph/README.md`; owner Person 1): `cd services/graph`, then `python -m venv .venv`, activate it (`.venv\Scripts\activate` on Windows, `source .venv/bin/activate` elsewhere), then `pip install -r requirements.txt`
+- Install graph service (Python; tested on 3.13.15 per `services/graph/README.md`; Person 1 (first version), Person 2 (completed)): `cd services/graph`, then `python -m venv .venv`, activate it (`.venv\Scripts\activate` on Windows, `source .venv/bin/activate` elsewhere), then `pip install -r requirements.txt`
 - Run graph service: fill `services/graph/.env` from `services/graph/.env.example` (TigerGraph settings and `GRAPH_SERVICE_PORT`), then from `services/graph` run `python scripts/run_service.py`. First-time graph setup: `python scripts/setup_graph.py`. Offline checks: `python -m unittest discover -s tests -t .`
 - Run backend: fill `services/backend/.env` from `services/backend/.env.example`, then `npm --prefix services/backend start`
 - Run verifier: same `.env`, then `npm --prefix services/backend run verifier` (separate process from the backend; keep `VERIFIER_DRY_RUN=true` until a human has checked a run)
@@ -113,7 +113,7 @@ Person 3 owns this section. Run every command from the repo root. Commands for `
 - Safe transaction calldata: `npm run safe:calldata -- <target|localhost> <action> <args>`
 - Load synthetic scenario on the local chain: `npm run seed:local` after `npm run deploy:local` (local Hardhat chain only; writes the git-ignored `deployments/localhost-seed.json`)
 - Load synthetic scenario into the graph: from `services/graph`, `python -m graph.generate --seed 1`, then `python -m graph.load` (needs TigerGraph; `python -m graph.load --dry-run` shows what would be loaded without it)
-- Local rehearsal (dev-only Graph Service stand-in, not Person 1's service; steps and variables in `docs/local-rehearsal.md`): `npm run node:local`, `npm run deploy:local`, `npm run seed:local`, `npm --prefix services/backend run dev:graph-fixture -- ../../deployments/localhost-seed.json`, `npm --prefix services/backend run dev:graph-stub`, then `npm --prefix services/backend run verifier`
+- Local rehearsal (dev-only Graph Service stand-in, not the real Graph Service; steps and variables in `docs/local-rehearsal.md`): `npm run node:local`, `npm run deploy:local`, `npm run seed:local`, `npm --prefix services/backend run dev:graph-fixture -- ../../deployments/localhost-seed.json`, `npm --prefix services/backend run dev:graph-stub`, then `npm --prefix services/backend run verifier`
 
 ## 9. When to stop and ask a human
 
