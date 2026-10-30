@@ -319,3 +319,42 @@ Blanking `NOTIFY_WEBHOOK_URL` and `NOTIFY_TIMEOUT_MS` this way did not switch no
 - The seed with a verifier address that is not a Hardhat account (the impersonation path).
 - Anything against Person 1's real Graph Service or a public testnet.
 - The rules thresholds used were test numbers (threshold 1), not the team's.
+
+## 14. Run of 2026-10-30: the real Graph Service on TigerGraph (graph `stakeout_v3`), synthetic data
+This is the first section about Person 1's real Graph Service (`services/graph`), not the dev-only stand-in of sections 12 and 13. Everything is synthetic data on TigerGraph, with the contract on Base Sepolia for the verifier row. Written by the assistant from the sources below only; the assistant did not run the rows marked as run by Shriya and saw only the output Shriya reported. "Run via Claude Code" means the assistant ran it on Shriya's laptop in a session on the same day.
+
+Sources: `services/graph/results/eval_seed1.json` (read by the assistant for this section); what Shriya saw in their own terminal on 2026-10-30; `docs/HANDOFF.md`; the limitations already listed in `services/graph/README.md`.
+
+### Checks
+| # | Check | Status | Who and when | Result |
+|---|---|---|---|---|
+| 1 | `python scripts/test_connection.py` | run | Shriya, 2026-10-30 | Connected to `stakeout_v3`; installed queries `analyze_wallet`, `get_cluster_graph`, `link_candidates` |
+| 2 | `GET /health` | run | Shriya, 2026-10-30 | `ok` |
+| 3 | `GET /analyze/<unknown wallet>` | run | Shriya, 2026-10-30 | HTTP 404, "No graph data for this address." |
+| 4 | `GET /analyze/<cluster member>` after commit `1a9f8f9` | run | Shriya, 2026-10-30 | `members` no longer contains the exit point |
+| 5 | Config change in `config/scoring.json`: `fanInMin` 2 to 7, restart, same wallet, then `git restore` and restart | run | via Claude Code, 2026-10-30; output seen by Shriya | `behaviorScore` 0.9 to 0.875 and the `fanIn` signal disappeared; after the restore, 0.9 again. Only the `scoring.json` variant was run |
+| 6 | Clean clone of the repo, installs and checks from the READMEs, no `.env` | run | via Claude Code, 2026-10-30; output seen by Shriya | 154 graph tests OK (1 skipped); 14 of 14 backend checks; web typecheck and build passed |
+| 7 | Live verifier run on Base Sepolia using this Graph Service | run | the team, 2026-10-30; recorded in `docs/HANDOFF.md` | One `confirm` (tx `0x5bf332a6...c123`) and two `link` transactions. See `docs/HANDOFF.md` for the full table; nothing is added here |
+| 8 | Live evaluation, seed 1 (`python -m graph.evaluate`) | run | who: unconfirmed (the file records only `mode: live Graph Service`); file time 2026-10-30 02:51 | See the numbers below |
+
+### Live evaluation, seed 1 (from `eval_seed1.json`)
+The file says `seed` 1, `mode` "live Graph Service", scored with `config/scoring.json`. The numbers equal the ones given for this task; nothing differs. The file is in a git-ignored folder (`results/`), so it is not part of the repository.
+
+| Measure | TP | FP | FN | TN | Total | Precision | Recall |
+|---|---|---|---|---|---|---|---|
+| Behavior | 7 | 1 | 0 | 49 | 57 | 0.875 | 1.0 |
+| Membership | 5 | 0 | 0 | 52 | 57 | 1.0 | 1.0 |
+| Linking | 2 | 0 | 0 | 6 | 8 | 1.0 | 1.0 |
+
+`linkedNeverCandidates` is empty. The eight hard negatives are listed in the file; the one flagged suspicious is the exchange hot wallet (score 0.75, the single behavior false positive). The merchant scored 0.35 and was not flagged. These two scores and the other limitations are in "Known limitations" in `services/graph/README.md` and are not restated here.
+
+### What this section does not cover
+- Seeds 2 and 3 on the live service (their result files exist but were not a source for this section).
+- The live runs of `setup_graph.py` and `graph.load`, and how long any live call takes (no timing was recorded).
+- The failure paths against TigerGraph (a TigerGraph outage and the 502 answers) and any load or rate test.
+- The `config/rules.json` variant of the config-change test, and any `scoring.json` value other than `fanInMin`.
+- Real testnet data or real victims: all data here is synthetic.
+- The web app talking to the live Graph Service.
+- Whether the false positive or the thin merchant margin matter outside the synthetic generator (see the limitations in `services/graph/README.md`).
+- Who ran the seed-1 evaluation and exactly when.
+- The details of the live verifier run beyond what `docs/HANDOFF.md` records.

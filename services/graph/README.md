@@ -81,6 +81,15 @@ The step-by-step runbook for the live Base Sepolia run (graph service, verifier,
 - **Linking** (`graph/linking.py`, AGENTS.md section 4): never a known victim or a one-off payer; linked if it sends repeatedly into the cluster, or is funded by it and forwards onward like a member. Inbound funding alone (dusting) never links.
 - **Generator** (`graph/generate.py`): scam cluster, rotation, feeder, repeat victim, dusting, framing (burners each funded from a different source, plus false reports against the innocent wallet), merchants, an exchange-like hot wallet, noise. `data/scenarios.json` is TEST-ONLY ground truth: only `evaluate.py`, the tests and `scripts/sample_addresses.py` (a manual-testing helper) read it.
 
+## Known limitations
+- The exchange hot wallet scores 0.75 on the synthetic data, which is a false positive. Seed-1 live evaluation of the behavior check: TP 7, FP 1, FN 0, TN 49.
+- The merchant scores 0.35, a thin margin below the 0.40 threshold.
+- A scammer who slows down could evade the speed signal.
+- The tuned set and the held-out set come from the same generator.
+- `unrelatedReporterCount` counts distinct reports, not verified unrelated reporters.
+- The graph's report `evidence_hash` uses SHA-256, while the contract side uses keccak256. A decision with Person 3 is pending.
+- The evidence bundle schema has no `metrics` field. This is also pending.
+
 ## What was run, and what a human must run
 Run by the assistant (offline, Python 3.13, test scoring file): the unit checks, `generate`, `load --dry-run`, `evaluate --offline` for seeds 1, 2, 3. **Not run, needs your TigerGraph account:** everything marked "Needs TigerGraph" above.
 Human steps, in order, from `services/graph` (the first one is new):
