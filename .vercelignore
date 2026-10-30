@@ -1,0 +1,11 @@
+/*
+!/apps
+!/shared
+!/deployments
+!/config
+**/node_modules
+**/.next
+**/.env*
+!**/.env.example
+deployments/localhost.json
+deployments/localhost-seed.json

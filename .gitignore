@@ -16,3 +16,4 @@ deployments/localhost.json
 *.tsbuildinfo
 deployments/localhost-seed.json
 next-env.d.ts
+.vercel
