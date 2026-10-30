@@ -372,6 +372,7 @@ Written by the assistant from `GET /decisions` (read from the running backend), 
 | 6 | Verifier restarted, links sent | run | startup line 06:11:15 UTC: [seen in terminal] (Shriya's verifier terminal, pasted into the chat; not saved to a file in the repo); decisions [seen in terminal]; chain [read on chain by Person 3] | `0x2CdBb6aE...` `link:funded-and-forwards`, `0xa02F5ef4...` `link:structured-outflow`; six candidates refused (five `link:known-victim`, one `link:inbound-only-or-insufficient`) |
 | 7 | `getStatus` | run | [read on chain by Person 3] | target 3, four members 3, exit point 3 (ExitPoint), both links 4 |
 | 8 | Website: Check address and Decisions | run | [seen in browser] | Confirmed for the target, Linked for both link wallets, rows on Decisions |
+| 9 | Website: more screens, 2026-10-30 about 10:19 to 10:25 UTC (3:49 to 3:55 PM IST) | run | [seen in browser] | Check address for the clean wallet `0x5E921119...cD61`: STATUS: NONE. Dashboard (no wallet connected): Reports (6), Flags (6), flag #5 and #4 Confirmed, flag #3 Expired. Target page: role Member, evidence source "Confirmed event", AI summary labelled "Data source: synthetic". Seed 2 money trail: Member (4), Exit point (1), Counterparty (8), Wallets (13), Transfers (17). Basescan Logs tab of the confirm tx: a Confirmed event with 4 members, 1 exit point and evidence hash `0x64fb817f...e1b1`. Details in `docs/live-run.md` |
 
 ### New limitation found
 One failing link candidate blocks the remaining candidates and all later events until the cause is fixed (the verifier fails loudly by design). Only the live run found it. Also listed in "Known limitations" in `services/graph/README.md`.
@@ -379,5 +380,5 @@ One failing link candidate blocks the remaining candidates and all later events 
 ### Not run
 - The `config/rules.json` variant of the config-change test (only `scoring.json` was run).
 - The Basescan Overview tab (step 12 of `docs/live-run.md`), also for the seed 2 transactions.
-- The seed 2 money trail page and its AI summary, and a Basescan view of the seed 2 transactions: not reported as seen.
+- A Basescan view of the seed 2 promote and link transactions: not reported as seen.
 - The time the seed 2 load ran: no file records it. The verifier lines at 05:47:41 and 06:11:15 were seen only in Shriya's terminal and are not saved to a file in the repo.

@@ -32,13 +32,13 @@ Marker legend for seed 2: **[seen in browser]** = Shriya reported it; the assist
 
 ### 2. Check address for a clean wallet
 - **Open:** the website, **Check address** (`/wallet`), and enter a wallet that is in no cluster and has no report.
-- **Should show:** a status of None. [not seen: no clean-wallet screen is recorded in the docs. Pick the wallet and try it beforehand; I cannot name one.]
+- **Should show:** a status of None. Check address for `0x5E921119a5168006F82Dfc295242e23b7328cD61` showed STATUS: NONE, "No record. This address has no reports, flags, or cluster entries." [seen in browser 2026-10-30, about 10:19 to 10:25 UTC (3:49 to 3:55 PM IST); the assistant did not see the screens].
 - **Time:** not timed.
 - **Say:** "Anyone can ask the contract about any address. This one has no record."
 
 ### 3. Show the existing report #5 and flag #5
 - **Open:** **Dashboard** (`/dashboard`) and find report #5 under Reports and flag #5 under Flags; then the block explorer for the promote transaction `0x8b94cf8666840dd04c585b1bfceb6fd81a3113e5b6972aab062506953fe89ab6` (block 52086814). Nothing is reported or promoted during the demo.
-- **Should show:** the report and the flag for `0x8fdb72a34980be64D347BdcDda5117b919f538DC`. [not seen: the Dashboard screen and the block explorer page for this transaction are not recorded as seen.]
+- **Should show:** the report and the flag for `0x8fdb72a34980be64D347BdcDda5117b919f538DC`. The Dashboard (no wallet connected) showed Reports (6) and Flags (6): report #5 for that address at block 52085149; flag #5 Confirmed, 0.001 ETH, promoted in block 52086814, tx `0x8b94cf8666840dd04c585b1bfceb6fd81a3113e5b6972aab062506953fe89ab6`; flag #4 Confirmed; flag #3 Expired. The actions said "Connect a wallet to use this action" [seen in browser 2026-10-30, about 10:19 to 10:25 UTC (3:49 to 3:55 PM IST); the assistant did not see the screens]. The block explorer page for the promote transaction: [not seen].
 - **Recorded (seed 2):** report #5 for `0x8fdb72a34980be64D347BdcDda5117b919f538DC` at 05:41:38 UTC (block 52085149); promote of flag #5 with a 0.001 ETH stake at 05:47:11 UTC (block 52086814). [read on chain by Person 3]
 - **Time:** not timed in the browser. Chain times above.
 - **Say:** "A victim reported for free. A whitelisted reporter put a stake behind it. A flag lives for 10 minutes unless it is confirmed."
@@ -51,13 +51,13 @@ Marker legend for seed 2: **[seen in browser]** = Shriya reported it; the assist
 
 ### 5. The confirm transaction on Basescan
 - **Open:** `https://sepolia.basescan.org/tx/0xd0e6996acb3f2f2566ea95bde3388cdd4efc653e1f811674a888280aaaca933a` (the seed 2 confirm tx, block 52086907).
-- **Should show:** a successful transaction and a Confirmed event in the Logs tab. [not seen for this transaction. For the seed 1 confirm only the Logs tab was seen; the Overview tab was never checked.]
+- **Should show:** a successful transaction and a Confirmed event in the Logs tab. The Logs tab of this transaction showed a Confirmed event from `0x2BDBEa9039F076b9587C2d692d21407Fbe3A66F7` with cluster `0x60dbbc2e…`, 4 members, 1 exit point and evidence hash `0x64fb817f…e1b1` [seen in browser 2026-10-30, about 10:19 to 10:25 UTC (3:49 to 3:55 PM IST); the assistant did not see the screens]. The Overview tab was never checked [not seen]; for the seed 1 confirm too only the Logs tab was seen.
 - **Time:** not timed.
 - **Say:** "This is the public record. Nobody can edit it."
 
 ### 6. Check address now shows Confirmed
 - **Open:** **Check address** for `0x8fdb72a34980be64D347BdcDda5117b919f538DC`.
-- **Should show:** STATUS: CONFIRMED [seen in browser]. On chain: target 3 [read on chain by Person 3]. The cluster id, role, AI summary and the **View money trail** page for seed 2: [not seen]. They were seen only for seed 1 (see the recorded run).
+- **Should show:** STATUS: CONFIRMED [seen in browser]. On chain: target 3 [read on chain by Person 3]. The page also showed role Member, cluster `0x60dbbc2e…`, evidence hash `0x64fb817f…e1b1` with source "Confirmed event" and the confirm tx, and an AI summary (behaviorScore 0.875, passThroughRatio 0.9951, fanOut 2, medianForwardTime 395, one hop to the exit) labelled "Summary source: llm. Data source: synthetic. The summary explains the evidence. It does not confirm anything." The seed 2 money trail showed Member (4), Exit point (1), Counterparty (8), Wallets (13) and Transfers (17) [seen in browser 2026-10-30, about 10:19 to 10:25 UTC (3:49 to 3:55 PM IST); the assistant did not see the screens].
 - **Time:** not timed.
 - **Say:** "The wallet's own behavior, split, merge and forward to an exit point, is what confirmed it."
 
@@ -105,8 +105,8 @@ If the seed 2 steps fail on stage, show this recorded run. Its responses are in 
 - A second live confirm for either 2026-10-30 cluster (not possible, see the top).
 - A fresh live confirm on another cluster: unconfirmed.
 - The Reviewer, Pricing and other info pages; challenges and resolution.
-- The screens for Check address with a clean wallet, Report and Dashboard promote (not recorded as seen).
-- The Basescan Overview tab (only the Logs tab was seen, and only for the seed 1 confirm).
+- The Report page and the promote action on the Dashboard (the Dashboard was only viewed, with no wallet connected).
+- The Basescan Overview tab (only the Logs tab was seen, for both confirms).
 - The `config/rules.json` variant of the config-change test (only `config/scoring.json` was run).
-- The seed 2 money trail, AI summary and Basescan pages.
+- The Basescan page of the seed 2 promote transaction.
 - Any timing in the browser: only the chain times and the 45-minute scan are recorded.

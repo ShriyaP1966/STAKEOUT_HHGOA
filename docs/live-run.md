@@ -154,7 +154,7 @@ A script for presenting this is in `docs/demo-script.md`.
 
 ### Not covered by this walk-through
 - The Report page and the promote action on the Dashboard.
-- Check address for a wallet with no record.
+- Check address for a wallet with no record (seen later the same day; see "Second live run, seed 2").
 - The Reviewer, Pricing, FAQ, Support, Terms and Privacy pages.
 - The Basescan Overview tab (only the Logs tab was seen, see section 6).
 - What a browser shows when the backend or the Graph Service is down.
@@ -176,6 +176,11 @@ Markers: **[seen in terminal]** = the assistant read it from `/decisions` or a r
 | Confirm decision (decision id 14) | rule `B:behavior-passed`, behavior score 0.875, 4 signals, 1 unrelated reporter (added confidence only, 0.925 with reports), evidence hash `0x64fb817f7865fa3a38a14f62cc83e3e55f9d68e1e76ac9ecd3b26a412fa6e1b1`, data source synthetic. **Logged at 05:47:31 UTC by the verifier's own clock when it logged the decision** (`created_at`); this is not the block time above and the two are not the same value | [seen in terminal] |
 | Verify page | found the evidence hash on chain and the recomputed hash matched | [seen in browser] |
 | Check address | target showed Confirmed; both link wallets showed Linked | [seen in browser] |
+| Check address, target (more) | role Member, cluster `0x60dbbc2e…`, evidence hash `0x64fb817f…e1b1` with source "Confirmed event" and the confirm tx, and an AI summary (behaviorScore 0.875, passThroughRatio 0.9951, fanOut 2, medianForwardTime 395, one hop to the exit) labelled "Summary source: llm. Data source: synthetic. The summary explains the evidence. It does not confirm anything." | [seen in browser 2026-10-30, about 10:19 to 10:25 UTC (3:49 to 3:55 PM IST); the assistant did not see the screens] |
+| Money trail, seed 2 | Member (4), Exit point (1), Counterparty (8), Wallets (13), Transfers (17) | [seen in browser, same time window] |
+| Check address, clean wallet `0x5E921119a5168006F82Dfc295242e23b7328cD61` | STATUS: NONE, "No record. This address has no reports, flags, or cluster entries." | [seen in browser, same time window] |
+| Dashboard, no wallet connected | Reports (6) and Flags (6): report #5 for `0x8fdb72a3…` at block 52085149; flag #5 Confirmed, 0.001 ETH, promoted in block 52086814, tx `0x8b94cf8666840dd04c585b1bfceb6fd81a3113e5b6972aab062506953fe89ab6`; flag #4 Confirmed; flag #3 Expired; actions said "Connect a wallet to use this action" | [seen in browser, same time window] |
+| Basescan, Logs tab of the seed 2 confirm tx `0xd0e6996a…` | a Confirmed event from `0x2BDBEa9039F076b9587C2d692d21407Fbe3A66F7` with cluster `0x60dbbc2e…`, 4 members, 1 exit point and evidence hash `0x64fb817f…e1b1` | [seen in browser, same time window] |
 | Decisions page | showed the rows | [seen in browser] |
 | `getStatus` | target 3, all four members 3, exit point 3 with role ExitPoint, both links 4, same cluster | [read on chain by Person 3] |
 
@@ -190,7 +195,7 @@ All of this table is [seen in terminal] except the on-chain block and time, whic
 
 **One failing candidate blocks the rest.** The first link candidate failed, and because events are handled in order, that stopped the other candidates and every later event until the cause was fixed. It fails loudly, by design. It was found only by the live run, not by any self-test.
 
-**Not run.** The `config/rules.json` variant of check 13 in section 6. The Basescan Overview tab for check 12 (also for the seed 2 transactions). The seed 2 money trail page, the AI summary for seed 2, and the Basescan view of the seed 2 transactions were not reported as seen.
+**Not run.** The `config/rules.json` variant of check 13 in section 6. The Basescan Overview tab for check 12 (also for the seed 2 transactions). The Basescan Overview tab, and the Basescan view of the seed 2 promote and link transactions, were not reported as seen.
 
 ## Unconfirmed (not stated by any repo file)
 
