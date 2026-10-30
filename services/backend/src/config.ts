@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { readFileSync } from "node:fs";
+import { isIP } from "node:net";
 import { z } from "zod";
 import { parseWebhookSecret } from "./dodo.js";
 import { parseTimeZone } from "./timezone.js";
@@ -18,6 +19,8 @@ export const llmEnv = z.object({
 
 export const serverEnv = z.object({
   PORT: z.coerce.number().int().positive(),
+  /** The address the server binds to. An IP address only, no default; 127.0.0.1 keeps it on this machine. */
+  LISTEN_HOST: z.string().refine((v) => isIP(v) !== 0, "must be an IP address such as 127.0.0.1 (use 0.0.0.0 only on purpose, to listen on every interface)"),
   DB_PATH: nonEmpty,
   DATA_SOURCE: z.enum(["synthetic", "testnet"]),
   GRAPH_SERVICE_URL: z.url(),

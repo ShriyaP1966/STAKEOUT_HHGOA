@@ -72,4 +72,7 @@ app.get("/decisions", async (req) => {
   return { decisions: db.listDecisions(query.data.limit), dataSource: env.DATA_SOURCE };
 });
 
-await app.listen({ port: env.PORT, host: "0.0.0.0" });
+await app.listen({ port: env.PORT, host: env.LISTEN_HOST });
+const bound = app.server.address();
+if (bound === null || typeof bound === "string") throw new Error("The server did not report a TCP address after listen.");
+console.log(`Backend listening on ${bound.address} port ${bound.port} (LISTEN_HOST=${env.LISTEN_HOST}, PORT=${env.PORT}).`);

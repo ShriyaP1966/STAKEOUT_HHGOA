@@ -18,6 +18,7 @@ All are required, except the `NOTIFY_` and `DODO_` variables, which may be left 
 | `LLM_TIMEOUT_MS` | server, verifier | How long to wait for one AI call |
 | `LLM_RETRY_MAX_WAIT_SECONDS` | server, verifier | Longest wait between retries. If the provider asks for longer, the request fails at once with 429 and the provider's own wait in `Retry-After`. Without a `retry-after` header the waits are 1, 2, 4... seconds up to this cap. |
 | `PORT` | server | Port to listen on |
+| `LISTEN_HOST` | server | IP address to bind to. Required, no default; `127.0.0.1` listens on this machine only. `0.0.0.0` (every interface) is accepted but must be chosen on purpose. Host names are refused. |
 | `DB_PATH` | server, verifier | SQLite file path (its folder is created if missing; git-ignored). The server and the verifier must point at the same file to share evidence and the decision log. |
 | `DATA_SOURCE` | server, verifier | `synthetic` or `testnet`, shown on every response and bundle. The graph's own label must agree with it. |
 | `DEFAULT_TIMEZONE` | server | IANA zone (Region/City form, or UTC) used to resolve relative times when a request has no `timezone` |
