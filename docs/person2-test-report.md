@@ -136,7 +136,7 @@ Not tested: the real contract, real events, `confirm`/`link` transactions, a rea
 
 
 ## 8. Run of 2026-10-28 (later session): AI resilience, summary guard, `npm run check`, secret-leak audit, voice hydration
-All runs by the assistant unless marked "human must run". No `npm run robustness` and no real AI calls were used for these checks (stub providers, a local stub AI server, a mock node).
+All runs by a coding agent on Shriya's laptop unless marked "human must run". No `npm run robustness` and no real AI calls were used for these checks (stub providers, a local stub AI server, a mock node).
 
 ### AI resilience in `/extract`
 `npm run llm-selftest` (stub provider using the real `OpenAI.APIError` classes, a fake clock, Fastify `inject`): 22 of 22 checks pass. 429 then success retries once and respects `retry-after` (2000 ms) and `retry-after-ms` (1500 ms); 5xx then timeout then success waits 1 s then 2 s; exhausted retries give HTTP 429 with `Retry-After`; a provider wait longer than the cap gives up at once with the provider's own value (3600 s); `maxRetries` 0 is final; a non-retryable provider 400 and a programming error are never retried; empty, non-JSON and wrong-shape answers still give 502.
@@ -155,7 +155,7 @@ Runs typecheck, verifier-selftest, llm-selftest, summary-selftest and env-parity
 - No `0x` + 40-hex literal in source. In `docs/` only the public verifier address in the handoff.
 - Key-like words in source and docs are variable names and code that handles them; no secret value in any tracked file; no URLs, hosts, chain ids or model names typed in non-script source (two matches are example text inside error messages).
 - `.env` is git-ignored and has no tracked copy. The local SQLite files contain neither secret; their 64-hex values are all stored evidence hashes (45 of 45).
-- **Process note:** one of the assistant's audit commands did not exclude `.env` and printed the real API key and the verifier private key into that session's output. It was repeated with `.env` excluded. The owner was told to rotate both keys.
+- **Process note:** one of the audit commands of a coding agent on Shriya's laptop did not exclude `.env` and printed the real API key and the verifier private key into that session's output. It was repeated with `.env` excluded. The owner was told to rotate both keys.
 
 Leak tests with FAKE secrets (a local stub AI server that echoes the API key in its 401 body; a mock node whose errors contain the RPC URL):
 - API server: the fake key, any Authorization or Bearer text, the complaint text and the complaint's wallet address appear in no response and no server log line; retry log lines carry only attempt, reason and wait.
@@ -174,7 +174,7 @@ Not run. `docs/local-chain-test.md` is the checklist a human runs against Person
 
 
 ## 9. Run of 2026-10-29: timezone, evidence build, verifier decisions, blocklist, notifier
-Everything below was run by the assistant. No real AI call was made and `npm run robustness` was not run. Every stand-in below (a stub Graph Service, a stub AI, a mock node, a rules fixture) lives only in test files and is never used at runtime. Each test was written first and shown failing before the code existed; the first failure was in every case a missing module or export (not a failed assertion), except where noted.
+Everything below was run by a coding agent on Shriya's laptop. No real AI call was made and `npm run robustness` was not run. Every stand-in below (a stub Graph Service, a stub AI, a mock node, a rules fixture) lives only in test files and is never used at runtime. Each test was written first and shown failing before the code existed; the first failure was in every case a missing module or export (not a failed assertion), except where noted.
 
 ### Result
 `npm run check`: 10 of 10 pass (typecheck, verifier-selftest, llm-selftest, summary-selftest, timezone-selftest, evidence-selftest, decide-selftest, blocklist-selftest, notify-selftest, env-parity).
@@ -217,7 +217,7 @@ Everything that needs a real Graph Service (none exists), a real deployed contra
 
 
 ## 10. Run of 2026-10-29 (later): Dodo webhook, verifier-status self-test, trust and oracle documents
-Run by the assistant. No real AI call and no `npm run robustness`. The real Dodo account and a live Dodo delivery were NOT RUN.
+Run by a coding agent on Shriya's laptop. No real AI call and no `npm run robustness`. The real Dodo account and a live Dodo delivery were NOT RUN.
 
 ### Result
 `npm run check`: 12 of 12 pass (typecheck, verifier-selftest, llm-selftest, summary-selftest, timezone-selftest, evidence-selftest, decide-selftest, blocklist-selftest, notify-selftest, dodo-selftest, verifier-status-selftest, env-parity).
@@ -254,11 +254,11 @@ The real Dodo account and a live delivery; whether test mode has a separate sign
 
 
 ## 11. Run of 2026-10-29 (latest): `npm run notify-test`, and the viaSocket webhook
-### Human-run, recorded as reported (not run or checked by the assistant)
-On 2026-10-29 a human POSTed the sample payload by hand to a live viaSocket flow, and the flow returned a **sent Gmail message**. The assistant did not see the request, the URL, the response or the email; this line records what the human reported. What it shows: a live viaSocket flow accepted a manual POST of the sample payload and sent a Gmail message.
+### Human-run, recorded as reported (not run or checked by a coding agent on Shriya's laptop)
+On 2026-10-29 a human POSTed the sample payload by hand to a live viaSocket flow, and the flow returned a **sent Gmail message**. A coding agent on Shriya's laptop did not see the request, the URL, the response or the email; this line records what the human reported. What it shows: a live viaSocket flow accepted a manual POST of the sample payload and sent a Gmail message.
 
-### Run by the assistant: `npm run notify-test` and its offline self-test
-The command was added and tested only against a LOCAL stub webhook. **The assistant did not run `npm run notify-test` against the real viaSocket URL**: `NOTIFY_WEBHOOK_URL` and `NOTIFY_TIMEOUT_MS` are set in the local `.env` (checked by name only), so running it would have delivered a real Gmail message, which was not part of the request. A human must run it for that.
+### Run by a coding agent on Shriya's laptop: `npm run notify-test` and its offline self-test
+The command was added and tested only against a LOCAL stub webhook. **A coding agent on Shriya's laptop did not run `npm run notify-test` against the real viaSocket URL**: `NOTIFY_WEBHOOK_URL` and `NOTIFY_TIMEOUT_MS` are set in the local `.env` (checked by name only), so running it would have delivered a real Gmail message, which was not part of the request. A human must run it for that.
 - The command loads the existing config (the same two webhook fields and the same rule as the verifier: with the URL set, the timeout is required), and with `NOTIFY_WEBHOOK_URL` empty it stops with a clear message and sends nothing (exit 1).
 - Otherwise it sends ONE sample through the real notifier code in `src/verifier/notify.ts`, exactly as the verifier would: id `notify-test`, kind `confirm`, outcome `skipped`, rule `notify-test`, target the all-ones sample address (built from a repeat, so no address literal is in the source), no tx hash. The payload has exactly the notifier's six public fields.
 - It prints three lines only: `SUCCESS` or `FAILURE`, `HTTP status: <n>` (or `none (no response: timeout or unreachable)`), `Elapsed: <n> ms`. It never prints the URL, any part of it, or the response body. Exit code 0 only for a 2xx answer.
@@ -267,7 +267,7 @@ The command was added and tested only against a LOCAL stub webhook. **The assist
 - A first draft of one of my own tests expected exactly one warning when the callback throws; that would have meant swallowing the callback's error, so the notifier reports it as a second warning and the test was corrected before the implementation was finished.
 
 ### Still NOT verified
-- That the real `npm run notify-test` (or the verifier) delivers to the real viaSocket flow: only a human's manual POST was reported, not the command itself. Whether that manual POST had exactly the JSON the code sends (the six fields) is also unknown to the assistant.
+- That the real `npm run notify-test` (or the verifier) delivers to the real viaSocket flow: only a human's manual POST was reported, not the command itself. Whether that manual POST had exactly the JSON the code sends (the six fields) is also unknown to a coding agent on Shriya's laptop.
 - Which HTTP status the live viaSocket webhook returns on success, and what it returns for a bad request, a slow flow or too many requests: UNKNOWN (the command will print the status when a human runs it).
 - Whether the email arrived in the intended inbox and what it shows: "sent" as reported by the flow is not the same as delivered and read.
 - Whether viaSocket enforces a timeout, retries, rate limits or authentication on the webhook, and whether `NOTIFY_TIMEOUT_MS` as currently set is long enough for it: UNKNOWN.
@@ -276,16 +276,16 @@ The command was added and tested only against a LOCAL stub webhook. **The assist
 
 
 ## 12. Run of 2026-10-29 (latest): local chain rehearsal results, and the dev-only Graph Service stand-in
-### Human-run on the local chain, recorded as reported (not run or seen by the assistant)
+### Human-run on the local chain, recorded as reported (not run or seen by a coding agent on Shriya's laptop)
 On 2026-10-29 a human ran `docs/local-chain-test.md` on a local Hardhat node. What they reported:
 - Deploy and seed worked with Hardhat Account #2 as the verifier.
 - The verifier started on chain 31337, found `VERIFIER_ROLE` for its signer, read a real `Promoted` event, and then waited with a clear ERROR, because no Graph Service was running. It sent nothing.
-- After a restart it resumed at block 9 instead of the deployment block, and repeated the same waiting ERROR. (The assistant did not see this. It matches the design: the next block to scan is stored, and an event it could not handle is retried.)
+- After a restart it resumed at block 9 instead of the deployment block, and repeated the same waiting ERROR. (A coding agent on Shriya's laptop did not see this. It matches the design: the next block to scan is stored, and an event it could not handle is retried.)
 - A wrong `CHAIN_ID` stopped it with a clear message.
 - A missing deployment file stopped it with a clear message that names Person 3.
 Also reported: with an external address as verifier the seed script fails with "invalid account" (bug to report to Person 3; outside Person 2's folders). Leaving `EXPLORER_API_KEY` empty in `.env.localhost` fails validation, and the verifier stops at the first live flag it cannot handle, so skipped decisions for later events do not appear until it is handled. Both are now written into `docs/local-chain-test.md`.
 
-### Run by the assistant: the dev-only stand-in Graph Service
+### Run by a coding agent on Shriya's laptop: the dev-only stand-in Graph Service
 Added `npm run dev:graph-fixture`, `npm run dev:graph-stub` and `npm run dev-graph-selftest` (in `npm run check`), plus `docs/local-rehearsal.md`. The stand-in answers only the two PROPOSED routes from a fixture file (`GRAPH_FIXTURE_PATH`, name added to `.env.example`, empty), refuses to start unless `DATA_SOURCE` is synthetic and `CHAIN_ID` is 31337, binds to 127.0.0.1 only, and prints the banner "DEV STAND-IN, NOT Person 1's Graph Service, synthetic data only".
 - The self-test (random generated addresses, real scripts as child processes) checks: strong and weak scores against the rules file; a regenerated fixture with other thresholds and a new seed carries nothing from the first; every refusal (testnet, wrong chain, non-local URL, no port, missing, malformed, wrong-shape, non-synthetic or wrong-chain fixture); the verifier's OWN graph client parses the stub's answers; the verifier's OWN `decideConfirm` confirms the strong target and refuses the weak one, and `decideLink` links both link shapes; 404, 400 and 405 answers; not reachable on the machine's non-loopback address; no address literal in the source. The first run of the self-test had one failing check: a wrong rule label I had guessed in the test (not a stand-in bug); I fixed the test to use the exported constant. As a mutation check I made the flagged target's score weak: 3 checks failed, and the original passes again.
 - Manual run against the REAL seed file (`deployments/localhost-seed.json`, structure only): the generator wrote 5 analyses and 2 clusters of link candidates; the stub started with the banner and answered the flagged target (score 2, 2 signals, synthetic), the challenged target (score 0, 0 signals, no cluster) and 3 link candidates; I then stopped my own stub by its process id. The rules file for this was a temporary fixture (threshold 1, minimum signals 1), not the team's.
@@ -298,7 +298,7 @@ Added `npm run dev:graph-fixture`, `npm run dev:graph-stub` and `npm run dev-gra
 
 
 ## 13. Run of 2026-10-29 (latest): local rehearsal with the stand-in Graph Service, after Person 3's commit 46356fa
-### Human-run, output seen by the human (Shriya); recorded as reported, not seen by the assistant
+### Human-run, output seen by the human (Shriya); recorded as reported, not seen by a coding agent on Shriya's laptop
 Local Hardhat node, chain 31337, the dev-only stand-in Graph Service (not Person 1's service), synthetic data, Person 3's commit 46356fa. Hashes are shortened (first characters, then last characters) so no full 64-character value appears here.
 1. `deploy:local` worked with `EXPLORER_API_KEY` not listed in `.env.localhost` (`FLAG_DURATION_SECONDS` was 3600). Message seen: "Explorer verification is skipped on localhost... EXPLORER_API_KEY is not needed here." The verifier was Hardhat Account #2.
 2. `seed:local` worked with a Hardhat account as verifier. The `getStatus` table printed: fresh 0, reported 1, flagged 2, challenged 2, member 3 / role 1, exitPoint 3 / role 2, linked 4 / role 3.
@@ -321,9 +321,9 @@ Blanking `NOTIFY_WEBHOOK_URL` and `NOTIFY_TIMEOUT_MS` this way did not switch no
 - The rules thresholds used were test numbers (threshold 1), not the team's.
 
 ## 14. Run of 2026-10-30: the real Graph Service on TigerGraph (graph `stakeout_v3`), synthetic data
-This is the first section about Person 1's real Graph Service (`services/graph`), not the dev-only stand-in of sections 12 and 13. Everything is synthetic data on TigerGraph, with the contract on Base Sepolia for the verifier row. Written by the assistant from the sources below only; the assistant did not run the rows marked as run by Shriya and saw only the output Shriya reported. "Run via Claude Code" means the assistant ran it on Shriya's laptop in a session on the same day.
+This is the first section about Person 1's real Graph Service (`services/graph`), not the dev-only stand-in of sections 12 and 13. Everything is synthetic data on TigerGraph, with the contract on Base Sepolia for the verifier row. Written by a coding agent on Shriya's laptop from the sources below only; a coding agent on Shriya's laptop did not run the rows marked as run by Shriya and saw only the output Shriya reported. "Run via a coding agent on Shriya's laptop" means that agent ran it in a session on the same day.
 
-Sources: `services/graph/results/eval_seed1.json` (read by the assistant for this section); what Shriya saw in their own terminal on 2026-10-30; `docs/HANDOFF.md`; the limitations already listed in `services/graph/README.md`.
+Sources: `services/graph/results/eval_seed1.json` (read by a coding agent on Shriya's laptop for this section); what Shriya saw in their own terminal on 2026-10-30; `docs/HANDOFF.md`; the limitations already listed in `services/graph/README.md`.
 
 ### Checks
 | # | Check | Status | Who and when | Result |
@@ -332,8 +332,8 @@ Sources: `services/graph/results/eval_seed1.json` (read by the assistant for thi
 | 2 | `GET /health` | run | Shriya, 2026-10-30 | `ok` |
 | 3 | `GET /analyze/<unknown wallet>` | run | Shriya, 2026-10-30 | HTTP 404, "No graph data for this address." |
 | 4 | `GET /analyze/<cluster member>` after commit `1a9f8f9` | run | Shriya, 2026-10-30 | `members` no longer contains the exit point |
-| 5 | Config change in `config/scoring.json`: `fanInMin` 2 to 7, restart, same wallet, then `git restore` and restart | run | via Claude Code, 2026-10-30; output seen by Shriya | `behaviorScore` 0.9 to 0.875 and the `fanIn` signal disappeared; after the restore, 0.9 again. Only the `scoring.json` variant was run |
-| 6 | Clean clone of the repo, installs and checks from the READMEs, no `.env` | run | via Claude Code, 2026-10-30; output seen by Shriya | 154 graph tests OK (1 skipped); 14 of 14 backend checks; web typecheck and build passed |
+| 5 | Config change in `config/scoring.json`: `fanInMin` 2 to 7, restart, same wallet, then `git restore` and restart | run | via a coding agent on Shriya's laptop, 2026-10-30; output seen by Shriya | `behaviorScore` 0.9 to 0.875 and the `fanIn` signal disappeared; after the restore, 0.9 again. Only the `scoring.json` variant was run |
+| 6 | Clean clone of the repo, installs and checks from the READMEs, no `.env` | run | via a coding agent on Shriya's laptop, 2026-10-30; output seen by Shriya | 154 graph tests OK (1 skipped); 14 of 14 backend checks; web typecheck and build passed |
 | 7 | Live verifier run on Base Sepolia using this Graph Service | run | the team, 2026-10-30; recorded in `docs/HANDOFF.md` | One `confirm` (tx `0x5bf332a6...c123`) and two `link` transactions. See `docs/HANDOFF.md` for the full table; nothing is added here |
 | 8 | Live evaluation, seed 1 (`python -m graph.evaluate`) | run | who: unconfirmed (the file records only `mode: live Graph Service`); file time 2026-10-30 02:51 | See the numbers below |
 
@@ -360,7 +360,7 @@ The file says `seed` 1, `mode` "live Graph Service", scored with `config/scoring
 - The details of the live verifier run beyond what `docs/HANDOFF.md` records.
 
 ## 15. Run of 2026-10-30 (second live run): seed 2 on the real Graph Service, Base Sepolia, synthetic data
-Written by the assistant from `GET /decisions` (read from the running backend), `services/graph/results/recorded/` (git-ignored) and `docs/HANDOFF.md` (Person 3's entry, not edited). The full table with every hash and block is in `docs/live-run.md`, "Second live run, seed 2"; it is not repeated here. Markers: [seen in terminal] = read by the assistant, or seen by Shriya in the verifier terminal and pasted into the chat (stated each time); [read on chain by Person 3] = from `docs/HANDOFF.md`; [seen in browser] = reported by Shriya, not seen by the assistant; [not seen].
+Written by a coding agent on Shriya's laptop from `GET /decisions` (read from the running backend), `services/graph/results/recorded/` (git-ignored) and `docs/HANDOFF.md` (Person 3's entry, not edited). The full table with every hash and block is in `docs/live-run.md`, "Second live run, seed 2"; it is not repeated here. Markers: [seen in terminal] = read by a coding agent on Shriya's laptop, or seen by Shriya in the verifier terminal and pasted into the chat (stated each time); [read on chain by Person 3] = from `docs/HANDOFF.md`; [seen in browser] = reported by Shriya, not seen by a coding agent on Shriya's laptop; [not seen].
 
 | # | Check | Status | Marker | Result |
 |---|---|---|---|---|
@@ -368,7 +368,7 @@ Written by the assistant from `GET /decisions` (read from the running backend), 
 | 2 | Flag #5 promoted, verifier confirms | run | [read on chain by Person 3]; decision [seen in terminal] | promote block 52086814 (05:47:11 UTC), confirm block 52086907 (05:47:30 UTC on chain), rule `B:behavior-passed`, evidence `0x64fb817f...e1b1`. The decision is stamped 05:47:31 UTC by the verifier's own clock; that is not the block time |
 | 3 | Verify page recomputes the hash | run | [seen in browser] | found on chain, recomputed hash matched |
 | 4 | Null metric blocks the link step | found by the live run | error at 05:47:41 UTC: [seen in terminal] (Shriya's verifier terminal, pasted into the chat; not saved to a file in the repo). Null values in the saved answers: [seen in terminal] | `hopsToExit` is `null` in the Graph Service answers for both link wallets (saved 05:54 UTC) and the strict check refused it with 502, so the link candidates and later events waited |
-| 5 | Fix in `services/backend` | run | `4428e9b` ([seen in terminal]: `git log`); `npm --prefix services/backend run check` 14 of 14 passed (run by the assistant in this session before the commit) | null dropped and logged once; string value, missing name or value, extra key, non-list still 502. The fix ran at 06:11 UTC as an uncommitted working-tree change to `evidence.ts` and `evidence-selftest.ts`; the same two files were committed afterwards as `4428e9b` (07:19:40 UTC). Whether what ran equals what was committed, byte for byte, is **unconfirmed** |
+| 5 | Fix in `services/backend` | run | `4428e9b` ([seen in terminal]: `git log`); `npm --prefix services/backend run check` 14 of 14 passed (run by a coding agent on Shriya's laptop in this session before the commit) | null dropped and logged once; string value, missing name or value, extra key, non-list still 502. The fix ran at 06:11 UTC as an uncommitted working-tree change to `evidence.ts` and `evidence-selftest.ts`; the same two files were committed afterwards as `4428e9b` (07:19:40 UTC). Whether what ran equals what was committed, byte for byte, is **unconfirmed** |
 | 6 | Verifier restarted, links sent | run | startup line 06:11:15 UTC: [seen in terminal] (Shriya's verifier terminal, pasted into the chat; not saved to a file in the repo); decisions [seen in terminal]; chain [read on chain by Person 3] | `0x2CdBb6aE...` `link:funded-and-forwards`, `0xa02F5ef4...` `link:structured-outflow`; six candidates refused (five `link:known-victim`, one `link:inbound-only-or-insufficient`) |
 | 7 | `getStatus` | run | [read on chain by Person 3] | target 3, four members 3, exit point 3 (ExitPoint), both links 4 |
 | 8 | Website: Check address and Decisions | run | [seen in browser] | Confirmed for the target, Linked for both link wallets, rows on Decisions |
@@ -379,12 +379,12 @@ One failing link candidate blocks the remaining candidates and all later events 
 
 ### Not run
 - The `config/rules.json` variant of the config-change test (only `scoring.json` was run).
-- The Basescan Overview tab of the seed 1 confirm (step 12 of `docs/live-run.md`; [not seen]). The Overview tab of the seed 2 confirm was seen in the browser on 2026-10-30 at about 10:32 UTC (4:02 PM IST): Status Success, block 52086907, timestamp 05:47:30 UTC, same as the on-chain time Person 3 recorded; the assistant did not see the screen.
+- The Basescan Overview tab of the seed 1 confirm (step 12 of `docs/live-run.md`; [not seen]). The Overview tab of the seed 2 confirm was seen in the browser on 2026-10-30 at about 10:32 UTC (4:02 PM IST): Status Success, block 52086907, timestamp 05:47:30 UTC, same as the on-chain time Person 3 recorded; a coding agent on Shriya's laptop did not see the screen.
 - A Basescan view of the seed 2 promote and link transactions: not reported as seen.
 - The time the seed 2 load ran: no file records it. The verifier lines at 05:47:41 and 06:11:15 were seen only in Shriya's terminal and are not saved to a file in the repo.
 
 ## 16. Final checks of 2026-10-30: hardcoding audit and fresh clone
-Everything in this section is [seen in terminal]: the assistant read it from command output. Nothing was sent to a chain or to TigerGraph, and no `.env` was read.
+Everything in this section is [seen in terminal]: a coding agent on Shriya's laptop read it from command output. Nothing was sent to a chain or to TigerGraph, and no `.env` was read.
 
 ### Hardcoding audit (AGENTS.md section 7), on `main` at `616e885`
 - **Address grep:** one match. `OLD_BUNDLE_HASH` in `services/backend/src/scripts/evidence-selftest.ts` is a 64-character hash, not an address (the pattern matches its first 40 characters). It is marked as a fixture in the file.
