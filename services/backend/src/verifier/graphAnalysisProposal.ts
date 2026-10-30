@@ -38,7 +38,7 @@ export const analysisProposalSchema = z.object({
   behaviorScore: z.number(),
   /** passed through unmodified into the evidence bundle */
   signals: z.array(z.looseObject({ name: z.string() })),
-  /** the numbers behind the score; accepted and read, but the evidence schema (shared/) has no field for them */
+  /** the numbers behind the score; the evidence schema (shared/) has an optional `metrics` field (633405d) and null metric values are dropped by the builder (4428e9b) */
   metrics: z.array(z.looseObject({ name: z.string() })).optional(),
   members: z.array(address),
   exitPoints: z.array(address),
