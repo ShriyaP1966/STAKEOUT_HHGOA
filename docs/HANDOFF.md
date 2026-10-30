@@ -40,6 +40,19 @@ Recorded from the chain, not from memory: every row below was read back from the
 
 The verifier (Person 2) confirmed 23 seconds after the promote, using the live Graph Service (Person 1's first version, completed by Person 2) and `config/rules.json`. Afterwards `getStatus` returned 3 (Confirmed) for the target and 4 (Linked) for both linked wallets, all in the same cluster.
 
+### Second confirm, synthetic seed 2
+Seed 2 was loaded into the graph and checked through the Graph Service by Person 2, and the verifier ran live on the code with optional evidence metrics (08db07b). The target was chosen by Person 2 as the seed 2 counterpart of flag #4, and `getStatus` returned 0 for it before the report.
+
+| Time (UTC) | Block | Event | Detail | Tx |
+|---|---|---|---|---|
+| 2026-10-30 05:41:38 | 52085149 | ReportSubmitted | report #5, target `0x8fdb72a34980be64D347BdcDda5117b919f538DC` | `0x4d39fec723d84cef558dc00cd47ae69031cdda40ac9311b48ea4814e5fe8fc06` |
+| 2026-10-30 05:47:11 | 52086814 | Promoted | flag #5, stake 0.001 ETH | `0x8b94cf8666840dd04c585b1bfceb6fd81a3113e5b6972aab062506953fe89ab6` |
+| 2026-10-30 05:47:30 | 52086907 | Confirmed | cluster `0x60dbbc2efb156c02d0b4b3cca0efbdbc5a19efb6466dac31d8fad7e419eaab78`, 4 members, 1 exit point, evidence `0x64fb817f7865fa3a38a14f62cc83e3e55f9d68e1e76ac9ecd3b26a412fa6e1b1` | `0xd0e6996acb3f2f2566ea95bde3388cdd4efc653e1f811674a888280aaaca933a` |
+| 2026-10-30 06:11:22 | 52094069 | Linked | `0x2CdBb6aE7a3020E0B98D74eA523f341BDe601eC1` | `0x32972de67b335128f47a4a50e4f0bccc214a929106953395382b33cb4c45be13` |
+| 2026-10-30 06:11:31 | 52094115 | Linked | `0xa02F5ef49C7d4511cbfd7C0696C1760AbB7fBBBA` | `0xd1c887741100b049aa7db19884700dc784b0589b0acd68d8ced0ede217e7b0c4` |
+
+The verifier confirmed 19 seconds after the promote. The links came later because a null `hopsToExit` metric first blocked them (reported and fixed by Person 2 in `services/backend`). Afterwards `getStatus` returned 3 (Confirmed) for the target and the other three members, 3 with role ExitPoint for the exit point `0x265632094a04fCdE45A00607B90C305da0480377`, and 4 (Linked) for both linked wallets, all in the same cluster. The exit point appears only in exitPoints, not in members.
+
 ### Earlier flags on the way there
 | Flag | Target | Promoted (UTC) | Outcome |
 |---|---|---|---|
@@ -49,7 +62,7 @@ The verifier (Person 2) confirmed 23 seconds after the promote, using the live G
 | #3 | same member | 2026-10-30 01:07:33 | Verifier in dry run (reported by Person 2); lapsed |
 
 ### Stakes
-Every stake was returned in full, with no slashing. Flag #4's stake was credited by the confirm; the lapsed flags were expired first.
+Every stake was returned in full, with no slashing. The stakes of flags #4 and #5 were credited by their confirms; the lapsed flags were expired first.
 
 | Time (UTC) | Event | Tx |
 |---|---|---|
@@ -60,5 +73,6 @@ Every stake was returned in full, with no slashing. Flag #4's stake was credited
 | 2026-10-30 02:00:02 | Expired flag #1 | `0xe579f6aa243b56167a8473c7c9fee9f7cb63695b52f6b4c73e36fbea766c85ea` |
 | 2026-10-30 02:00:04 | Expired flag #3 | `0xa3421dd2c19e11636dea0aeff4052abc9e253675ce33fa273d042d05363b0e27` |
 | 2026-10-30 02:00:07 | Withdrawn 0.003 ETH (flags #1, #3, #4) | `0x9ce0772be9bd25459ee4f89b650e462855328a568ac98bda5dcecc8a82e2fa8c` |
+| 2026-10-30 07:28:08 | Withdrawn 0.001 ETH (flag #5) | `0xee7d4f72dea040e28d4b527044dbc0ba22db6669ae07803f86fa138a5b539f98` |
 
 To check any row, open `https://sepolia.basescan.org/tx/<tx>`.
