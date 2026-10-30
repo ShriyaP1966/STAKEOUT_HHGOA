@@ -87,7 +87,7 @@ The step-by-step runbook for the live Base Sepolia run (graph service, verifier,
 - A scammer who slows down could evade the speed signal.
 - The tuned set and the held-out set come from the same generator.
 - `unrelatedReporterCount` counts distinct reports, not verified unrelated reporters.
-- The graph's report `evidence_hash` uses SHA-256, while the contract side uses keccak256. A decision with Person 3 is pending.
+- The graph's report `evidence_hash` is a SHA-256 of the graph's own synthetic report record (reporter, target, narrative, reportedAt). It is not an evidence bundle hash, so it does not match any on-chain `evidenceHash` and is not used by the `/verify` page. Changing the algorithm alone would not fix that. It is a known difference, to be decided with Person 3 after the demo.
 - The evidence bundle schema has no `metrics` field. This is also pending.
 
 ## What was run, and what a human must run
