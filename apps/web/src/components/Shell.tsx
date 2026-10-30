@@ -44,8 +44,8 @@ function shortAddress(address: string): string {
 }
 
 const LOGO_SIZES = {
-  md: { mark: 34, text: "gap-0.5 text-[26px]" },
-  lg: { mark: 46, text: "gap-1 text-[36px]" },
+  md: { mark: 34, text: "text-[26px]", pull: "-ml-1.5" },
+  lg: { mark: 46, text: "text-[36px]", pull: "-ml-2" },
 };
 
 export function Logo({ size = "md", hole = "var(--header)", className = "" }: { size?: keyof typeof LOGO_SIZES; hole?: string; className?: string }) {
@@ -53,7 +53,7 @@ export function Logo({ size = "md", hole = "var(--header)", className = "" }: { 
     <span className={`inline-flex items-center font-bold tracking-tight ${LOGO_SIZES[size].text} ${className}`}>
       <TrailLensMark size={LOGO_SIZES[size].mark} hole={hole} />
       <span className="sr-only">stakeout</span>
-      <span aria-hidden="true" className="whitespace-nowrap">
+      <span aria-hidden="true" className={`whitespace-nowrap ${LOGO_SIZES[size].pull}`}>
         stake
         <svg viewBox="0 0 100 100" className="mr-[0.034em] ml-[0.047em] inline-block h-[0.532em] w-[0.531em] align-[-0.016em]" focusable="false">
           <circle cx="50" cy="50" r="38" fill="none" stroke="currentColor" strokeWidth="24" />
