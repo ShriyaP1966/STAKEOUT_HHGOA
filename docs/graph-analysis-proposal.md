@@ -1,6 +1,6 @@
 # Graph Service analysis response (as built in services/graph; verifier written against it)
 
-Status: **describes the real `services/graph` service** (read-only for Person 2), checked against its code (`app/service.py`), not yet against a live run from the backend. `shared/schemas/analysis.json` still does not exist; if it appears it replaces this document and `services/backend/src/verifier/graphAnalysisProposal.ts`. The backend tests use a stub server with exactly this shape (marked as fixtures in `verifier-selftest.ts`).
+Status: **describes the real `services/graph` service** (read-only for Person 2), checked against its code (`app/service.py`), not yet against a live run from the backend. `shared/schemas/analysis.json` now exists (added in commit `bea41e3` and approved by Person 3); this document still describes the same shape in prose. The backend's own check in `services/backend/src/verifier/graphAnalysisProposal.ts` is looser than the schema (any address casing, optional `metrics`, extra keys) and is unchanged until after submission. The backend tests use a stub server with exactly this shape (marked as fixtures in `verifier-selftest.ts`).
 
 ## Routes the backend calls
 1. `GET {GRAPH_SERVICE_URL}/analysis/{address}` (alias of the primary `/analyze/{address}`).
