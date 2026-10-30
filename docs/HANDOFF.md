@@ -38,12 +38,12 @@ Recorded from the chain, not from memory: every row below was read back from the
 | 2026-10-30 01:24:16 | 52007937 | Linked | `0x37b363F437AADce2a7Dc3Ef0b7a191bD18323383` | `0xfd0de8848ad8be520b3949db7b5df74d5b5af32c30e57fea4ce77e621473b5ea` |
 | 2026-10-30 01:24:24 | 52007976 | Linked | `0xa8DB670002bFD989BE9E448a29019D9f436B54C9` | `0x8655ce0028b09ee98f65c90a1a90a29d91ad2be19bd025ddf965eaeb14b82725` |
 
-The verifier (Person 2) confirmed 23 seconds after the promote, using the live Graph Service (Person 1) and `config/rules.json`. Afterwards `getStatus` returned 3 (Confirmed) for the target and 4 (Linked) for both linked wallets, all in the same cluster.
+The verifier (Person 2) confirmed 23 seconds after the promote, using the live Graph Service (Person 1's first version, completed by Person 2) and `config/rules.json`. Afterwards `getStatus` returned 3 (Confirmed) for the target and 4 (Linked) for both linked wallets, all in the same cluster.
 
 ### Earlier flags on the way there
 | Flag | Target | Promoted (UTC) | Outcome |
 |---|---|---|---|
-| #0 | `0x944Df10923b47ba3a8cc4311f5Fa22B078fCF0f7` (random address) | 2026-10-29 12:33:32 | Not confirmed (the Graph Service was not yet reachable from the verifier); lapsed |
+| #0 | `0x944Df10923b47ba3a8cc4311f5Fa22B078fCF0f7` (random address) | 2026-10-29 12:33:32 | Not confirmed; lapsed |
 | #1 | `0x8ff48310F884196C87EbEfEfE1bF4056D0A6A072` (random address, no graph data) | 2026-10-29 23:50:59 | Not confirmed; lapsed |
 | #2 | `0xb2b3f4d58D82cA6386D2C96E760e819b85c924C3` (cluster member) | 2026-10-30 00:54:12 | Skipped by the verifier before sending, because the Graph Service listed the exit point in both members and exitPoints (reported by Person 2, fixed in 1a9f8f9); lapsed |
 | #3 | same member | 2026-10-30 01:07:33 | Verifier in dry run (reported by Person 2); lapsed |

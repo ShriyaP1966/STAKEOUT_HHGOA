@@ -23,13 +23,32 @@ Read `AGENTS.md` before changing anything.
 
 ## Setup
 
-Prerequisites: Node.js and npm. The commands below were run with Node 26.8.1 and npm 11.19.0.
+Prerequisites:
+
+| Part | Runtime |
+|---|---|
+| Contracts, scripts and web app | Node.js and npm. Tested with Node 26.8.1 and npm 11.19.0 |
+| Backend and verifier (`services/backend`) | **Node 24** (`>=24 <25`, enforced by its `package.json`; `services/backend/.nvmrc` is `24`). Use Node 24 in the terminal that runs it |
+| Graph service (`services/graph`) | Python. Tested on Python 3.13.15; see `services/graph/README.md` |
+
+Install every part from the repo root:
 
 ```sh
 npm ci
+npm ci --prefix shared/hash
+npm ci --prefix apps/web
+npm ci --ignore-scripts --prefix services/backend
+```
+
+`shared/hash` is installed separately because the web app and the backend both import it and it brings its own copy of ethers. The backend needs `--ignore-scripts` on Windows; its README explains why. The graph service uses its own Python environment: follow "Install" in `services/graph/README.md`.
+
+npm may warn that install scripts are not covered by `allowScripts`, for example for `utf-8-validate` (pulled in by the wallet libraries), `keccak` or `secp256k1`. npm skips those native build steps, and each of these packages then loads its built-in JavaScript version instead, so the warning needs no action.
+
+Then check the contracts and the web app:
+
+```sh
 npm run compile
 npm test
-npm ci --prefix apps/web
 npm run web:test
 ```
 
