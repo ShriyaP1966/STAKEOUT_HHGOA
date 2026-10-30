@@ -34,7 +34,7 @@ pip install -r requirements.txt   (versions are pinned)
 | `SCENARIO_SEED` | `generate`, if `--seed` is not given | whole number |
 | `GRAPH_SERVICE_PORT` | the service, live `evaluate` | port on 127.0.0.1 |
 
-Nothing has a default. A missing value stops the program and names the variable. The scoring numbers are read from `config/scoring.json` at the repo root; **that file does not exist yet** (see `docs/graph-config-proposal.md`), so the service and `load` stop with a clear message until the team adds it.
+Nothing has a default. A missing value stops the program and names the variable. The scoring numbers are read from `config/scoring.json` at the repo root; the file is in the repo (`config/scoring.json`); if it is missing the service and `load` stop with a clear message. The proposal behind it is in `docs/graph-config-proposal.md`.
 
 ## Commands (from `services/graph`)
 | Do | Command | Needs TigerGraph |
@@ -65,12 +65,15 @@ Wallet(address PK, is_exit_point BOOL, data_source STRING) · Cluster(cluster_id
 ## API
 | Route | Answer |
 |---|---|
-| `GET /analyze/{address}` (alias `/analysis/{address}`) | `target` (lower-case), `clusterId` (or null), `behaviorScore` 0 to 1, `signals` (objects with `name`, only the ones that fired), `metrics`, `members` (`[]` when no cluster), `exitPoints`, `unrelatedReporterCount`, `dataSource`; for a wallet outside every cluster that is connected to one also `link` (five flags), `linked`, `reason`. 404 `{"detail": "No graph data for this address."}` if the graph has no such wallet (TigerGraph "Failed to convert user vertex id" or `found` 0), 400 for a bad address; any other TigerGraph error is a 502 with its message |
+| `GET /analyze/{address}` (alias `/analysis/{address}`) | `target` (lower-case), `clusterId` (or null), `behaviorScore` 0 to 1, `signals` (objects with `name`, only the ones that fired), `metrics`, `members` (`[]` when no cluster; an address that is also in `exitPoints` is left out of `members`, so the two lists never share an address), `exitPoints`, `unrelatedReporterCount`, `dataSource`; for a wallet outside every cluster that is connected to one also `link` (five flags), `linked`, `reason`. 404 `{"detail": "No graph data for this address."}` if the graph has no such wallet (TigerGraph "Failed to convert user vertex id" or `found` 0), 400 for a bad address; any other TigerGraph error is a 502 with its message |
 | `GET /link_candidates/{clusterId}` (alias `/clusters/{clusterId}/link-candidates`) | `candidates` (every wallet outside the cluster that touches it) and `details` with the five flags and the linking verdict for each |
 | `GET /cluster/{clusterId}/graph` (an unknown cluster id is a 404 here and on /link_candidates: `{"detail": "No graph data for this cluster."}`) | `nodes` (role `member`, `exit_point` or `counterparty`) and real `edges` (`src`, `tgt`, `amount`, `timestamp`, `txId`) |
 | `GET /health` | `{"status":"ok"}` |
 
 Exact proposed schema and the open questions: `docs/graph-config-proposal.md`. The Person 2 verifier reads the first two routes under the alias spellings today.
+
+## Live run
+The step-by-step runbook for the live Base Sepolia run (graph service, verifier, reading decisions, troubleshooting, checklist) is `docs/live-run.md`.
 
 ## How it decides (definitions in the code docstrings)
 - **Relay**: receives and sends, passes at least `passThroughRatioMin` of its inflow on, and does it fast (lower-median forward time at most `rapidForwardTimeMaxSeconds`).
