@@ -10,18 +10,18 @@ app/        config.py (settings, no defaults) · service.py (the HTTP API) · ma
 graph/      schema.gsql · queries/*.gsql · schema_spec.py · tg.py (the only TigerGraph code) · scoring_config.py (reads config/scoring.json)
             metrics.py scoring.py detect.py linking.py offline.py (pure Python, no database) · ids.py
             generate.py load.py evaluate.py (command line tools)
-scripts/    test_connection.py · setup_graph.py · run_service.py
+scripts/    test_connection.py · setup_graph.py · diagnose_graph.py · run_service.py · sample_addresses.py
 tests/      offline checks, a test scoring file and a test-only fake backend
 ```
 
-## Install (Python 3.11)
+## Install (tested on Python 3.13.15)
 ```
 cd services/graph
 python -m venv .venv
 .venv\Scripts\activate            (Windows)     or    source .venv/bin/activate
 pip install -r requirements.txt   (versions are pinned)
 ```
-`pyproject.toml` and `uv.lock` of the source repository were dropped; `requirements.txt` is the only dependency list. `.python-version` says 3.11. (The offline checks below were run on Python 3.13 only, because 3.11 is not installed on the machine used.)
+`pyproject.toml` and `uv.lock` of the source repository were dropped; `requirements.txt` is the only dependency list. `.python-version` says 3.11 (untested here). The install and the offline checks below were tested on Python 3.13.15 only.
 
 ## Settings: `services/graph/.env` (git-ignored; `.env.example` has the names only)
 | Name | Needed by | Meaning |
@@ -47,8 +47,8 @@ Nothing has a default. A missing value stops the program and names the variable.
 | Load into the graph | `python -m graph.load` | yes |
 | Run the service | `python scripts/run_service.py` | yes |
 | Evaluate against the live service | `python -m graph.evaluate` | yes |
-| Evaluate offline (Python reference analysis) | `python -m graph.evaluate --offline` (add `--scoring tests/fixtures/scoring.test.json` while `config/scoring.json` is missing) | no |
-| One example address per role and scenario, for manual testing (reads the test-only ground truth) | `python scripts/sample_addresses.py` | no |
+| Evaluate offline (Python reference analysis) | `python -m graph.evaluate --offline` (run `python -m graph.generate --seed N` first: `data/` is git-ignored, so a fresh clone has no data) | no |
+| One example address per role and scenario, for manual testing (reads the test-only ground truth) | `python scripts/sample_addresses.py` (run `python -m graph.generate --seed N` first: `data/` is git-ignored, so a fresh clone has no ground-truth file) | no |
 | Offline checks | `python -m unittest discover -s tests -t .` | no |
 
 `setup_graph.py` **never drops or alters an existing graph**: if `TG_GRAPH_NAME` exists it compares it with `graph/schema_spec.py` and prints the differences (exit 2 on a blocking difference, queries not installed).
@@ -86,8 +86,7 @@ Run by the assistant (offline, Python 3.13, test scoring file): the unit checks,
 Human steps, in order, from `services/graph` (the first one is new):
 1. In `.env` set `TG_GRAPH_NAME` to a **new** graph name (not `stakeout_graph`, not `stakeout_v2`). Everything else stays as it is.
 2. `python scripts/test_connection.py` (connects and lists installed queries; for a new name it lists none).
-3. Make sure `config/scoring.json` exists.
-4. `python scripts/setup_graph.py`. It creates the global edge type `TRANSFER_TX` if it is missing (and checks TigerGraph's listing for it and its discriminator), reuses the existing vertex types and `MEMBER_OF`/`REPORTED` only if they match, creates the new graph, then installs the three queries. Paste any error back; it prints TigerGraph's raw answer.
-5. `python -m graph.generate --seed 1`, then `python -m graph.load`. The load ends with a line saying every repeated transfer is its own `TRANSFER_TX` edge.
-6. `python scripts/run_service.py`, then `curl.exe -i http://127.0.0.1:<port>/analyze/<a wallet from: python scripts/sample_addresses.py>`.
-7. `python -m graph.evaluate`. For seed 1 the linking table should now read TP 2, FN 0, as the offline run does (`python -m graph.evaluate --offline`).
+3. `python scripts/setup_graph.py`. It creates the global edge type `TRANSFER_TX` if it is missing (and checks TigerGraph's listing for it and its discriminator), reuses the existing vertex types and `MEMBER_OF`/`REPORTED` only if they match, creates the new graph, then installs the three queries. Paste any error back; it prints TigerGraph's raw answer.
+4. `python -m graph.generate --seed 1`, then `python -m graph.load`. The load ends with a line saying every repeated transfer is its own `TRANSFER_TX` edge.
+5. `python scripts/run_service.py`, then `curl.exe -i http://127.0.0.1:<port>/analyze/<a wallet from: python scripts/sample_addresses.py>`.
+6. `python -m graph.evaluate`. For seed 1 the linking table should now read TP 2, FN 0, as the offline run does (`python -m graph.evaluate --offline`).

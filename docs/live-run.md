@@ -42,7 +42,7 @@ curl.exe -i http://127.0.0.1:<GRAPH_SERVICE_PORT>/analyze/<address>
 
 - `/health` answers `{"status":"ok"}` [app/service.py]. It does not touch TigerGraph, so it proves the process is up, not that the graph answers.
 - `/analyze/<address>`: 200 with `target`, `clusterId`, `behaviorScore`, `signals`, `metrics`, `members`, `exitPoints`, `unrelatedReporterCount`, `dataSource`. **`members` never contains an address that is also in `exitPoints`** (commit 1a9f8f9). 404 `No graph data for this address.` or `Wallet not found in the graph.` when the graph has no such wallet; 400 for a malformed address; 502 with TigerGraph's message for any other graph failure [app/service.py].
-- Use a wallet that really is in the loaded graph: `python scripts/sample_addresses.py` lists examples (reads test-only ground truth, offline) [services/graph/README.md].
+- Use a wallet that really is in the loaded graph: `python scripts/sample_addresses.py` lists examples (reads the test-only ground truth in `services/graph/data/`, so run `python -m graph.generate --seed N` first: `data/` is git-ignored and a fresh clone has none) [services/graph/README.md].
 
 ## 3. Start the verifier
 
