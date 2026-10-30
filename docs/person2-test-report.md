@@ -382,3 +382,28 @@ One failing link candidate blocks the remaining candidates and all later events 
 - The Basescan Overview tab of the seed 1 confirm (step 12 of `docs/live-run.md`; [not seen]). The Overview tab of the seed 2 confirm was seen in the browser on 2026-10-30 at about 10:32 UTC (4:02 PM IST): Status Success, block 52086907, timestamp 05:47:30 UTC, same as the on-chain time Person 3 recorded; the assistant did not see the screen.
 - A Basescan view of the seed 2 promote and link transactions: not reported as seen.
 - The time the seed 2 load ran: no file records it. The verifier lines at 05:47:41 and 06:11:15 were seen only in Shriya's terminal and are not saved to a file in the repo.
+
+## 16. Final checks of 2026-10-30: hardcoding audit and fresh clone
+Everything in this section is [seen in terminal]: the assistant read it from command output. Nothing was sent to a chain or to TigerGraph, and no `.env` was read.
+
+### Hardcoding audit (AGENTS.md section 7), on `main` at `616e885`
+- **Address grep:** one match. `OLD_BUNDLE_HASH` in `services/backend/src/scripts/evidence-selftest.ts` is a 64-character hash, not an address (the pattern matches its first 40 characters). It is marked as a fixture in the file.
+- **Key-word grep:** about 250 matching lines in 40 files. None contains a real value. They are variable names, validators, redaction code, randomly generated test keys, and dummy test strings such as `"s3cret-value"` in `services/graph/tests`. `.env` files were excluded from both greps, as were `node_modules`, `.venv`, build caches and the git-ignored `results/` and `data/` folders.
+
+### Fresh clone of `main` at `81c3228`, in a new empty folder
+- **Installs:** all succeeded: root `npm ci`, `shared/hash`, `apps/web`, `services/backend` (`--ignore-scripts`), and the graph service `pip install`.
+- **Tests:** contracts `npm test`: 83 passing. `services/graph` unittest: 154 tests, OK (skipped=1). `services/backend` `npm run check`: 15 of 15. `apps/web` `npm run web:test`: 13 files passed and 2 skipped, 102 tests passed and 11 skipped. `npm run web:build`, web `lint` and `typecheck`, root `typecheck` and `lint`: exit 0.
+- **No env file was created and no service was started.** So everything that needs TigerGraph, a chain or a key was not run.
+- **Backend `npm start` with no `.env`** stops at config validation with exit 1 and names every missing variable, including `LISTEN_HOST`.
+- **Node:** Node 24.19.0 was used although the root README says it was tested on Node 26.8.1.
+- **`LISTEN_HOST`** is documented in the root `README.md`, in `services/backend/README.md` and in `services/backend/.env.example`.
+
+### Not run
+- Contracts deploy (and anything else that needs a chain or a deployer key).
+- Anything that needs credentials or a running service: the live backend, the verifier, the graph service, `test_connection.py`, `setup_graph.py`, `graph.load`.
+- The built web app opened in a browser.
+
+### Unconfirmed
+- Which `services/graph` test was skipped (1 skipped), and why.
+- The names of the 11 skipped web tests. The reason (local-node tests need `STAKEOUT_LOCAL_RPC_URL`) is from the README, not confirmed in the test names.
+- Whether the web build shows a configuration-error screen without `apps/web/.env.local`, as the README says.

@@ -8,6 +8,13 @@ TypeScript service: complaint extraction, evidence building and storage, a hashe
 3. `npm run gen-wallet` creates the verifier wallet and writes its key to `.env` (never printed). It refuses to run if a key is already set.
 4. `npm start`
 
+## What you need to run the live parts
+The offline checks (`npm run check`) need none of this. The live parts need the following; this only restates what the repo's own README files, `.env.example` files and `docs/` already say, with no values and no keys.
+- **Graph Service data:** a TigerGraph Savanna workspace and its credentials for `services/graph` (`TG_HOST`, and `TG_SECRET` or `TG_USERNAME` with `TG_PASSWORD`). `services/graph/README.md` says which of them each step needs; it does not say where to get a Savanna workspace, so ask the project owner.
+- **AI explanation:** an OpenAI-compatible LLM endpoint, key and model name (`LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL`). The repo does not say which provider to use or where to get a key: ask the project owner.
+- **Chain access:** a Base Sepolia RPC URL (`RPC_URL`, with `CHAIN_ID` matching it) and the deployment file in `deployments/` (`DEPLOYMENT_PATH`). The deployment file comes from the contract owner (Person 3); see the root `README.md`.
+- **Verifier wallet:** made with `npm run gen-wallet` (it writes `VERIFIER_PRIVATE_KEY` to `.env` and never prints it). The wallet must hold `VERIFIER_ROLE` on the deployed contract, which the contract owner grants to its public address (`npm run verifier-address` prints it; see `docs/person2-handoff.md`). It also needs some test ETH for gas; the repo does not say where to get it for this wallet (the root `README.md` says only that the deployer is funded from a testnet faucet): ask the project owner. `npm run verifier-status` checks the role without sending anything.
+
 ## Environment variables (exactly those read in `src/config.ts`)
 All are required, except the `NOTIFY_` and `DODO_` variables, which may be left empty. There are no defaults in code; a missing or invalid one stops startup with a message naming it (never its value). The `/blocklist` variables are checked when that endpoint is first used, so the rest of the API runs without them.
 
