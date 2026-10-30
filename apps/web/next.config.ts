@@ -14,6 +14,7 @@ function proxyRewrite(proxyPath: string, rawUrl: string | undefined) {
 const nextConfig: NextConfig = {
   turbopack: { root: repoRoot },
   outputFileTracingRoot: repoRoot,
+  outputFileTracingIncludes: { "/**": ["../../deployments/**", "../../config/**"] },
   experimental: { externalDir: true },
   async rewrites() {
     return [
