@@ -27,7 +27,7 @@ const CONTAINER = "mx-auto w-full max-w-[1440px] px-4 sm:px-6 lg:px-10";
 
 const FOOTER_LINKS = [
   { href: "/faq", label: "FAQ" },
-  { href: "/support", label: "Help and contact" },
+  { href: "/support", label: "Help and Contact" },
   { href: "/privacy", label: "Privacy" },
   { href: "/terms", label: "Terms" },
 ];

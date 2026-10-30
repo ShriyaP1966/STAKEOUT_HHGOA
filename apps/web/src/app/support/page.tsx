@@ -5,7 +5,7 @@ import { Notice, PageHeader, Section } from "@/components/ui";
 import { CONTACT_EMAIL } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Help and contact",
+  title: "Help and Contact",
   description: "How to get help with Stakeout, report a bug or contact Team Synergy.",
 };
 
@@ -36,7 +36,7 @@ const TEAM = [
 export default function SupportPage() {
   return (
     <>
-      <PageHeader title="Help and contact" description="Stakeout is a hackathon prototype built by Team Synergy. Here is how to get help or reach us." />
+      <PageHeader title="Help and Contact" description="Stakeout is a hackathon prototype built by Team Synergy. Here is how to get help or reach us." />
       <Notice tone="warn" title="Stay safe">
         <p>
           We will never ask for your seed phrase or private key. We cannot recover funds sent to a scammer. If someone claiming to be Stakeout support
