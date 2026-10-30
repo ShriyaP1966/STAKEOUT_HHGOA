@@ -58,7 +58,7 @@ def live_rows(base_url: str, addresses: list[str], cfg: Scoring) -> dict[str, di
             r.raise_for_status()
             body = r.json()
             result = {"behaviorScore": body["behaviorScore"], "signals": body["signals"]}
-            in_cluster = body["clusterId"] is not None and address in body["members"]
+            in_cluster = body["clusterId"] is not None and (address in body["members"] or address in body["exitPoints"])
             out[address] = {
                 "suspicious": is_suspicious(result, cfg), "in_cluster": in_cluster,
                 "linked": body.get("linked") if not in_cluster else None, "score": body["behaviorScore"],
