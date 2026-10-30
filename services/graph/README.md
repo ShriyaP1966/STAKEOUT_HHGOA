@@ -88,7 +88,8 @@ The step-by-step runbook for the live Base Sepolia run (graph service, verifier,
 - The tuned set and the held-out set come from the same generator.
 - `unrelatedReporterCount` counts distinct reports, not verified unrelated reporters.
 - The graph's report `evidence_hash` is a SHA-256 of the graph's own synthetic report record (reporter, target, narrative, reportedAt). It is not an evidence bundle hash, so it does not match any on-chain `evidenceHash` and is not used by the `/verify` page. Changing the algorithm alone would not fix that. It is a known difference, to be decided with Person 3 after the demo.
-- The evidence bundle schema has no `metrics` field. This is also pending.
+- The evidence bundle schema now has an optional `metrics` field (merged in `633405d`). Metrics the graph cannot measure for a wallet (for example `hopsToExit`, `medianForwardTime`) come back as `null` from `/analyze`; the backend leaves those entries out of the evidence bundle and logs it once (`4428e9b`).
+- One failing link candidate blocks the remaining candidates and all later events until the cause is fixed. The verifier fails loudly on purpose and retries. This was found only by the second live run (seed 2, 2026-10-30), where a `null` metric was refused; no self-test had caught it. See "Second live run, seed 2" in `docs/live-run.md`.
 
 ## What was run, and what a human must run
 Run by the assistant (offline, Python 3.13, test scoring file): the unit checks, `generate`, `load --dry-run`, `evaluate --offline` for seeds 1, 2, 3. **Not run, needs your TigerGraph account:** everything marked "Needs TigerGraph" above.

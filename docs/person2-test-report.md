@@ -358,3 +358,26 @@ The file says `seed` 1, `mode` "live Graph Service", scored with `config/scoring
 - Whether the false positive or the thin merchant margin matter outside the synthetic generator (see the limitations in `services/graph/README.md`).
 - Who ran the seed-1 evaluation and exactly when.
 - The details of the live verifier run beyond what `docs/HANDOFF.md` records.
+
+## 15. Run of 2026-10-30 (second live run): seed 2 on the real Graph Service, Base Sepolia, synthetic data
+Written by the assistant from `GET /decisions` (read from the running backend), `services/graph/results/recorded/` (git-ignored) and `docs/HANDOFF.md` (Person 3's entry, not edited). The full table with every hash and block is in `docs/live-run.md`, "Second live run, seed 2"; it is not repeated here. Markers: [seen in terminal] = read by the assistant, or seen by Shriya in the verifier terminal and pasted into the chat (stated each time); [read on chain by Person 3] = from `docs/HANDOFF.md`; [seen in browser] = reported by Shriya, not seen by the assistant; [not seen].
+
+| # | Check | Status | Marker | Result |
+|---|---|---|---|---|
+| 1 | Seed 2 loaded into `stakeout_v3` and queried | run | load: [not seen]; queries: [seen in terminal] | six `/analyze` calls and one cluster graph, all HTTP 200, first at 05:33:18 UTC. Target score 0.875, 1 unrelated reporter, cluster `0x60dbbc2e...aab78` |
+| 2 | Flag #5 promoted, verifier confirms | run | [read on chain by Person 3]; decision [seen in terminal] | promote block 52086814 (05:47:11 UTC), confirm block 52086907 (05:47:30 UTC on chain), rule `B:behavior-passed`, evidence `0x64fb817f...e1b1`. The decision is stamped 05:47:31 UTC by the verifier's own clock; that is not the block time |
+| 3 | Verify page recomputes the hash | run | [seen in browser] | found on chain, recomputed hash matched |
+| 4 | Null metric blocks the link step | found by the live run | error at 05:47:41 UTC: [seen in terminal] (Shriya's verifier terminal, pasted into the chat; not saved to a file in the repo). Null values in the saved answers: [seen in terminal] | `hopsToExit` is `null` in the Graph Service answers for both link wallets (saved 05:54 UTC) and the strict check refused it with 502, so the link candidates and later events waited |
+| 5 | Fix in `services/backend` | run | `4428e9b` ([seen in terminal]: `git log`); `npm --prefix services/backend run check` 14 of 14 passed (run by the assistant in this session before the commit) | null dropped and logged once; string value, missing name or value, extra key, non-list still 502. The fix ran at 06:11 UTC as an uncommitted working-tree change to `evidence.ts` and `evidence-selftest.ts`; the same two files were committed afterwards as `4428e9b` (07:19:40 UTC). Whether what ran equals what was committed, byte for byte, is **unconfirmed** |
+| 6 | Verifier restarted, links sent | run | startup line 06:11:15 UTC: [seen in terminal] (Shriya's verifier terminal, pasted into the chat; not saved to a file in the repo); decisions [seen in terminal]; chain [read on chain by Person 3] | `0x2CdBb6aE...` `link:funded-and-forwards`, `0xa02F5ef4...` `link:structured-outflow`; six candidates refused (five `link:known-victim`, one `link:inbound-only-or-insufficient`) |
+| 7 | `getStatus` | run | [read on chain by Person 3] | target 3, four members 3, exit point 3 (ExitPoint), both links 4 |
+| 8 | Website: Check address and Decisions | run | [seen in browser] | Confirmed for the target, Linked for both link wallets, rows on Decisions |
+
+### New limitation found
+One failing link candidate blocks the remaining candidates and all later events until the cause is fixed (the verifier fails loudly by design). Only the live run found it. Also listed in "Known limitations" in `services/graph/README.md`.
+
+### Not run
+- The `config/rules.json` variant of the config-change test (only `scoring.json` was run).
+- The Basescan Overview tab (step 12 of `docs/live-run.md`), also for the seed 2 transactions.
+- The seed 2 money trail page and its AI summary, and a Basescan view of the seed 2 transactions: not reported as seen.
+- The time the seed 2 load ran: no file records it. The verifier lines at 05:47:41 and 06:11:15 were seen only in Shriya's terminal and are not saved to a file in the repo.
