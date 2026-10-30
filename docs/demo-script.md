@@ -51,7 +51,7 @@ Marker legend for seed 2: **[seen in browser]** = Shriya reported it; the assist
 
 ### 5. The confirm transaction on Basescan
 - **Open:** `https://sepolia.basescan.org/tx/0xd0e6996acb3f2f2566ea95bde3388cdd4efc653e1f811674a888280aaaca933a` (the seed 2 confirm tx, block 52086907).
-- **Should show:** a successful transaction and a Confirmed event in the Logs tab. The Logs tab of this transaction showed a Confirmed event from `0x2BDBEa9039F076b9587C2d692d21407Fbe3A66F7` with cluster `0x60dbbc2e…`, 4 members, 1 exit point and evidence hash `0x64fb817f…e1b1` [seen in browser 2026-10-30, about 10:19 to 10:25 UTC (3:49 to 3:55 PM IST); the assistant did not see the screens]. The Overview tab was never checked [not seen]; for the seed 1 confirm too only the Logs tab was seen.
+- **Should show:** a successful transaction and a Confirmed event in the Logs tab. The Logs tab of this transaction showed a Confirmed event from `0x2BDBEa9039F076b9587C2d692d21407Fbe3A66F7` with cluster `0x60dbbc2e…`, 4 members, 1 exit point and evidence hash `0x64fb817f…e1b1` [seen in browser 2026-10-30, about 10:19 to 10:25 UTC (3:49 to 3:55 PM IST); the assistant did not see the screens]. The Overview tab of this transaction on sepolia.basescan.org showed Status Success; Block 52086907 "Confirmed by Sequencer"; Timestamp Oct-30-2026 05:47:30 AM +UTC; Transaction action "Call Confirm Function"; From `0x5E921119a5168006F82Dfc295242e23b7328cD61`; To `0x2BDBEa9039F076b9587C2d692d21407Fbe3A66F7` (with the green verified-contract tick); Value 0 ETH; Transaction Fee 0.000002754636259938 ETH; Gas Price 0.006 Gwei [seen in browser 2026-10-30 at about 10:32 UTC (4:02 PM IST); the assistant did not see the screen]. Its timestamp 05:47:30 UTC agrees with the on-chain time Person 3 recorded in `docs/HANDOFF.md`. The Overview tab of the seed 1 confirm was NOT checked [not seen]; for that one only the Logs tab was seen.
 - **Time:** not timed.
 - **Say:** "This is the public record. Nobody can edit it."
 
@@ -106,7 +106,7 @@ If the seed 2 steps fail on stage, show this recorded run. Its responses are in 
 - A fresh live confirm on another cluster: unconfirmed.
 - The Reviewer, Pricing and other info pages; challenges and resolution.
 - The Report page and the promote action on the Dashboard (the Dashboard was only viewed, with no wallet connected).
-- The Basescan Overview tab (only the Logs tab was seen, for both confirms).
+- The Basescan Overview tab of the seed 1 confirm (not seen; only its Logs tab was seen), and the pages of the seed 2 promote and link transactions (not seen).
 - The `config/rules.json` variant of the config-change test (only `config/scoring.json` was run).
 - The Basescan page of the seed 2 promote transaction.
 - Any timing in the browser: only the chain times and the 45-minute scan are recorded.

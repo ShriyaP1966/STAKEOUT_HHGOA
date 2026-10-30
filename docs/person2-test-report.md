@@ -379,6 +379,6 @@ One failing link candidate blocks the remaining candidates and all later events 
 
 ### Not run
 - The `config/rules.json` variant of the config-change test (only `scoring.json` was run).
-- The Basescan Overview tab (step 12 of `docs/live-run.md`), also for the seed 2 transactions.
+- The Basescan Overview tab of the seed 1 confirm (step 12 of `docs/live-run.md`; [not seen]). The Overview tab of the seed 2 confirm was seen in the browser on 2026-10-30 at about 10:32 UTC (4:02 PM IST): Status Success, block 52086907, timestamp 05:47:30 UTC, same as the on-chain time Person 3 recorded; the assistant did not see the screen.
 - A Basescan view of the seed 2 promote and link transactions: not reported as seen.
 - The time the seed 2 load ran: no file records it. The verifier lines at 05:47:41 and 06:11:15 were seen only in Shriya's terminal and are not saved to a file in the repo.

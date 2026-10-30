@@ -122,7 +122,7 @@ Read them from the API (`GET /decisions`, server must be running) or the `decisi
 
 ## 6. Manual-test checklist
 
-"Run" means the step was run and the output seen. Per the 2026-10-30 outputs (observed 2026-10-30): **run** by Shriya: steps 1, 3, 4, 5, 6, 7, 8, 9 and 10; **run** via Claude Code on Shriya's laptop: step 2; **reported** by Person 3, not run by Shriya: step 11; **partly**: step 12 (the Overview tab was not checked), step 13 (only the `config/scoring.json` variant was run; the `config/rules.json` variant was not) and step 14 (two different wallets decided). Nothing is entirely "not run" now; the open parts are the Overview tab of step 12 and the `rules.json` variant of step 13. The recorded live runs (2026-10-30: flag #4 on seed 1, confirm 23 seconds after the promote; flag #5 on seed 2, confirm 19 seconds after) are in `docs/HANDOFF.md`; the seed 2 run is in "Second live run, seed 2" below. The table's "who / evidence" column refers to the first run.
+"Run" means the step was run and the output seen. Per the 2026-10-30 outputs (observed 2026-10-30): **run** by Shriya: steps 1, 3, 4, 5, 6, 7, 8, 9 and 10; **run** via Claude Code on Shriya's laptop: step 2; **reported** by Person 3, not run by Shriya: step 11; **partly**: step 12 (run for the seed 2 confirm, Logs and Overview tabs; not run for the seed 1 confirm, whose Overview tab was not checked), step 13 (only the `config/scoring.json` variant was run; the `config/rules.json` variant was not) and step 14 (two different wallets decided). Nothing is entirely "not run" now; the open parts are the Overview tab of the seed 1 confirm for step 12 and the `rules.json` variant of step 13. The recorded live runs (2026-10-30: flag #4 on seed 1, confirm 23 seconds after the promote; flag #5 on seed 2, confirm 19 seconds after) are in `docs/HANDOFF.md`; the seed 2 run is in "Second live run, seed 2" below. The table's "who / evidence" column refers to the first run.
 
 | # | Step | Status | Who / evidence |
 |---|---|---|---|
@@ -137,7 +137,7 @@ Read them from the API (`GET /decisions`, server must be running) or the `decisi
 | 9 | Stop; set `VERIFIER_DRY_RUN=false`; start; startup line shows `dry run: false` | run | run by Shriya 2026-10-30, output seen |
 | 10 | Promote a **new** flag; a `confirm` decision with outcome `sent` and a `tx_hash` appears | run | promotion sent by Person 3; decision with tx_hash seen by Shriya 2026-10-30 |
 | 11 | `getStatus(target)` returns 3 (Confirmed); linked wallets return 4 (Linked) | reported | reported by Person 3, not run by Shriya |
-| 12 | The transaction opens on the Base Sepolia explorer | partly | Logs tab seen (Confirmed event), Overview tab not checked |
+| 12 | The transaction opens on the Base Sepolia explorer | partly | run for the seed 2 confirm (Logs tab and Overview tab seen, see "Second live run, seed 2"); not run for the seed 1 confirm (Logs tab seen, Overview tab not checked) |
 | 13 | Change a value in `config/rules.json`, restart, and the decision changes | partly | scoring.json variant run via Claude Code 2026-10-30: fanInMin 2 -> 7 changed behaviorScore 0.9 -> 0.875 and removed the fanIn signal for the same wallet; restored with git restore, result back to 0.9. The config/rules.json variant was not run. |
 | 14 | Repeat with a different address | partly | two different wallets decided |
 
@@ -156,7 +156,7 @@ A script for presenting this is in `docs/demo-script.md`.
 - The Report page and the promote action on the Dashboard.
 - Check address for a wallet with no record (seen later the same day; see "Second live run, seed 2").
 - The Reviewer, Pricing, FAQ, Support, Terms and Privacy pages.
-- The Basescan Overview tab (only the Logs tab was seen, see section 6).
+- The Basescan Overview tab of the seed 1 confirm (only its Logs tab was seen, see section 6).
 - What a browser shows when the backend or the Graph Service is down.
 - Any timing of page loads.
 
@@ -180,6 +180,7 @@ Markers: **[seen in terminal]** = the assistant read it from `/decisions` or a r
 | Money trail, seed 2 | Member (4), Exit point (1), Counterparty (8), Wallets (13), Transfers (17) | [seen in browser, same time window] |
 | Check address, clean wallet `0x5E921119a5168006F82Dfc295242e23b7328cD61` | STATUS: NONE, "No record. This address has no reports, flags, or cluster entries." | [seen in browser, same time window] |
 | Dashboard, no wallet connected | Reports (6) and Flags (6): report #5 for `0x8fdb72a3…` at block 52085149; flag #5 Confirmed, 0.001 ETH, promoted in block 52086814, tx `0x8b94cf8666840dd04c585b1bfceb6fd81a3113e5b6972aab062506953fe89ab6`; flag #4 Confirmed; flag #3 Expired; actions said "Connect a wallet to use this action" | [seen in browser, same time window] |
+| Basescan, Overview tab of the seed 2 confirm tx `0xd0e6996a…` | Status Success; Block 52086907 "Confirmed by Sequencer"; Timestamp Oct-30-2026 05:47:30 AM +UTC (agrees with the on-chain time Person 3 recorded); action "Call Confirm Function"; From `0x5E921119a5168006F82Dfc295242e23b7328cD61`; To `0x2BDBEa9039F076b9587C2d692d21407Fbe3A66F7` (green verified-contract tick); Value 0 ETH; Transaction Fee 0.000002754636259938 ETH; Gas Price 0.006 Gwei | [seen in browser 2026-10-30 at about 10:32 UTC (4:02 PM IST); the assistant did not see the screen] |
 | Basescan, Logs tab of the seed 2 confirm tx `0xd0e6996a…` | a Confirmed event from `0x2BDBEa9039F076b9587C2d692d21407Fbe3A66F7` with cluster `0x60dbbc2e…`, 4 members, 1 exit point and evidence hash `0x64fb817f…e1b1` | [seen in browser, same time window] |
 | Decisions page | showed the rows | [seen in browser] |
 | `getStatus` | target 3, all four members 3, exit point 3 with role ExitPoint, both links 4, same cluster | [read on chain by Person 3] |
@@ -195,7 +196,7 @@ All of this table is [seen in terminal] except the on-chain block and time, whic
 
 **One failing candidate blocks the rest.** The first link candidate failed, and because events are handled in order, that stopped the other candidates and every later event until the cause was fixed. It fails loudly, by design. It was found only by the live run, not by any self-test.
 
-**Not run.** The `config/rules.json` variant of check 13 in section 6. The Basescan Overview tab for check 12 (also for the seed 2 transactions). The Basescan Overview tab, and the Basescan view of the seed 2 promote and link transactions, were not reported as seen.
+**Not run.** The `config/rules.json` variant of check 13 in section 6. The Basescan Overview tab of the seed 1 confirm (check 12; [not seen]). The Basescan pages of the seed 2 promote and link transactions were not reported as seen.
 
 ## Unconfirmed (not stated by any repo file)
 
