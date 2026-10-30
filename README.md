@@ -59,6 +59,8 @@ Create the env files you need from the examples. Each one is git-ignored:
 | `.env` | `.env.example` | `deploy:target` and `safe:calldata -- target` |
 | `.env.localhost` | `.env.example` | `deploy:local`, `seed:local`, and `safe:calldata -- localhost` |
 | `apps/web/.env.local` | `apps/web/.env.example` | The web app at build and dev time |
+| `services/backend/.env` | `services/backend/.env.example` | The backend and the verifier. Every variable is required and described in `services/backend/README.md`. `LISTEN_HOST` is the IP address the backend binds to: set `127.0.0.1` so it listens on this machine only, which is all the web app needs (it reaches the backend through its own `/backend/*` path). Without it the backend stops with a config error naming `LISTEN_HOST` |
+| `services/graph/.env` | `services/graph/.env.example` | The graph service; variables are described in `services/graph/README.md` |
 
 Without them, contract compile and tests still work, and the web app builds but shows a configuration-error screen.
 
