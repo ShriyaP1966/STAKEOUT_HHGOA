@@ -31,6 +31,7 @@
     "dev-graph-selftest": "tsx src/scripts/dev-graph-selftest.ts",
     "dodo-selftest": "tsx src/scripts/dodo-selftest.ts",
     "listen-host-selftest": "tsx src/scripts/listen-host-selftest.ts",
+    "expose-write-routes-selftest": "tsx src/scripts/expose-write-routes-selftest.ts",
     "env-parity": "tsx src/scripts/env-parity.ts",
     "check": "tsx src/scripts/check.ts"
   },

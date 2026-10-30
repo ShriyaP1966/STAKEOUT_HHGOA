@@ -18,7 +18,7 @@ Services involved: the Graph Service (`services/graph`, Python) answers question
 | Chain | `RPC_URL`, `CHAIN_ID`, `RPC_TIMEOUT_MS`, `DEPLOYMENT_PATH`, `VERIFIER_PRIVATE_KEY` |
 | Rules and storage | `RULES_PATH`, `DB_PATH`, `DATA_SOURCE` |
 | Verifier loop | `VERIFIER_DRY_RUN`, `VERIFIER_POLL_INTERVAL_MS`, `VERIFIER_LOG_CHUNK_BLOCKS` |
-| API server (not the verifier) | `PORT`, `LISTEN_HOST`. `LISTEN_HOST` is required, has no default, and must be an IP address; `127.0.0.1` keeps the backend on this machine only, `0.0.0.0` listens on every interface and must be chosen on purpose. A `.env` without it stops the server at start with a message naming `LISTEN_HOST`. |
+| API server (not the verifier) | `PORT`, `LISTEN_HOST`. `LISTEN_HOST` is required, has no default, and must be an IP address; `127.0.0.1` keeps the backend on this machine only, `0.0.0.0` listens on every interface and must be chosen on purpose. A `.env` without it stops the server at start with a message naming `LISTEN_HOST`. `EXPOSE_WRITE_ROUTES` is also required, exactly `true` or `false`: `false` serves only `GET /health`, `GET /decisions` and `GET /evidence/:hash` (the startup log says which mode is on); `true` is the full API. The verifier does not read either variable. |
 | AI (writes the evidence summary only) | `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL`, plus the retry and timeout names in `.env.example` |
 | Optional | `NOTIFY_WEBHOOK_URL`, `NOTIFY_TIMEOUT_MS` |
 

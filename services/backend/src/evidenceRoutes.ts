@@ -21,6 +21,12 @@ export type EvidenceRouteDeps = {
 const buildBody = z.object({ target: z.string() });
 
 export function registerEvidenceRoutes(app: FastifyInstance, deps: EvidenceRouteDeps) {
+  registerEvidenceBuildRoute(app, deps);
+  registerEvidenceReadRoute(app, deps.db);
+}
+
+/** Calls the Graph Service and the AI, and writes a bundle to the database. */
+export function registerEvidenceBuildRoute(app: FastifyInstance, deps: EvidenceRouteDeps) {
   app.post("/evidence/build", async (req) => {
     const body = buildBody.safeParse(req.body);
     if (!body.success || !isAddress(body.data.target) || getAddress(body.data.target) === ZeroAddress) {
@@ -40,11 +46,14 @@ export function registerEvidenceRoutes(app: FastifyInstance, deps: EvidenceRoute
     }
     return createEvidence({ llm: deps.llm, rules, dataSource: deps.dataSource, db: deps.db, now: deps.now }, analysis);
   });
+}
 
+/** Reads a stored bundle by hash. Read-only. */
+export function registerEvidenceReadRoute(app: FastifyInstance, db: Db) {
   app.get("/evidence/:hash", async (req) => {
     const { hash } = req.params as { hash: string };
     if (!/^0x[0-9a-fA-F]{64}$/.test(hash)) throw new UserError("hash must be 0x followed by 64 hex characters");
-    const bundle = deps.db.getEvidence(hash);
+    const bundle = db.getEvidence(hash);
     if (!bundle) throw new UserError("No evidence stored for that hash", 404);
     return { hash, bundle };
   });

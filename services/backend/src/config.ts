@@ -21,6 +21,8 @@ export const serverEnv = z.object({
   PORT: z.coerce.number().int().positive(),
   /** The address the server binds to. An IP address only, no default; 127.0.0.1 keeps it on this machine. */
   LISTEN_HOST: z.string().refine((v) => isIP(v) !== 0, "must be an IP address such as 127.0.0.1 (use 0.0.0.0 only on purpose, to listen on every interface)"),
+  /** "false" serves only the read routes (a public read-only instance); "true" serves the full API. Exactly these two strings, no default. */
+  EXPOSE_WRITE_ROUTES: z.enum(["true", "false"], { error: 'must be exactly "true" or "false"' }).transform((v) => v === "true"),
   DB_PATH: nonEmpty,
   DATA_SOURCE: z.enum(["synthetic", "testnet"]),
   GRAPH_SERVICE_URL: z.url(),

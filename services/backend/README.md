@@ -26,6 +26,7 @@ All are required, except the `NOTIFY_` and `DODO_` variables, which may be left 
 | `LLM_RETRY_MAX_WAIT_SECONDS` | server, verifier | Longest wait between retries. If the provider asks for longer, the request fails at once with 429 and the provider's own wait in `Retry-After`. Without a `retry-after` header the waits are 1, 2, 4... seconds up to this cap. |
 | `PORT` | server | Port to listen on |
 | `LISTEN_HOST` | server | IP address to bind to. Required, no default; `127.0.0.1` listens on this machine only. `0.0.0.0` (every interface) is accepted but must be chosen on purpose. Host names are refused. |
+| `EXPOSE_WRITE_ROUTES` | server | Required, no default, exactly `true` or `false`. `true` serves the full API. `false` serves only `GET /health`, `GET /decisions` and `GET /evidence/:hash`; `POST /extract`, `POST /evidence/build`, `POST /webhooks/dodo` and `GET /blocklist` are not registered and answer 404. See "Public read-only instance". |
 | `DB_PATH` | server, verifier | SQLite file path (its folder is created if missing; git-ignored). The server and the verifier must point at the same file to share evidence and the decision log. |
 | `DATA_SOURCE` | server, verifier | `synthetic` or `testnet`, shown on every response and bundle. The graph's own label must agree with it. |
 | `DEFAULT_TIMEZONE` | server | IANA zone (Region/City form, or UTC) used to resolve relative times when a request has no `timezone` |
@@ -45,6 +46,22 @@ All are required, except the `NOTIFY_` and `DODO_` variables, which may be left 
 | `VERIFIER_LOG_CHUNK_BLOCKS` | verifier | Blocks queried per event request |
 | `DODO_WEBHOOK_SECRET`, `DODO_WEBHOOK_TOLERANCE_SECONDS` | server | Optional Dodo Payments (test mode) webhook. The secret is the signing secret Dodo shows for the endpoint (`whsec_` followed by base64); an invalid one stops startup without being printed. The tolerance is how many seconds a webhook timestamp may differ from now (Standard Webhooks libraries use 300; the Dodo page names no number of its own). If the secret is set the tolerance is required. If the secret is empty, `POST /webhooks/dodo` answers 503 and nothing else is affected. |
 | `NOTIFY_WEBHOOK_URL`, `NOTIFY_TIMEOUT_MS` | verifier | Optional viaSocket webhook. Empty means no notifications at all. If the URL is set, the timeout is required. |
+
+## Public read-only instance
+Set `EXPOSE_WRITE_ROUTES=false` to run a copy of the server that only reads. The startup log prints the mode and the routes served (and, for `false`, the routes not served). Nothing in that line is a secret.
+
+| Mode | Routes served |
+|---|---|
+| `false` | `GET /health`, `GET /decisions`, `GET /evidence/:hash` |
+| `true` | the three above, plus `POST /extract` (calls the AI, writes the database), `POST /evidence/build` (calls the Graph Service and the AI, writes the database), `POST /webhooks/dodo` (writes the database after a valid signature) and `GET /blocklist` (reads the chain) |
+
+What this does and does not do:
+- With `false`, no route in this server calls the AI, the Graph Service or the chain, or writes to the database. `LLM_*`, `GRAPH_*`, `RPC_URL` and the Dodo settings are still validated at startup (the other settings are unchanged); the server simply never uses them.
+- The verifier is a separate process (`npm run verifier`) and is not affected by this setting.
+- Rate limiting (`RATE_LIMIT_PER_MINUTE`) and CORS (`CORS_ORIGINS`) work as before. There is still no login: `GET /decisions` and `GET /evidence/:hash` are readable by anyone who can reach the server.
+- `GET /evidence/:hash` returns whatever bundle is stored under that hash, including complaint text saved earlier by `POST /extract`.
+- The web app's /report page calls POST /extract, so it shows its unreachable-backend error against a `false` instance. The evidence summary on /wallet calls GET /evidence/:hash (apps/web/src/lib/backend.ts line 124), which a `false` instance serves, so it works there when the bundle is stored in the database that instance uses; this has not been run. /cluster/<id> needs the Graph Service, which this server does not expose.
+- Running a second copy beside the full one: give it its own `PORT`. A variable set in the process environment wins over `.env` (dotenv does not override variables that are already set). Sharing one `DB_PATH` between processes is what the server and the verifier already do (see the `DB_PATH` row above). The database is opened in WAL mode, which lets one process write while another reads. Two server copies on one file under load have not been tested.
 
 ## Install trouble on Windows
 Plain `npm ci` fails with `gyp ERR! find VS` because `better-sqlite3` has a `binding.gyp` and no install script, so npm tries to compile it, which needs Visual Studio build tools. Its package already ships a prebuilt Windows binary that it loads at runtime, and `npm ci --ignore-scripts` skips the compile. Verified in a clean copy on Node 24.19.0 (Windows): plain `npm ci` exit 1; `npm ci --ignore-scripts` exit 0, then typecheck passes, the server starts and `/health` returns 200.
