@@ -41,12 +41,27 @@ class Service(unittest.TestCase):
         body = client().get(f"/analyze/{master}").json()
         self.assertEqual(body["target"], master)
         self.assertEqual(body["clusterId"], TRUTH["expected_cluster_id"])
-        self.assertEqual(body["members"], TRUTH["expected_cluster_members"])
+        self.assertEqual(body["members"], [a for a in TRUTH["expected_cluster_members"] if a not in TRUTH["expected_exit_points"]])
         self.assertEqual(body["exitPoints"], TRUTH["expected_exit_points"])
         self.assertEqual(body["dataSource"], "synthetic")
         self.assertTrue(all("name" in s for s in body["signals"]))
         self.assertNotIn("link", body)
         self.assertGreaterEqual(body["unrelatedReporterCount"], 0)
+
+    def test_members_and_exit_points_are_disjoint_when_the_graph_lists_an_exit_point_as_member(self):
+        class ExitAlsoMember(FakeBackend):
+            def analyze(self, address):
+                facts = super().analyze(address)
+                if facts.cluster_ids:
+                    facts.members = facts.members + [a.upper().replace("0X", "0x") for a in facts.exit_points]
+                return facts
+
+        master = role("scam_master")[0]
+        body = client(ExitAlsoMember(TRANSFERS, REPORTS, CFG)).get(f"/analyze/{master}").json()
+        self.assertTrue(body["exitPoints"])
+        self.assertEqual(body["exitPoints"], TRUTH["expected_exit_points"])
+        self.assertFalse({a.lower() for a in body["members"]} & {a.lower() for a in body["exitPoints"]})
+        self.assertTrue(body["members"])
 
     def test_address_is_lowercased_and_validated(self):
         master = role("scam_master")[0]
@@ -124,7 +139,7 @@ class Service(unittest.TestCase):
             body = c.get(f"/analyze/{address}").json()
             self.assertEqual(body["behaviorScore"], row.behavior_score, address)
             self.assertEqual(is_suspicious({"behaviorScore": body["behaviorScore"], "signals": body["signals"]}, CFG), row.suspicious, address)
-            self.assertEqual(body["clusterId"] is not None and address in body["members"], row.in_cluster, address)
+            self.assertEqual(body["clusterId"] is not None and (address in body["members"] or address in body["exitPoints"]), row.in_cluster, address)
             self.assertEqual(body.get("linked"), row.linked, address)
 
     def test_a_graph_failure_is_a_502_with_a_message(self):

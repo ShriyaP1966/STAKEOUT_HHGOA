@@ -27,6 +27,12 @@ NO_ADDRESS = "No graph data for this address."
 NO_CLUSTER = "No graph data for this cluster."
 
 
+def members_without_exit_points(members: list[str], exit_points: list[str]) -> list[str]:
+    """The graph may list an exit point among the cluster members; the API reports each address in one list only."""
+    exits = {a.lower() for a in exit_points}
+    return [a for a in members if a.lower() not in exits]
+
+
 def _link_facts(row: CandidateRow, cluster_reported: bool) -> LinkFacts:
     return LinkFacts(row.outflows_to_cluster, row.inflows_from_cluster, row.total_in, row.total_out, row.out_count,
                      row.delay_count, row.fast_delay_count, cluster_reported)
@@ -80,7 +86,7 @@ def create_app(backend, scoring: Scoring) -> FastAPI:
             "behaviorScore": scored["behaviorScore"],
             "signals": scored["signals"],
             "metrics": scored["metrics"],
-            "members": facts.members if cluster_id else [],
+            "members": members_without_exit_points(facts.members, facts.exit_points) if cluster_id else [],
             "exitPoints": facts.exit_points if cluster_id else [],
             "unrelatedReporterCount": facts.report_count,
             "dataSource": facts.data_source,
