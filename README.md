@@ -27,7 +27,7 @@ Prerequisites:
 
 | Part | Runtime |
 |---|---|
-| Contracts, scripts and web app | Node.js and npm. Tested with Node 26.8.1 and npm 11.19.0 |
+| Contracts, scripts and web app | Node.js and **npm 11 or newer**. Tested with Node 26.8.1 and npm 11.19.0. npm 10 (the default with Node 22) fails `npm ci` in `apps/web` with "Missing: zod@3.25.76 from lock file", because the lockfile was written by npm 11; `apps/web/package.json` declares `engines.npm` `>=11` |
 | Backend and verifier (`services/backend`) | **Node 24** (`>=24 <25`, enforced by its `package.json`; `services/backend/.nvmrc` is `24`). Use Node 24 in the terminal that runs it |
 | Graph service (`services/graph`) | Python. Tested on Python 3.13.15; see `services/graph/README.md` |
 

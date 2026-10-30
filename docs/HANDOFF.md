@@ -22,6 +22,23 @@ These are all the variables `apps/web` reads. Each one except `NEXT_PUBLIC_SITE_
 
 `STAKEOUT_LOCAL_RPC_URL` is read only by the web tests, to include the local-node checks.
 
+## Hosted web app (Vercel)
+- Production: https://stakeout-six.vercel.app, Vercel project `stakeout` (Person 3's account). It is not connected to GitHub, so pushes do not deploy it and it posts no commit checks. It is deployed from the repo root with `npx vercel@latest --prod`; `.vercelignore` keeps every `.env*` file, `node_modules` and `.next` out of the upload.
+- Project settings: Root Directory `apps/web`, framework Next.js, Install Command `npm ci --prefix ../../shared/hash && npm ci`, Node.js 24.x, files outside the root directory included.
+- Build runtime, printed in the build log on 2026-10-30: Node v24.22.2, npm 11.19.1.
+- Environment variables: only the public `NEXT_PUBLIC_*` names listed above, set for Production, Preview and Development. No keys or secrets are stored in Vercel.
+- `NEXT_PUBLIC_BACKEND_URL` and `NEXT_PUBLIC_GRAPH_URL` point at Person 2's tunnels and are inlined at build time. When a tunnel address changes, from the repo root:
+  ```sh
+  printf '%s' "<new url>" | npx vercel@latest env add NEXT_PUBLIC_BACKEND_URL --environment production,preview,development --no-sensitive --force --yes
+  npx vercel@latest --prod --yes
+  ```
+  Use `NEXT_PUBLIC_GRAPH_URL` for the graph tunnel. Pages that need the backend or graph show an "unreachable" message while a tunnel is down; chain reads keep working.
+
+## Explorer verification
+`npm run verify:target` on 2026-10-30 reported both contracts already verified on Basescan:
+- Stakeout: https://sepolia.basescan.org/address/0x2BDBEa9039F076b9587C2d692d21407Fbe3A66F7#code
+- StakeoutGuard: https://sepolia.basescan.org/address/0x9999BaDDc06b77B2f11f36A4f728E22916D002CF#code
+
 ## Local chain
 - `EXPLORER_API_KEY` in `.env.localhost` may be empty or left out; both behave the same, and the deploy prints that explorer verification is skipped on the local chain. It is required only for `deploy:target`, and an empty or missing value there stops with `EXPLORER_API_KEY: is missing. It is required to verify contracts on the explorer when deploying to a non-local chain`.
 - `npm run seed:local` refuses to run unless the node reports the Hardhat config's local chain id and identifies as a Hardhat node. `VERIFIER_ADDRESS` may be any address, including your real verifier: the script impersonates it with `hardhat_impersonateAccount`, raises its local balance with `hardhat_setBalance` if it is below the Hardhat account balance, calls `confirm` and `link` as that verifier, and stops impersonating. Contract roles are not changed. The reviewer must still be one of the node's accounts.
