@@ -159,6 +159,38 @@ check("a different metric value from the graph gives a different hash", changed.
 stubMetrics = [{ name: "fanIn", value: "six" }];
 r = await build();
 check("a metric without a numeric value: 502 naming the problem", r.status === 502 && /metrics/.test(r.body.error), r.body.error);
+for (const [label, bad] of [["a missing value", [{ name: "fanIn" }]], ["a missing name", [{ value: 1 }]], ["a null name", [{ name: null, value: 1 }]], ["an extra key", [{ name: "fanIn", value: 1, extra: true }]], ["a non-list", { fanIn: 1 }]] as const) {
+  stubMetrics = bad;
+  r = await build();
+  check(`${label}: still 502, not dropped`, r.status === 502, `${r.status} ${r.body.error ?? ""}`.slice(0, 120));
+}
+
+console.log("\n## metrics: a null value (not measurable) is dropped explicitly, anything else malformed is not");
+const warnings: string[] = [];
+const realWarn = console.warn;
+console.warn = (...args: unknown[]) => void warnings.push(args.join(" "));
+const withNull = [{ name: "passThroughRatio", value: 0.7297 }, { name: "hopsToExit", value: null }, { name: "fanIn", value: 6 }, { name: "medianForwardTime", value: null }, { name: "totalOut", value: 12.294501 }];
+const nonNull = [withNull[0], withNull[2], withNull[4]];
+stubMetrics = withNull;
+r = await build();
+check("a list with nulls builds (200), the bundle passes the schema mirror", r.status === 200 && evidenceBundleSchema.safeParse(r.body.bundle).success, `status ${r.status} ${r.body.error ?? ""}`);
+check("the null entries are dropped and the others keep the graph's order", JSON.stringify(r.body.bundle.metrics) === JSON.stringify(nonNull));
+check("the hash equals hashBundle of the built bundle, and the stored bundle matches", r.body.hash === hashBundle(r.body.bundle) && JSON.stringify((r.db.getEvidence(r.body.hash) as { metrics?: unknown }).metrics) === JSON.stringify(nonNull));
+check("the hash covers exactly the non-null list (every kept value is a number)", r.body.hash === hashBundle({ ...r.body.bundle, metrics: nonNull }) && (r.body.bundle.metrics as { value: unknown }[]).every((m) => typeof m.value === "number"));
+check("exactly one warning naming the dropped metrics (two builds with the same nulls)", warnings.length === 1 && /hopsToExit,medianForwardTime/.test(warnings[0]), `${warnings.length} warning(s): ${warnings[0] ?? ""}`.slice(0, 160));
+stubMetrics = withNull;
+await build();
+check("the same nulls again do not warn again", warnings.length === 1, `${warnings.length}`);
+stubMetrics = [{ name: "hopsToExit", value: null }, { name: "medianForwardTime", value: null }];
+r = await build();
+check("a list that is all null: 200 and the metrics field is omitted", r.status === 200 && !("metrics" in r.body.bundle) && r.body.hash === hashBundle(r.body.bundle), `status ${r.status} ${r.body.error ?? ""}`);
+console.warn = realWarn;
+stubMetrics = [{ name: "fanIn", value: "six" }, { name: "hopsToExit", value: null }];
+r = await build();
+check("a null next to a \"six\" value: still 502", r.status === 502 && /metrics/.test(r.body.error), r.body.error);
+stubMetrics = [];
+r = await build();
+check("an empty list from the graph (nothing dropped) is unchanged: metrics stays []", r.status === 200 && JSON.stringify(r.body.bundle.metrics) === "[]");
 stubMetrics = undefined;
 
 console.log("\n## summary guard in the build");
