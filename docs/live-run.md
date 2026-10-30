@@ -31,7 +31,7 @@ From `services/graph` with the virtual environment active (install steps are in 
 python scripts/run_service.py
 ```
 
-It listens on `127.0.0.1` at `GRAPH_SERVICE_PORT` [scripts/run_service.py]. Importing the app connects to TigerGraph and reads `config/scoring.json`; any problem prints `Graph Service cannot start: ...` and exits [app/main.py]. The exact "started" output is **unconfirmed** (it is uvicorn's own output; the repo does not record it).
+It listens on `127.0.0.1` at `GRAPH_SERVICE_PORT` [scripts/run_service.py]. Importing the app connects to TigerGraph and reads `config/scoring.json`; any problem prints `Graph Service cannot start: ...` and exits [app/main.py]. Startup output, observed 2026-10-30 (three starts, no bind error): `INFO: Started server process [<pid>]`, `Waiting for application startup.`, `Application startup complete.`, `Uvicorn running on http://127.0.0.1:8001 (Press CTRL+C to quit)`.
 
 Checks (use `curl.exe` on Windows, as the graph README does):
 
@@ -121,15 +121,15 @@ Read them from the API (`GET /decisions`, server must be running) or the `decisi
 
 ## 6. Manual-test checklist
 
-"Run" means a human ran it and saw the result. The assistant ran none of these steps. Who ran what, per the user's own terminal output on 2026-10-30 (observed 2026-10-30): Shriya ran steps 3, 4, 6, 7, 8, 9 and 10 and saw the output; Person 3 reported step 11; steps 12 and 14 were done in part; steps 1, 2, 5 and 13 were not run. The last recorded live run (2026-10-30, flag #4, confirm 23 seconds after the promote) is in `docs/HANDOFF.md`.
+"Run" means the step was run and the output seen. Per the 2026-10-30 outputs (observed 2026-10-30): **run** by Shriya: steps 1, 3, 4, 5, 6, 7, 8, 9 and 10; **run** via Claude Code on Shriya's laptop: step 2; **reported** by Person 3, not run by Shriya: step 11; **partly**: step 12 (the Overview tab was not checked), step 13 (only the `config/scoring.json` variant was run; the `config/rules.json` variant was not) and step 14 (two different wallets decided). Nothing is entirely "not run" now; the open parts are the Overview tab of step 12 and the `rules.json` variant of step 13. The last recorded live run (2026-10-30, flag #4, confirm 23 seconds after the promote) is in `docs/HANDOFF.md`.
 
 | # | Step | Status | Who / evidence |
 |---|---|---|---|
-| 1 | TigerGraph workspace running, graph loaded (`test_connection.py`) | not run | |
-| 2 | `python scripts/run_service.py` starts without a configuration error | not run | |
+| 1 | TigerGraph workspace running, graph loaded (`test_connection.py`) | run | run by Shriya 2026-10-30; output: Connected. Graph: stakeout_v3; installed queries: analyze_wallet, get_cluster_graph, link_candidates |
+| 2 | `python scripts/run_service.py` starts without a configuration error | run | run via Claude Code on Shriya's laptop 2026-10-30, output reported (started three times, no bind error) |
 | 3 | `/health` returns `{"status":"ok"}` | run | run by Shriya 2026-10-30, output seen |
 | 4 | `/analyze/<known wallet>` returns 200 and no address is in both `members` and `exitPoints` | run | run by Shriya 2026-10-30, output seen |
-| 5 | `/analyze/<unknown wallet>` returns 404 | not run | |
+| 5 | `/analyze/<unknown wallet>` returns 404 | run | run by Shriya 2026-10-30; HTTP 404, {"detail":"No graph data for this address."} |
 | 6 | `npm --prefix services/backend run verifier-status` shows the verifier account has the role | run | run by Shriya 2026-10-30, output seen |
 | 7 | Verifier starts with `VERIFIER_DRY_RUN=true`; startup line matches section 3 | run | run by Shriya 2026-10-30, output seen |
 | 8 | Reporter promotes a flag on the target; a `B:behavior-passed` decision appears with outcome `skipped` (dry run) | run | promotion sent by Person 3; decision and output seen by Shriya 2026-10-30 |
@@ -137,13 +137,12 @@ Read them from the API (`GET /decisions`, server must be running) or the `decisi
 | 10 | Promote a **new** flag; a `confirm` decision with outcome `sent` and a `tx_hash` appears | run | promotion sent by Person 3; decision with tx_hash seen by Shriya 2026-10-30 |
 | 11 | `getStatus(target)` returns 3 (Confirmed); linked wallets return 4 (Linked) | reported | reported by Person 3, not run by Shriya |
 | 12 | The transaction opens on the Base Sepolia explorer | partly | Logs tab seen (Confirmed event), Overview tab not checked |
-| 13 | Change a value in `config/rules.json`, restart, and the decision changes | not run | |
+| 13 | Change a value in `config/rules.json`, restart, and the decision changes | partly | scoring.json variant run via Claude Code 2026-10-30: fanInMin 2 -> 7 changed behaviorScore 0.9 -> 0.875 and removed the fanIn signal for the same wallet; restored with git restore, result back to 0.9. The config/rules.json variant was not run. |
 | 14 | Repeat with a different address | partly | two different wallets decided |
 
 ## Unconfirmed (not stated by any repo file)
 
 1. What the TigerGraph console shows for an "Active" workspace.
-2. The exact output of `python scripts/run_service.py` when it starts (uvicorn's own).
-3. Whether the verifier's RPC provider has the same `eth_getLogs` limits as those measured for the web app, and the cost of the verifier's first scan on any RPC other than `https://sepolia.base.org` (the formula in section 3 is derived; one observation exists, see section 3).
-4. Whether `GRAPH_SERVICE_URL` for the live graph service has any host restriction (the dev stand-in requires `127.0.0.1` or `localhost`; the verifier's rule is not in the files I read).
-5. Any live result for the steps in section 6 beyond what `docs/HANDOFF.md` and the observations marked "observed 2026-10-30" record.
+2. Whether the verifier's RPC provider has the same `eth_getLogs` limits as those measured for the web app, and the cost of the verifier's first scan on any RPC other than `https://sepolia.base.org` (the formula in section 3 is derived; one observation exists, see section 3).
+3. Whether `GRAPH_SERVICE_URL` for the live graph service has any host restriction (the dev stand-in requires `127.0.0.1` or `localhost`; the verifier's rule is not in the files I read).
+4. Any live result for the steps in section 6 beyond what `docs/HANDOFF.md` and the observations marked "observed 2026-10-30" record.
