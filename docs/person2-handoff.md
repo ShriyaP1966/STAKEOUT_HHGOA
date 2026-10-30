@@ -129,7 +129,7 @@ Follows the Standard Webhooks scheme described at https://docs.dodopayments.com/
 | Webhook payload | viaSocket (nobody has checked it) | `src/verifier/notify.ts` | UNVERIFIED |
 
 **Needed from Person 3:** the deployment file at `DEPLOYMENT_PATH` and `VERIFIER_ROLE` granted to the verifier address above; please also run `docs/local-chain-test.md` and report what you see.
-**Needed from Person 1:** a running Graph Service and the agreed analysis schema (`shared/schemas/analysis.json`).
+**Needed from Person 1:** a running Graph Service. The analysis schema `shared/schemas/analysis.json` now exists (commit `bea41e3`, approved by Person 3), so it is no longer needed from Person 1.
 
 ## Related documents
 - `docs/trust-model.md`: the verifier and the reviewer Safe, what each can and cannot do on-chain, from the contract code. UNKNOWN where the repo does not say (for example the Safe's owners and threshold, and any decentralization roadmap).

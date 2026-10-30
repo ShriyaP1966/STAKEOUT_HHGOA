@@ -1,7 +1,8 @@
 // PROPOSED, NOT AGREED WITH PERSON 1. This file and docs/graph-analysis-proposal.md describe what the backend
-// would like the Graph Service to return. Do not treat it as the real contract until Person 1's
-// shared/schemas/analysis.json exists and replaces it. It is the ONLY place the shape and routes are written,
-// so a changed schema is a change to this file (plus graphClient.ts for the routes).
+// would like the Graph Service to return. shared/schemas/analysis.json now exists (commit bea41e3, approved by Person 3), but this
+// file's check is looser than the schema (any address casing, optional metrics, extra keys) and is unchanged until after submission.
+// This backend does not use the schema. This file is the ONLY place the backend writes the shape and routes,
+// so a changed shape is a change to this file (plus graphClient.ts for the routes).
 import { z } from "zod";
 import { getAddress, isAddress } from "ethers";
 import { clusterIdSchema } from "../clusterId.js";

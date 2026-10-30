@@ -116,4 +116,4 @@ Paste the verifier output and the `/decisions` response into a new dated section
 `docs/local-rehearsal.md` runs the same setup with a DEV-ONLY stand-in Graph Service, so the verifier can decide (and, on the local chain only, send) for real.
 
 ## Still blocked after this passes
-Real decisions need Person 1's running Graph Service and agreed `shared/schemas/analysis.json`, and an agreed `config/rules.json` (see `docs/rules-proposal.md` and `docs/graph-analysis-proposal.md`).
+Real decisions need Person 1's running Graph Service and an agreed `config/rules.json` (see `docs/rules-proposal.md` and `docs/graph-analysis-proposal.md`). The schema `shared/schemas/analysis.json` now exists (commit `bea41e3`, approved by Person 3).
