@@ -7,6 +7,8 @@ alias so the verifier works without a change on its side):
     GET /link_candidates/{clusterId}     also GET /clusters/{clusterId}/link-candidates
     GET /cluster/{clusterId}/graph
     GET /health
+With expose_all_routes=False (EXPOSE_ALL_ROUTES=false, a public read-only instance) only /health and /cluster/{clusterId}/graph are
+registered, and the generated /docs, /redoc and /openapi.json are turned off; every other path answers 404.
 """
 
 from __future__ import annotations
@@ -14,6 +16,7 @@ from __future__ import annotations
 import re
 
 from fastapi import FastAPI, HTTPException
+from fastapi.routing import APIRoute
 
 from graph.linking import LinkFacts, decide_link, link_flags
 from graph.scoring import score_wallet
@@ -38,8 +41,23 @@ def _link_facts(row: CandidateRow, cluster_reported: bool) -> LinkFacts:
                      row.delay_count, row.fast_delay_count, cluster_reported)
 
 
-def create_app(backend, scoring: Scoring) -> FastAPI:
-    app = FastAPI(title="Stakeout Graph Service (analysis from the graph)", version="3.0.0")
+def served_routes(app: FastAPI) -> list[str]:
+    """The method and path of every registered API route (the generated documentation pages are not API routes)."""
+    found = {f"{method} {r.path}" for r in app.routes if isinstance(r, APIRoute) for method in sorted(r.methods or ())}
+    return sorted(found)
+
+
+def describe_routes(expose_all_routes: bool, app: FastAPI) -> str:
+    """One startup line: the mode and the routes served. It contains no setting value other than the mode."""
+    mode = "EXPOSE_ALL_ROUTES=true (all routes)" if expose_all_routes else "EXPOSE_ALL_ROUTES=false (public read-only instance; /docs, /redoc and /openapi.json are off)"
+    return f"{mode}. Serving: {', '.join(served_routes(app))}."
+
+
+def create_app(backend, scoring: Scoring, expose_all_routes: bool = True) -> FastAPI:
+    """`expose_all_routes` comes from EXPOSE_ALL_ROUTES; app/main.py always passes it. The default here is only so the offline tests
+    that build the full app keep their two-argument call."""
+    docs_off = {} if expose_all_routes else {"docs_url": None, "redoc_url": None, "openapi_url": None}
+    app = FastAPI(title="Stakeout Graph Service (analysis from the graph)", version="3.0.0", **docs_off)
 
     def graph_call(fn, *args, unknown: str | None = None):
         """Run a backend call. `unknown` is the 404 message for an id TigerGraph does not know; without it that case stays a 502 like
@@ -66,8 +84,6 @@ def create_app(backend, scoring: Scoring) -> FastAPI:
     def health():
         return {"status": "ok"}
 
-    @app.get("/analyze/{address}")
-    @app.get("/analysis/{address}", include_in_schema=False)
     def analyze(address: str):
         if not ADDRESS.match(address):
             raise HTTPException(status_code=400, detail="Invalid address. Expected 0x followed by 40 hex characters.")
@@ -103,8 +119,6 @@ def create_app(backend, scoring: Scoring) -> FastAPI:
                 body.update({"clusterId": related, "link": verdict["flags"], "linked": verdict["linked"], "reason": verdict["reason"]})
         return body
 
-    @app.get("/link_candidates/{cluster_id}")
-    @app.get("/clusters/{cluster_id}/link-candidates", include_in_schema=False)
     def link_candidates(cluster_id: str):
         if not CLUSTER_ID.match(cluster_id):
             raise HTTPException(status_code=400, detail="Invalid clusterId. Expected 0x followed by 64 hex characters.")
@@ -126,5 +140,11 @@ def create_app(backend, scoring: Scoring) -> FastAPI:
         if graph is None:
             raise HTTPException(status_code=404, detail="Cluster not found in the graph.")
         return {"clusterId": cluster_id, **graph}
+
+    if expose_all_routes:
+        app.get("/analyze/{address}")(analyze)
+        app.get("/analysis/{address}", include_in_schema=False)(analyze)
+        app.get("/link_candidates/{cluster_id}")(link_candidates)
+        app.get("/clusters/{cluster_id}/link-candidates", include_in_schema=False)(link_candidates)
 
     return app

@@ -100,6 +100,18 @@ def service_port() -> int:
     return _integer("GRAPH_SERVICE_PORT", 1)
 
 
+def expose_all_routes() -> bool:
+    """EXPOSE_ALL_ROUTES: exactly "true" (every route) or "false" (public read-only: only /health and the cluster graph).
+    The value is not trimmed or case-folded, so " true", "TRUE", "1" and an empty value are refused."""
+    ensure_env_loaded()
+    value = os.getenv("EXPOSE_ALL_ROUTES")
+    if value is None:
+        raise ConfigError("Missing required environment variable EXPOSE_ALL_ROUTES. Set it to true or false in services/graph/.env (see .env.example).")
+    if value not in ("true", "false"):
+        raise ConfigError('EXPOSE_ALL_ROUTES must be exactly "true" or "false".')
+    return value == "true"
+
+
 def stop_on_config_error(action):
     """Run `action()`; on a ConfigError print the message and exit with status 1."""
     try:

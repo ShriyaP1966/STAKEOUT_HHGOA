@@ -33,6 +33,7 @@ pip install -r requirements.txt   (versions are pinned)
 | `TG_GRAPH_NAME` | everything that connects | the graph this service uses. **Set a NEW name** the first time (a graph that already exists is never changed, and one created before `TRANSFER_TX` existed has the collapsing edge). No graph name is written anywhere in the code |
 | `SCENARIO_SEED` | `generate`, if `--seed` is not given | whole number |
 | `GRAPH_SERVICE_PORT` | the service, live `evaluate` | port on 127.0.0.1 |
+| `EXPOSE_ALL_ROUTES` | the service | required, no default, exactly `true` or `false` (not trimmed, no other spelling). `true` serves every route in "API". `false` serves only `GET /health` and `GET /cluster/{clusterId}/graph`. A missing or invalid value stops the start and names the variable. See "Public read-only instance" |
 
 Nothing has a default. A missing value stops the program and names the variable. The scoring numbers are read from `config/scoring.json` at the repo root; the file is in the repo (`config/scoring.json`); if it is missing the service and `load` stop with a clear message. The proposal behind it is in `docs/graph-config-proposal.md`.
 
@@ -71,6 +72,15 @@ Wallet(address PK, is_exit_point BOOL, data_source STRING) · Cluster(cluster_id
 | `GET /health` | `{"status":"ok"}` |
 
 Exact proposed schema and the open questions: `docs/graph-config-proposal.md`. The Person 2 verifier reads the first two routes under the alias spellings today.
+
+## Public read-only instance
+With `EXPOSE_ALL_ROUTES=false` the service registers only `GET /health` and `GET /cluster/{clusterId}/graph`. `/analyze`, `/analysis`, `/link_candidates` and `/clusters/{clusterId}/link-candidates` are not registered and answer 404, and the generated `/docs`, `/redoc` and `/openapi.json` are turned off. With `true` every route and the docs pages are served as before. At start the service prints one line with the mode and the routes served (no secrets).
+
+- A `false` instance cannot serve the verifier (it calls `/analysis/{address}` and `/clusters/{clusterId}/link-candidates`) or the backend's `POST /evidence/build` (it calls `/analysis/{address}`). Keep a `true` instance, bound to this machine, for those.
+- The web app's `/cluster/<id>` page calls `GET /cluster/{clusterId}/graph`, which a `false` instance serves.
+- It is still an unauthenticated service with no rate limit: anyone who can reach it can read any cluster's wallets and transfers, and every request runs a TigerGraph query. This setting removes routes; it adds no login or limit.
+- It does not change what the service reads or writes in TigerGraph: no route writes, loads or deletes data in either mode.
+- Run a second copy beside the first by giving it its own `GRAPH_SERVICE_PORT` in the shell (a variable already set in the shell wins over `.env`; see `app/config.py`). `scripts/run_service.py` reads the port from `GRAPH_SERVICE_PORT` and always binds `127.0.0.1`. A copy meant to be reached from other machines needs a different way to expose it; that is not set up here and has not been run.
 
 ## Live run
 The step-by-step runbook for the live Base Sepolia run (graph service, verifier, reading decisions, troubleshooting, checklist) is `docs/live-run.md`.
