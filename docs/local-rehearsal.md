@@ -5,18 +5,18 @@
 It builds on `docs/local-chain-test.md` (same node, deploy and seed). Read that first for the background and for what each variable means.
 
 ## Status of every step
-Each step says who ran it. "NOT RUN" means the assistant did not run it; a human must, and should record what they see.
+Each step says who ran it. "NOT RUN" means a coding agent did not run it; a human must, and should record what they see.
 
 | Step | What | Status |
 |---|---|---|
-| 1 | Start the local node | NOT RUN by the assistant (a human-run node on chain 31337 was seen answering on the local RPC port, nothing more) |
-| 2 | Deploy with `VERIFIER_ADDRESS` set (a Hardhat account, or since commit 46356fa any address) | NOT RUN by the assistant. Human-run on 2026-10-29, before Person 3's fix (commit 46356fa): worked with Hardhat Account #2 (see `docs/person2-test-report.md`, section 12). The blank `EXPLORER_API_KEY` change is NOT RUN by anyone yet |
-| 3 | Seed | NOT RUN by the assistant. Human-run on 2026-10-29, before Person 3's fix (commit 46356fa): worked with a Hardhat account as verifier, failed with "invalid account" for an external verifier address. The fixed seed script (impersonates the verifier) is NOT RUN by anyone yet |
-| 4 | Generate the fixture from the real seed file | RAN by the assistant on 2026-10-29: wrote 5 analyses and 2 clusters of link candidates, exit 0 (rules file was a temporary test fixture with threshold 1 and minimum signals 1) |
-| 5 | Start the stand-in | RAN by the assistant on 2026-10-29: printed the banner, answered the flagged target with score 2 and 2 signals, the challenged target with score 0 and 0 signals, and 3 link candidates; then stopped by its own process id |
-| 6 | Verifier in dry run | NOT RUN by the assistant. Human-run on 2026-10-29: 3 decisions via `GET /decisions`: flagged target `skipped` (rule `B:behavior-passed`, "contract call was simulated successfully", score 2, 2 signals); challenged target `refused` (rule `B:behaviorThreshold`, score 0, 2 unrelated reporters only added confidence); a target `skipped` (rule `feasibility:no-live-flag`) |
-| 7 | Verifier live (`VERIFIER_DRY_RUN=false`), see a real confirm and `getStatus` change | NOT RUN by the assistant. Human-run on 2026-10-29 (new database): flagged target `sent` with a tx hash (0x63ba8ce0...1fb49a), rule `B:behavior-passed`; challenged target `refused` again; third `skipped` again. `getStatus` before: flagged 2, challenged 2. After: flagged 3 (cluster 0xa96f518b...3d79e8d6, role 1, expiresAt 0); challenged stayed 2 with no cluster |
-| 8 | `GET /decisions` | NOT RUN by the assistant. Human-run on 2026-10-29: the three decisions of step 6 were read through it |
+| 1 | Start the local node | NOT RUN by a coding agent (a human-run node on chain 31337 was seen answering on the local RPC port, nothing more) |
+| 2 | Deploy with `VERIFIER_ADDRESS` set (a Hardhat account, or since commit 46356fa any address) | NOT RUN by a coding agent. Human-run on 2026-10-29, before Person 3's fix (commit 46356fa): worked with Hardhat Account #2 (see `docs/person2-test-report.md`, section 12). The blank `EXPLORER_API_KEY` change is NOT RUN by anyone yet |
+| 3 | Seed | NOT RUN by a coding agent. Human-run on 2026-10-29, before Person 3's fix (commit 46356fa): worked with a Hardhat account as verifier, failed with "invalid account" for an external verifier address. The fixed seed script (impersonates the verifier) is NOT RUN by anyone yet |
+| 4 | Generate the fixture from the real seed file | RAN by a coding agent on 2026-10-29: wrote 5 analyses and 2 clusters of link candidates, exit 0 (rules file was a temporary test fixture with threshold 1 and minimum signals 1) |
+| 5 | Start the stand-in | RAN by a coding agent on 2026-10-29: printed the banner, answered the flagged target with score 2 and 2 signals, the challenged target with score 0 and 0 signals, and 3 link candidates; then stopped by its own process id |
+| 6 | Verifier in dry run | NOT RUN by a coding agent. Human-run on 2026-10-29: 3 decisions via `GET /decisions`: flagged target `skipped` (rule `B:behavior-passed`, "contract call was simulated successfully", score 2, 2 signals); challenged target `refused` (rule `B:behaviorThreshold`, score 0, 2 unrelated reporters only added confidence); a target `skipped` (rule `feasibility:no-live-flag`) |
+| 7 | Verifier live (`VERIFIER_DRY_RUN=false`), see a real confirm and `getStatus` change | NOT RUN by a coding agent. Human-run on 2026-10-29 (new database): flagged target `sent` with a tx hash (0x63ba8ce0...1fb49a), rule `B:behavior-passed`; challenged target `refused` again; third `skipped` again. `getStatus` before: flagged 2, challenged 2. After: flagged 3 (cluster 0xa96f518b...3d79e8d6, role 1, expiresAt 0); challenged stayed 2 with no cluster |
+| 8 | `GET /decisions` | NOT RUN by a coding agent. Human-run on 2026-10-29: the three decisions of step 6 were read through it |
 | 9 | viaSocket alert | NOT RUN (by anyone) |
 
 Details of the human run, including the finding about blanking variables in PowerShell, are in `docs/person2-test-report.md`, section 13. Test numbers were used (threshold 1), not the team's thresholds; no real `link` was sent (all link candidates were already in a cluster); nothing was run against Person 1's real Graph Service or a public testnet.
@@ -97,7 +97,7 @@ Expected, from reading the code (NOT RUN):
 
 ## 7. Run it live on the local chain only (terminal D)
 Stop the verifier. Make sure `RPC_URL` points at the local node and `CHAIN_ID` is 31337. Use a NEW `DB_PATH` (the old one remembers the events as handled). The seeded flag may have lapsed since step 3 if `FLAG_DURATION_SECONDS` was short; if the log says "no live flag", run `npm run seed:local` again, regenerate the fixture (step 4), restart the stand-in and use a new database.
-The verifier needs local ETH for gas. The Hardhat accounts are funded. If you used another address, the fixed seed script should already have set its local balance when it impersonated it (NOT RUN: confirm with a balance check on the local node); otherwise `npm run fund:local -- <address> <amountEth>` exists in the root `package.json` (usage taken from the script's own message; NOT RUN by the assistant).
+The verifier needs local ETH for gas. The Hardhat accounts are funded. If you used another address, the fixed seed script should already have set its local balance when it impersonated it (NOT RUN: confirm with a balance check on the local node); otherwise `npm run fund:local -- <address> <amountEth>` exists in the root `package.json` (usage taken from the script's own message; NOT RUN by a coding agent).
 ```
 $env:VERIFIER_DRY_RUN = "false"
 npm run verifier

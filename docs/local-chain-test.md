@@ -1,6 +1,6 @@
 # Local chain test: run the verifier against Person 3's Hardhat node
 
-A human runs this. Nothing here has been run by the assistant: there is no root `node_modules` on the machine where it was written, so the Hardhat commands could not be tried.
+A human runs this. Nothing here has been run by a coding agent: there is no root `node_modules` on the machine where it was written, so the Hardhat commands could not be tried.
 Commands are copied from the root `package.json`, `README.md`, `scripts/` and AGENTS.md section 8. Anything not found in those files is marked **UNVERIFIED**.
 
 What this proves: the verifier starts against a real contract, finds the `VERIFIER_ROLE`, reads real `Promoted` events, logs decisions, and survives a restart without repeating itself.
@@ -32,7 +32,7 @@ Same variable names as `.env.example` (README, "Deployment"). The file is git-ig
 | `VERIFIER_ADDRESS` | **your verifier public address from step 0** |
 | `MIN_STAKE_WEI`, `FLAG_DURATION_SECONDS`, `MAX_MEMBERS_PER_CALL` | local test values of your choice; they are constructor arguments, read back into the deployment file |
 | `CONFIRMATIONS` | `1` (README: use 1 on a local node) |
-| `EXPLORER_API_KEY` | may be left blank or omitted on localhost. Since Person 3's commit 46356fa the deploy accepts a blank value in the `localhost` deploy schema (`scripts/lib/deploy-config.ts`); on a real chain it is still required. **Before that commit** a blank value failed validation (human-run, 2026-10-29), so the line had to be removed. The fixed behaviour is NOT RUN by the assistant: a human must confirm it. |
+| `EXPLORER_API_KEY` | may be left blank or omitted on localhost. Since Person 3's commit 46356fa the deploy accepts a blank value in the `localhost` deploy schema (`scripts/lib/deploy-config.ts`); on a real chain it is still required. **Before that commit** a blank value failed validation (human-run, 2026-10-29), so the line had to be removed. The fixed behaviour is NOT RUN by a coding agent: a human must confirm it. |
 
 ## 3. Deploy (terminal B, repo root)
 ```
@@ -48,10 +48,10 @@ npm run seed:local
 ```
 README: creates fresh random targets: no record, reported, flagged, flagged and challenged, a confirmed member and exit point, and a linked address; writes `deployments/localhost-seed.json` (git-ignored, `"dataSource": "synthetic"`). This produces real `Promoted` events for the verifier to read.
 
-What the seed script does with the verifier (read from `scripts/seed-local.ts` after commit 46356fa; NOT RUN by the assistant): it first checks that the node is a local Hardhat node (its chain id equals the local Hardhat chain id and `web3_clientVersion` mentions Hardhat) and refuses to run on any other node. If the `VERIFIER_ADDRESS` from the deployment is not one of the node's own unlocked accounts, it impersonates that address on the local node (`hardhat_impersonateAccount`), sets its balance to the first Hardhat account's balance when it has less (for gas), sends `confirm` and `link` as that address, and stops impersonating at the end. So the verifier no longer has to be a Hardhat account and no longer has to be funded first. **Before that commit** (human-run, 2026-10-29) a verifier address that was not a Hardhat account made the seed fail with "invalid account"; that is the behaviour Person 3 fixed.
+What the seed script does with the verifier (read from `scripts/seed-local.ts` after commit 46356fa; NOT RUN by a coding agent): it first checks that the node is a local Hardhat node (its chain id equals the local Hardhat chain id and `web3_clientVersion` mentions Hardhat) and refuses to run on any other node. If the `VERIFIER_ADDRESS` from the deployment is not one of the node's own unlocked accounts, it impersonates that address on the local node (`hardhat_impersonateAccount`), sets its balance to the first Hardhat account's balance when it has less (for gas), sends `confirm` and `link` as that address, and stops impersonating at the end. So the verifier no longer has to be a Hardhat account and no longer has to be funded first. **Before that commit** (human-run, 2026-10-29) a verifier address that was not a Hardhat account made the seed fail with "invalid account"; that is the behaviour Person 3 fixed.
 
 ## 5. Fund the verifier address (needed only for real sends; skip for dry run)
-The verifier's dry run only simulates calls, so it needs no balance. For a live run it needs gas. If the seed script impersonated your verifier address in step 4, it already set a balance on the local node (see step 4; NOT RUN by the assistant). Otherwise, `npm run fund:local -- <recipient> <amountEth>` is in the root `package.json` (usage taken from the script's own message; NOT RUN by the assistant).
+The verifier's dry run only simulates calls, so it needs no balance. For a live run it needs gas. If the seed script impersonated your verifier address in step 4, it already set a balance on the local node (see step 4; NOT RUN by a coding agent). Otherwise, `npm run fund:local -- <recipient> <amountEth>` is in the root `package.json` (usage taken from the script's own message; NOT RUN by a coding agent).
 - **UNVERIFIED:** `npx hardhat console --network localhost`, then in the console `const [a] = await ethers.getSigners(); await a.sendTransaction({ to: "<VERIFIER_ADDRESS>", value: ethers.parseEther("1") })`.
 
 ## 6. Give the verifier a rules file (outside the repo)

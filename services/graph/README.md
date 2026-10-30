@@ -102,7 +102,7 @@ The step-by-step runbook for the live Base Sepolia run (graph service, verifier,
 - One failing link candidate blocks the remaining candidates and all later events until the cause is fixed. The verifier fails loudly on purpose and retries. This was found only by the second live run (seed 2, 2026-10-30), where a `null` metric was refused; no self-test had caught it. See "Second live run, seed 2" in `docs/live-run.md`.
 
 ## What was run, and what a human must run
-Run by the assistant (offline, Python 3.13, test scoring file): the unit checks, `generate`, `load --dry-run`, `evaluate --offline` for seeds 1, 2, 3. **Not run, needs your TigerGraph account:** everything marked "Needs TigerGraph" above.
+Run by a coding agent (offline, Python 3.13, test scoring file): the unit checks, `generate`, `load --dry-run`, `evaluate --offline` for seeds 1, 2, 3. **Not run, needs your TigerGraph account:** everything marked "Needs TigerGraph" above.
 Human steps, in order, from `services/graph` (the first one is new):
 1. In `.env` set `TG_GRAPH_NAME` to a **new** graph name (not `stakeout_graph`, not `stakeout_v2`). Everything else stays as it is.
 2. `python scripts/test_connection.py` (connects and lists installed queries; for a new name it lists none).

@@ -3,9 +3,9 @@
 Synthetic data only, testnet only (Base Sepolia). Use this as a numbered list while presenting. Every fact comes from `docs/live-run.md`, `docs/HANDOFF.md`, `services/graph/README.md` or the page routes in `apps/web/src/app`. Where a step needs a value those files do not give, it says **unconfirmed** and where to find it.
 
 How to read the markers:
-- **[seen in browser]**: Shriya looked at this screen on 2026-10-30 (listed in `docs/live-run.md`, "Web walk-through, 2026-10-30"). The assistant did not see the screens.
+- **[seen in browser]**: Shriya looked at this screen on 2026-10-30 (listed in `docs/live-run.md`, "Web walk-through, 2026-10-30"). A coding agent did not see the screens.
 - **[read on chain by Person 3]**: written in `docs/HANDOFF.md` from the contract's events (some older lines say "recorded on chain"; same meaning).
-- **[seen in terminal]**: the assistant read it from `/decisions` or a recorded file.
+- **[seen in terminal]**: a coding agent read it from `/decisions` or a recorded file.
 - **[not seen]**: nobody has recorded seeing this screen.
 
 Times are what the docs record for the 2026-10-30 run. Anything else is "not timed".
@@ -15,7 +15,7 @@ This demo replays two real runs on Base Sepolia, both on 2026-10-30: seed 1 (rec
 
 A fresh live confirm would need a new, unconfirmed cluster (for example seed 3 loaded before the demo). That has not been run. Whether such a target exists in the loaded graph is **unconfirmed**; `python scripts/sample_addresses.py` from `services/graph` lists example wallets for the data in the local `data/` folder.
 
-Marker legend for seed 2: **[seen in browser]** = Shriya reported it; the assistant did not see the screen. **[read on chain by Person 3]** = written in `docs/HANDOFF.md`. **[seen in terminal]** = the assistant read it from `/decisions` or a recorded file, or Shriya saw it in the verifier terminal and pasted it into the chat. **[not seen]** = no evidence.
+Marker legend for seed 2: **[seen in browser]** = Shriya reported it; a coding agent did not see the screen. **[read on chain by Person 3]** = written in `docs/HANDOFF.md`. **[seen in terminal]** = a coding agent read it from `/decisions` or a recorded file, or Shriya saw it in the verifier terminal and pasted it into the chat. **[not seen]** = no evidence.
 
 ## Steps
 
@@ -32,13 +32,13 @@ Marker legend for seed 2: **[seen in browser]** = Shriya reported it; the assist
 
 ### 2. Check address for a clean wallet
 - **Open:** the website, **Check address** (`/wallet`), and enter a wallet that is in no cluster and has no report.
-- **Should show:** a status of None. Check address for `0x5E921119a5168006F82Dfc295242e23b7328cD61` showed STATUS: NONE, "No record. This address has no reports, flags, or cluster entries." [seen in browser 2026-10-30, about 10:19 to 10:25 UTC (3:49 to 3:55 PM IST); the assistant did not see the screens].
+- **Should show:** a status of None. Check address for `0x5E921119a5168006F82Dfc295242e23b7328cD61` showed STATUS: NONE, "No record. This address has no reports, flags, or cluster entries." [seen in browser 2026-10-30, about 10:19 to 10:25 UTC (3:49 to 3:55 PM IST); a coding agent did not see the screens].
 - **Time:** not timed.
 - **Say:** "Anyone can ask the contract about any address. This one has no record."
 
 ### 3. Show the existing report #5 and flag #5
 - **Open:** **Dashboard** (`/dashboard`) and find report #5 under Reports and flag #5 under Flags; then the block explorer for the promote transaction `0x8b94cf8666840dd04c585b1bfceb6fd81a3113e5b6972aab062506953fe89ab6` (block 52086814). Nothing is reported or promoted during the demo.
-- **Should show:** the report and the flag for `0x8fdb72a34980be64D347BdcDda5117b919f538DC`. The Dashboard (no wallet connected) showed Reports (6) and Flags (6): report #5 for that address at block 52085149; flag #5 Confirmed, 0.001 ETH, promoted in block 52086814, tx `0x8b94cf8666840dd04c585b1bfceb6fd81a3113e5b6972aab062506953fe89ab6`; flag #4 Confirmed; flag #3 Expired. The actions said "Connect a wallet to use this action" [seen in browser 2026-10-30, about 10:19 to 10:25 UTC (3:49 to 3:55 PM IST); the assistant did not see the screens]. The block explorer page for the promote transaction: [not seen].
+- **Should show:** the report and the flag for `0x8fdb72a34980be64D347BdcDda5117b919f538DC`. The Dashboard (no wallet connected) showed Reports (6) and Flags (6): report #5 for that address at block 52085149; flag #5 Confirmed, 0.001 ETH, promoted in block 52086814, tx `0x8b94cf8666840dd04c585b1bfceb6fd81a3113e5b6972aab062506953fe89ab6`; flag #4 Confirmed; flag #3 Expired. The actions said "Connect a wallet to use this action" [seen in browser 2026-10-30, about 10:19 to 10:25 UTC (3:49 to 3:55 PM IST); a coding agent did not see the screens]. The block explorer page for the promote transaction: [not seen].
 - **Recorded (seed 2):** report #5 for `0x8fdb72a34980be64D347BdcDda5117b919f538DC` at 05:41:38 UTC (block 52085149); promote of flag #5 with a 0.001 ETH stake at 05:47:11 UTC (block 52086814). [read on chain by Person 3]
 - **Time:** not timed in the browser. Chain times above.
 - **Say:** "A victim reported for free. A whitelisted reporter put a stake behind it. A flag lives for 10 minutes unless it is confirmed."
@@ -51,13 +51,13 @@ Marker legend for seed 2: **[seen in browser]** = Shriya reported it; the assist
 
 ### 5. The confirm transaction on Basescan
 - **Open:** `https://sepolia.basescan.org/tx/0xd0e6996acb3f2f2566ea95bde3388cdd4efc653e1f811674a888280aaaca933a` (the seed 2 confirm tx, block 52086907).
-- **Should show:** a successful transaction and a Confirmed event in the Logs tab. The Logs tab of this transaction showed a Confirmed event from `0x2BDBEa9039F076b9587C2d692d21407Fbe3A66F7` with cluster `0x60dbbc2e…`, 4 members, 1 exit point and evidence hash `0x64fb817f…e1b1` [seen in browser 2026-10-30, about 10:19 to 10:25 UTC (3:49 to 3:55 PM IST); the assistant did not see the screens]. The Overview tab of this transaction on sepolia.basescan.org showed Status Success; Block 52086907 "Confirmed by Sequencer"; Timestamp Oct-30-2026 05:47:30 AM +UTC; Transaction action "Call Confirm Function"; From `0x5E921119a5168006F82Dfc295242e23b7328cD61`; To `0x2BDBEa9039F076b9587C2d692d21407Fbe3A66F7` (with the green verified-contract tick); Value 0 ETH; Transaction Fee 0.000002754636259938 ETH; Gas Price 0.006 Gwei [seen in browser 2026-10-30 at about 10:32 UTC (4:02 PM IST); the assistant did not see the screen]. Its timestamp 05:47:30 UTC agrees with the on-chain time Person 3 recorded in `docs/HANDOFF.md`. The Overview tab of the seed 1 confirm was NOT checked [not seen]; for that one only the Logs tab was seen.
+- **Should show:** a successful transaction and a Confirmed event in the Logs tab. The Logs tab of this transaction showed a Confirmed event from `0x2BDBEa9039F076b9587C2d692d21407Fbe3A66F7` with cluster `0x60dbbc2e…`, 4 members, 1 exit point and evidence hash `0x64fb817f…e1b1` [seen in browser 2026-10-30, about 10:19 to 10:25 UTC (3:49 to 3:55 PM IST); a coding agent did not see the screens]. The Overview tab of this transaction on sepolia.basescan.org showed Status Success; Block 52086907 "Confirmed by Sequencer"; Timestamp Oct-30-2026 05:47:30 AM +UTC; Transaction action "Call Confirm Function"; From `0x5E921119a5168006F82Dfc295242e23b7328cD61`; To `0x2BDBEa9039F076b9587C2d692d21407Fbe3A66F7` (with the green verified-contract tick); Value 0 ETH; Transaction Fee 0.000002754636259938 ETH; Gas Price 0.006 Gwei [seen in browser 2026-10-30 at about 10:32 UTC (4:02 PM IST); a coding agent did not see the screen]. Its timestamp 05:47:30 UTC agrees with the on-chain time Person 3 recorded in `docs/HANDOFF.md`. The Overview tab of the seed 1 confirm was NOT checked [not seen]; for that one only the Logs tab was seen.
 - **Time:** not timed.
 - **Say:** "This is the public record. Nobody can edit it."
 
 ### 6. Check address now shows Confirmed
 - **Open:** **Check address** for `0x8fdb72a34980be64D347BdcDda5117b919f538DC`.
-- **Should show:** STATUS: CONFIRMED [seen in browser]. On chain: target 3 [read on chain by Person 3]. The page also showed role Member, cluster `0x60dbbc2e…`, evidence hash `0x64fb817f…e1b1` with source "Confirmed event" and the confirm tx, and an AI summary (behaviorScore 0.875, passThroughRatio 0.9951, fanOut 2, medianForwardTime 395, one hop to the exit) labelled "Summary source: llm. Data source: synthetic. The summary explains the evidence. It does not confirm anything." The seed 2 money trail showed Member (4), Exit point (1), Counterparty (8), Wallets (13) and Transfers (17) [seen in browser 2026-10-30, about 10:19 to 10:25 UTC (3:49 to 3:55 PM IST); the assistant did not see the screens].
+- **Should show:** STATUS: CONFIRMED [seen in browser]. On chain: target 3 [read on chain by Person 3]. The page also showed role Member, cluster `0x60dbbc2e…`, evidence hash `0x64fb817f…e1b1` with source "Confirmed event" and the confirm tx, and an AI summary (behaviorScore 0.875, passThroughRatio 0.9951, fanOut 2, medianForwardTime 395, one hop to the exit) labelled "Summary source: llm. Data source: synthetic. The summary explains the evidence. It does not confirm anything." The seed 2 money trail showed Member (4), Exit point (1), Counterparty (8), Wallets (13) and Transfers (17) [seen in browser 2026-10-30, about 10:19 to 10:25 UTC (3:49 to 3:55 PM IST); a coding agent did not see the screens].
 - **Time:** not timed.
 - **Say:** "The wallet's own behavior, split, merge and forward to an exit point, is what confirmed it."
 
