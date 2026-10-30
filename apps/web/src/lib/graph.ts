@@ -86,7 +86,10 @@ export function describeGraphFailure(status: number | null, body: unknown): Deco
   if (status === null || detail === undefined) {
     return {
       title: "Graph service unreachable",
-      detail: "The graph service at NEXT_PUBLIC_GRAPH_URL did not answer. Check that it is running, then try again.",
+      detail:
+        status === null
+          ? "The graph service did not answer. It may be offline; try again in a few minutes."
+          : `The graph service did not answer (HTTP ${status}). It may be offline; try again in a few minutes.`,
     };
   }
   if (status === 400) return { title: "Invalid cluster id", detail };
@@ -106,7 +109,7 @@ export async function fetchClusterGraph(clusterId: Hex): Promise<ClusterGraph> {
   try {
     body = await response.json();
   } catch {
-    throw new GraphError(response.status, describeGraphFailure(null, undefined));
+    throw new GraphError(response.status, describeGraphFailure(response.status, undefined));
   }
   if (!response.ok) throw new GraphError(response.status, describeGraphFailure(response.status, body));
   const parsed = clusterGraphSchema.safeParse(body);

@@ -76,6 +76,10 @@ describe("callBackend", () => {
     expect((await failureOf(callBackend("/health", schema))).decoded.title).toBe("Backend unreachable");
     respond(500, "<html>Internal Server Error</html>");
     expect((await failureOf(callBackend("/health", schema))).decoded.title).toBe("Backend unreachable");
+    respond(502, "An error occurred with this application.");
+    const proxyFailure = await failureOf(callBackend("/health", schema));
+    expect(proxyFailure.status).toBe(502);
+    expect(proxyFailure.decoded.detail).toContain("HTTP 502");
   });
 
   it("rejects a 200 response with an unexpected shape instead of showing it", async () => {

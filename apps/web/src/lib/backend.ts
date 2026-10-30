@@ -66,7 +66,10 @@ export function describeBackendFailure(status: number | null, body: unknown): De
   if (status === null || message === undefined) {
     return {
       title: "Backend unreachable",
-      detail: "The backend at NEXT_PUBLIC_BACKEND_URL did not answer. Check that it is running, then try again.",
+      detail:
+        status === null
+          ? "The backend did not answer. It may be offline; try again in a few minutes."
+          : `The backend did not answer (HTTP ${status}). It may be offline; try again in a few minutes.`,
     };
   }
   if (status === 400) return { title: "Please check your input", detail: message };
@@ -90,7 +93,7 @@ export async function callBackend<T>(path: string, schema: z.ZodType<T>, init?: 
   try {
     body = await response.json();
   } catch {
-    throw new BackendError(response.status, describeBackendFailure(null, undefined));
+    throw new BackendError(response.status, describeBackendFailure(response.status, undefined));
   }
   if (!response.ok) throw new BackendError(response.status, describeBackendFailure(response.status, body), body);
   const parsed = schema.safeParse(body);

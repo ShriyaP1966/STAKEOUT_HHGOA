@@ -54,6 +54,13 @@ describe("decodeError", () => {
     expect(JSON.stringify(decoded)).not.toContain("deadbeef");
   });
 
+  it("reads plain wallet provider errors instead of calling them unknown", () => {
+    expect(decodeError({ code: -32002, message: "Request already pending" }, combinedAbi).title).toBe("Wallet request already open");
+    expect(decodeError({ code: 4001, message: "User rejected" }, combinedAbi).title).toBe("Request rejected");
+    expect(decodeError({ code: -32603, message: "Internal wallet failure" }, combinedAbi)).toEqual({ title: "Wallet error", detail: "Internal wallet failure" });
+    expect(decodeError(42, combinedAbi).detail).toBe("An unknown error occurred.");
+  });
+
   it("explains wallet rejections and RPC failures without leaking the RPC URL", () => {
     expect(decodeError(new UserRejectedRequestError(new Error("denied")), combinedAbi).title).toBe("Request rejected");
     const url = "https://rpc.invalid/credential-in-path";

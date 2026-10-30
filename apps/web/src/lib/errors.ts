@@ -86,6 +86,23 @@ export function decodeError(error: unknown, abi: Abi): DecodedError {
     }
     return { title: "Request failed", detail: error.shortMessage };
   }
+  const provider = providerError(error);
+  if (provider) return provider;
   if (error instanceof Error) return { title: "Error", detail: error.message };
+  const message = typeof error === "object" && error !== null ? (error as { message?: unknown }).message : undefined;
+  if (typeof message === "string" && message.trim() !== "") return { title: "Wallet error", detail: message };
   return { title: "Error", detail: "An unknown error occurred." };
+}
+
+function providerError(error: unknown): DecodedError | undefined {
+  if (typeof error !== "object" || error === null) return undefined;
+  const code = (error as { code?: unknown }).code;
+  if (code === 4001) return { title: "Request rejected", detail: "You rejected the request in your wallet." };
+  if (code === -32002) {
+    return {
+      title: "Wallet request already open",
+      detail: "Your wallet is already showing a request from this site. Open the wallet, finish or cancel that request, then try again.",
+    };
+  }
+  return undefined;
 }
