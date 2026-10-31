@@ -115,6 +115,12 @@ export function candidatesOf(error: unknown): Address[] {
   return parsed.data.candidates.filter((candidate) => isAddress(candidate)).map((candidate) => getAddress(candidate));
 }
 
+export const REPORTING_DISABLED: DecodedError = {
+  title: "Reporting is disabled on this read-only demo",
+  detail:
+    "This site is connected to a read-only backend, which does not read complaints. Checking addresses, verifying evidence and the dashboard still work. Reporting needs the full backend running locally; see the README.",
+};
+
 export const backend = {
   extract: (text: string, targetAddress?: Address) => {
     const timezone = viewerTimeZone();
@@ -122,6 +128,9 @@ export const backend = {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(targetAddress === undefined ? { text, timezone } : { text, targetAddress, timezone }),
+    }).catch((error: unknown) => {
+      if (error instanceof BackendError && error.status === 404) throw new BackendError(404, REPORTING_DISABLED, error.body);
+      throw error;
     });
   },
   evidence: (hash: Hex) => callBackend(`/evidence/${hash}`, evidenceResponseSchema),

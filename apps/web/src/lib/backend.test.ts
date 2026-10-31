@@ -69,6 +69,15 @@ describe("callBackend", () => {
     }
   });
 
+  it("explains that reporting is disabled when the backend is read-only", async () => {
+    respond(404, JSON.stringify({ message: "Route POST:/extract not found", error: "Not Found", statusCode: 404 }));
+    const error = await failureOf(backend.extract("I sent funds to a scammer"));
+    expect(error.status).toBe(404);
+    expect(error.decoded.title).toBe("Reporting is disabled on this read-only demo");
+    respond(429, JSON.stringify({ error: "slow down" }));
+    expect((await failureOf(backend.extract("I sent funds to a scammer"))).decoded.title).toBe("Too many requests");
+  });
+
   it("reports an unreachable backend when fetch fails or the proxy returns HTML", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => {
       throw new TypeError("fetch failed");

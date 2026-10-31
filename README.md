@@ -253,6 +253,8 @@ npm ci --prefix apps/web
 npm run web:dev
 ```
 
+The hosted demo at https://stakeout-six.vercel.app is connected to a read-only backend (`EXPOSE_WRITE_ROUTES=false`), so `/report` there says reporting is disabled; `/wallet`, `/verify`, `/dashboard`, `/decisions` and the money trail work. Reporting needs the full backend running locally, as below.
+
 Run the commands after the first in a second terminal. Start the backend as described in `docs/person2-handoff.md` for `/report`, `/verify`, `/decisions`, and the `/wallet` summaries. Before `web:dev`, create `apps/web/.env.local` with `NEXT_PUBLIC_DEPLOYMENT=localhost`, `NEXT_PUBLIC_DATA_SOURCE=synthetic`, and the backend URL. To point a browser wallet at the local node, add a network with the node's RPC URL and chain id, and import one of the throwaway accounts the node prints.
 
 `npm run web:test` skips the local-node tests by default. To run them against a seeded local chain, set `STAKEOUT_LOCAL_RPC_URL` to the node's RPC URL for that one command, for example `STAKEOUT_LOCAL_RPC_URL=http://127.0.0.1:8545 npm run web:test` in a POSIX shell.
